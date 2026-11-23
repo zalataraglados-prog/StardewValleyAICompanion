@@ -31,6 +31,7 @@ $template = Join-Path $RunDirectory 'summer04-native-save-20261123\native-bounda
 $arguments = [string[]](Get-Content -LiteralPath $template -Raw | ConvertFrom-Json)
 # Profession menus need their existing planned choice, rather than repeated sleep.
 $arguments[[Array]::IndexOf($arguments, '--daily-plan-candidate-options') + 1] = 'recovery.stabilize_day,skills.choose_profession'
+$arguments[[Array]::IndexOf($arguments, '--max-persisted-iterations') + 1] = '600'
 foreach ($binding in @{
     '--run-id' = $session.run_id
     '--save-isolation-path' = $session.save_root

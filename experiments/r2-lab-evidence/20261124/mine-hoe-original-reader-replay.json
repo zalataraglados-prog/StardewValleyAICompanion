@@ -1,0 +1,41 @@
+{
+  "reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "reader_assembly": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\c42508c1-managed-lab\\live-training-loop-season-bound\\StardewAI.GoalConditionedBootstrap.dll",
+  "reader_assembly_sha256": "E3C593F01E25F8E72E2D9B1B3278B87BB16268AA1142982447C723F7B5E3AB43",
+  "original_native_source_replay_verified": true,
+  "run_id": "r2-global-daily-20261117-171253",
+  "queue_id": "queue.d3068550dbf94a70bc6fc5b168369c86",
+  "queue_item_id": "queue_item.b3195dc2e06e43549a6b3f00f6db8ef1",
+  "option_id": "executor.till_soil",
+  "native_status": "applied",
+  "before_state_hash": "8a78bd05e5aac2d5cc9016d907ac4a5164ea8ff69c0551377eaef695140aef46",
+  "after_state_hash": "d8270b80c8e6a0ca0aa8929234b6a58ca3619eba551babfbfaa98b14af56c363",
+  "before_game_tick": 54053,
+  "after_game_tick": 54305,
+  "combat_target_runtime_identity": "",
+  "combat_target_defeated": null,
+  "combat_attack_count": null,
+  "combat_hit_count": null,
+  "combat_damage_taken": null,
+  "native_changed_facts": [
+    {
+      "Path": "current_location.terrain_features[21,36].type",
+      "Before": "none",
+      "After": "HoeDirt"
+    },
+    {
+      "Path": "player.energy",
+      "Before": "168.4",
+      "After": "166.5"
+    }
+  ],
+  "source_sha256": {
+    "queue": "49ec75d89a679c55ffea335ba25cfd1d8fa9437126f2cb428ce00f41f5d58d3b",
+    "result": "d26d95a5a538eeb9c60b03d3ebdf8352f1b042cb5d613c60d417bef009b71165",
+    "before": "939613930d97a3b3ee073db47b4dffc35a8a4b0ab4716d8899417b27e5638fed",
+    "after": "9ae693a2204c69a6b408a34908d7cfb86cd815c841db992ab8c97723d35b4a7e",
+    "journal": "57b882cd0a06979772c91c83b0fd3e54520f2d1e11b82d9e4fbecfca8cf239cc",
+    "request_gzip": "a0a223828f039c5479efa36ea4d5d575d38b8ee1cd07b82fd4232894deec6f51"
+  },
+  "formal_training_authorized": false
+}

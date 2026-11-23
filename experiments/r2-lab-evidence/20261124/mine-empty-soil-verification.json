@@ -1,0 +1,16 @@
+{
+  "save": "ProofFarm",
+  "player": "319842636613009663",
+  "day": 32,
+  "location": "UndergroundMine6",
+  "tile": [
+    21,
+    36
+  ],
+  "before": "8a78bd05e5aac2d5cc9016d907ac4a5164ea8ff69c0551377eaef695140aef46",
+  "after_hoe": "d8270b80c8e6a0ca0aa8929234b6a58ca3619eba551babfbfaa98b14af56c363",
+  "after_move": "c6cc9cc736fc8501d2630d3a4f14210d36bf02ea0bf3306ae5c6ac34d82ddfe3",
+  "empty_hoe_dirt": true,
+  "projected_blocked": false,
+  "native_actor_on_tile": true
+}

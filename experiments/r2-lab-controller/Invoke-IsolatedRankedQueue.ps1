@@ -8,7 +8,7 @@ param(
     [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$Attempt,
     [object[]]$CandidateParameters = @(),
     [switch]$UseOriginalFreshSelection,
-    [ValidateRange(1,1000000)][int]$MaxPersistedIterations = 400
+    [ValidateRange(1,1000000)][int]$MaxPersistedIterations = 600
 )
 
 $ErrorActionPreference = 'Stop'

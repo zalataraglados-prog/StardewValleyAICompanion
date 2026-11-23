@@ -400,8 +400,8 @@
   "controller_files": [
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedRankedQueue.ps1",
-      "sha256": "A1303D2FCFBC5D9294EA5F0E59B64F86524535AA559515C6B4394027946C3E3C",
-      "git_blob_oid": "e095f505a58c274e35a2a59d202dd4163e9d9867"
+      "sha256": "99E2ED03CB17D9DF8AFD183678721EDF0003205951981ED9180CFA2F675246EA",
+      "git_blob_oid": "c266760cd6b3211a7febc2b490b62cb904bc9b09"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedMapApproach.ps1",
@@ -440,13 +440,13 @@
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedMinePassabilityProbe.ps1",
-      "sha256": "BAED53222B788FE31FA1DEDAE32418642C663C9EF0E0395920747601D2FE982A",
-      "git_blob_oid": "249c304e3f246a990be0236a4f9c48d5763c730a"
+      "sha256": "72FA4E2AF9BA20F45F8B22C6D4D7009C34CE32996D3619352036A526C4FFF1EC",
+      "git_blob_oid": "a9a2f623267e0a333f6a8b41d6a6853291bc1964"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedNativeDaySave.ps1",
-      "sha256": "556BC0C228B59DB770EAE0374D34CDB79AC39BC10659DF6246E4BDA34261EE8F",
-      "git_blob_oid": "f2cb47fe6497aebad51078e86292c22c73f368f1"
+      "sha256": "AA9F2C57E9B233554504AF45E362B0BC4331EA1B6759E04A366FDB062211F4EE",
+      "git_blob_oid": "360e4e11b71e238280d3ed59777a212441ecb8ad"
     },
     {
       "path": "experiments/r2-lab-controller/Restart-IsolatedVerifiedDay.ps1",
@@ -470,8 +470,8 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T00:44:28.1855509+08:00",
-  "controller_revision_note": "Mining optionally delegates fresh selection/compilation of the same fixed candidate to the existing controller, recording both observed hashes without bypassing native preconditions. Mining artifact retention is bounded at 600. Added an invocation wrapper for the original verified-Product source reader. Restart retains explicit evidence when discarding an unsaved failed experiment.",
+  "updated_at": "2026-11-24T00:53:22.7025488+08:00",
+  "controller_revision_note": "Retention defaults and the native-save command are bounded at 600 without deleting prior artifacts. Native soil probe binds ExpectedTotalDay throughout, and its original controller hoe selection / original compiler walk both passed at total_day32. Native source replay for both actions passed. Mining fresh selection continues to bind the same candidate and preserves original execution guards.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
     "sha256": "D3F19E0B533D914DCD9570444AB55992082666A5757C1FA2C44BDACB772E6BFF",
@@ -498,7 +498,34 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer05-native-crab-shell-recovery-probe-20261124\\original-reader-replay.json",
       "sha256": "AE8387F1246CB350066B12CFDF5D6FCF5EA7BBD665EEC77D9415FAE41B936653",
       "git_blob_oid": "5e73afccf085a059b688dcd7f589bc705dc93f95"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/mine-empty-soil-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer05-patched-native-empty-soil-20261124-evidence\\verified.json",
+      "sha256": "CB6483ED5E1F463DC0036F431FA0187166A82B750BEBF962D24647FDFA0DD5B0",
+      "git_blob_oid": "a6244e4bc077d034a124fff842e2d7ebf5994450"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/mine-hoe-original-reader-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer05-patched-native-empty-soil-20261124-evidence\\original-reader-0437.json",
+      "sha256": "7E8DD4EEF2CC34B075DAF6EA848DF011E811A7E9F16D513E77C8FE86838BBC0D",
+      "git_blob_oid": "820a7f0f77b0ac1eae47d26fd148f67ed05d624b"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/mine-walk-original-reader-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer05-patched-native-empty-soil-20261124-evidence\\original-reader-0438.json",
+      "sha256": "405D325F37F03300C8E833B68FFA9223ABDFBE81B5B889D42E948ADA864E7BAE",
+      "git_blob_oid": "054f14a804944c98083e12a07fbe7f1a5af2a876"
     }
   ],
-  "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries."
+  "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
+  "latest_isolated_bridge": {
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runtime\\Stardew Valley\\Mods\\StardewAI.TransparentBridge\\StardewAI.TransparentBridge.dll",
+    "sha256": "18D0D1F21FFB3AB5959E872AA497E5694F9C05AF8DC7758AEBAB27F1C472AE4C",
+    "clean_main_fix_pr": 592,
+    "clean_main_fix_commit": "20c3a85cf0f3d0147ffe709d0ed6854d4aa8c8a3",
+    "native_empty_hoe_dirt_walk_verified": true,
+    "native_source_replay_verified": true,
+    "scope": "Combined isolated lab Bridge; actual Summer5 ordinary-mine floor6, tile21,36. The original reader separately accepted native hoe and walk sources."
+  }
 }

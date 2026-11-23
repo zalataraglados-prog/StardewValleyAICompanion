@@ -40,7 +40,7 @@ $bound = @{
     CandidateId=$candidate.candidate_id; ExpectedStateHash=$before.state_hash; GoalId=$goal
     Attempt=($Attempt + '-hoe'); CandidateParameters=$parameters
 }
-& (Join-Path $PSScriptRoot 'Invoke-IsolatedRankedQueue.ps1') @bound
+& (Join-Path $PSScriptRoot 'Invoke-IsolatedRankedQueue.ps1') @bound -UseOriginalFreshSelection -MaxPersistedIterations 600
 if ($LASTEXITCODE -ne 0) { throw 'Original native hoe probe stopped.' }
 $afterBody = (Invoke-WebRequest -Uri $bridge -TimeoutSec 15).Content
 $after = $afterBody | ConvertFrom-Json
@@ -73,7 +73,7 @@ if ($queue.status -cne 'pending' -or $queue.state_hash -cne $after.state_hash -o
 }
 $argsFor = Get-Content -Raw -LiteralPath (Join-Path $RunDirectory 'spring27-chest-adapter-replay\execution-arguments.json') | ConvertFrom-Json
 $argsFor[[array]::IndexOf($argsFor,'--precompiled-queue') + 1] = $queuePath
-$argsFor[[array]::IndexOf($argsFor,'--max-persisted-iterations') + 1] = '400'
+$argsFor[[array]::IndexOf($argsFor,'--max-persisted-iterations') + 1] = '600'
 foreach ($key in $settings.Keys) { [Environment]::SetEnvironmentVariable($key,$settings[$key],'Process') }
 $dotnet = $session.processes | Where-Object role -ceq 'backend' | Select-Object -ExpandProperty exe
 & $dotnet @argsFor *> (Join-Path $folder 'move-native.log')
@@ -83,11 +83,11 @@ $last = $lastBody | ConvertFrom-Json
 [IO.File]::WriteAllText((Join-Path $folder 'after-move.json'), $lastBody)
 if ($last.state.player.tile_x.value -ne $x -or $last.state.player.tile_y.value -ne $y -or
     $last.save_id.value -cne $before.save_id.value -or $last.player_id.value -cne $before.player_id.value -or
-    $last.state.time.total_days.value -ne 30 -or $last.state.player.location_id.value -cne $before.state.player.location_id.value) {
+    $last.state.time.total_days.value -ne $ExpectedTotalDay -or $last.state.player.location_id.value -cne $before.state.player.location_id.value) {
     throw 'Native probe did not finish on the exact original hoed tile.'
 }
 [ordered]@{
-    save=$last.save_id.value; player=$last.player_id.value; day=30; location=$last.state.player.location_id.value
+    save=$last.save_id.value; player=$last.player_id.value; day=$ExpectedTotalDay; location=$last.state.player.location_id.value
     tile=@($x,$y); before=$before.state_hash; after_hoe=$after.state_hash; after_move=$last.state_hash
     empty_hoe_dirt=$true; projected_blocked=$false; native_actor_on_tile=$true
 } | ConvertTo-Json -Depth 5 | Tee-Object -FilePath (Join-Path $folder 'verified.json')
