@@ -1,5 +1,43 @@
 # Current Production Snapshot Handoff
 
+## Latest267/268: Saved-Day Fork Saved, But Crop Ownership Was Not Restored
+
+PR591 ownCI44224280514 succeeded; normally merged main3a878870 and exact merged
+temporary branch removed. Original old game/services are GONE after host reboot;
+never reuse old PIDs (3356 was observed as svchost). Unsaved42-47 is not current
+world. Original four-file summer3/accepted41 save, ledger486 and old owner tail
+remain unchanged. Owner authorized one-off47 developer supplement/exclusion and,
+separately, copied summer3 recovery. Do not repeat the authorization question.
+
+Actual new native load retained raw snapshots/events/logs and exact copied save
+fingerprint f1174f975b870d352739c0b6a4e71e9f6182f5f142f3a1d95f7693a5d45ea4e4.
+This is a bounded DEVELOPER fork, not old strict saved-resource readback success:
+declared environment/endpoint and observed weed/CC derived-note differences are
+recorded, all other business resources checked, raw data unchanged. No generic
+native-reload certificate or ordinary old47 acceptance is fabricated.
+
+Copied saved ledger481 ->482 via original Backend API; independent original
+mutation replay and RequireReconciledReadback passed. Reuse existing same new
+game/Backend/Product and frozen263/264 binaries. Main exited0,17iterations,
+6verified primary actions and actual summer3->4 save. However, no crop water was
+dispatched and all8 crops' growth counters stayed unchanged. Controller restored
+only ledger, not existing crop owner; mechanical maintenance is intentionally
+absent from autonomous pool. Business recovery FAILED, despite CLI/save success;
+entire diagnostic branch excluded from formal training. Original result retained,
+new business-outcome.json says business_exit_verified=false. New game/services
+closed only after saved boundary. Original tail/save/ledger remain unchanged.
+
+NEXT explicit saved-source initialization of EXISTING managed owner, inheriting
+original plan and accepted planning-prefix progress, distinct operation IDs and
+actual process binding. Reuse original composition/compiler/executors; do not add
+mechanical work to autonomous candidates or repeat13days. Host reserve4096MiB,
+stop256/gzip and same future water opt-in remain scoped settings, not product gates.
+AGY original model selection was rejected by current CLI catalog before a review;
+no substantive result/retry/fallback, controller continues. Process identities,
+authorization and raw evidence stay on external COLLAB_BOARD/267/268, not Git.
+Full managed production/Teacher21/Stage5->570->569/formal remain OPEN; see
+[current recovery details](SAVED_DAY_DEVELOPMENT_RECOVERY_CN.md).
+
 ## Latest265: Both Layers Merged / Real Water And Pickup Samples Passed
 
 - PR589/590 MERGED under normal protection; origin/main94e3abfe has tested df7996a5 tree a6fb280405c1b418a4d3611755c6ff9577827dd4. Final590 own CI44217637509 SUCCESS, Core2866/Backend4130, zero failures/skips. Both merged temporary remote branches removed under exact head leases. Merge-push CI is a separate result.
