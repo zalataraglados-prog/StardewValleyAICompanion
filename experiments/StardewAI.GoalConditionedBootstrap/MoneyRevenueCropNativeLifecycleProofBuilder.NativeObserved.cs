@@ -16,8 +16,15 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
             return transition with { NativeNonProduction = true };
         }
         if (transition.Receipt.Success || request.TransitionKind != CropActionsKind ||
-            transition.Queue.Items is not { Length: > 0 } items || items.Any(item => item.OptionId != PlantOption))
+            transition.Queue.Items is not { Length: > 0 } items)
             return transition;
+        if (items.All(item => item.OptionId == WaterOption) || items.All(item => item.OptionId == HarvestOption))
+        {
+            var prefix = NativeExecutionActionSourceReader.ReadOwnedCropPrefix(request);
+            var appliedCount = prefix.Actions.Count(frame => frame.Result.Status == "applied");
+            return transition with { NativeAppliedItemCount = appliedCount, NativeNonProduction = appliedCount == 0 };
+        }
+        if (items.Any(item => item.OptionId != PlantOption)) return transition;
 
         // Reuse the original owned-planting prefix contract; never complete or trim the persisted queue/receipt.
         var applied = CropTeacherSeedPlantingReceipt.Validate(transition.Queue, transition.Before, transition.Receipt,

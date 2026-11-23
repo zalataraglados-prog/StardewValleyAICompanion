@@ -35,6 +35,9 @@ public sealed partial record CropTeacherTerminalShippingTarget(
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CropTeacherTerminalVariantPlan? NativeVariants { get; init; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CropTeacherShippingBaseline? ShippingBaseline { get; init; }
+
     public IEnumerable<CropTeacherTerminalVariant> ReadNativeVariants()
     {
         if (NativeVariants is null || NativeVariants.SchemaVersion is not
@@ -70,6 +73,9 @@ public sealed partial record CropTeacherTerminalShippingTarget(
     }
 
     public long PendingValueAt(int count)
+        => checked(CropValueAt(count) + (ShippingBaseline?.Value ?? 0));
+
+    public long CropValueAt(int count)
     {
         if (count < 0 || count > RequiredQuantity) throw new InvalidDataException("Terminal cursor is outside obligation.");
         if (NativeVariants is null) return checked((long)count * UnitPrice);
@@ -95,7 +101,7 @@ public sealed partial record CropTeacherTerminalShippingTarget(
         var rows = ReadNativeVariants().ToArray();
         if (count < 0 || count > RequiredQuantity)
             throw new InvalidDataException("Native terminal cursor is outside obligation.");
-        if (PendingValueAt(RequiredQuantity) < minimumGrossRevenue || source.SaveId.Value != SaveId ||
+        if (CropValueAt(RequiredQuantity) < minimumGrossRevenue || source.SaveId.Value != SaveId ||
             source.PlayerId.Value != PlayerId || source.GameVersion != GameVersion)
             throw new InvalidDataException("Native terminal retained actor/obligation differs.");
         MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(source, "native terminal variant source");
@@ -135,7 +141,8 @@ public sealed partial record CropTeacherTerminalShippingTarget(
             selected.GetProperty("interaction_stand_tile_y").GetInt32() != StandTileY ||
             !string.IsNullOrWhiteSpace(standReason.GetString()) ||
             !selected.GetProperty("pending_settlement_value_complete").GetBoolean() ||
-            selected.GetProperty("pending_settlement_value").GetInt64() != PendingValueAt(count))
+            selected.GetProperty("pending_settlement_value").GetInt64() != PendingValueAt(count) ||
+            ShippingBaseline is not null && CropTeacherShippingBaseline.Read(selected, QualifiedItemId) != ShippingBaseline)
             throw new InvalidDataException("Native terminal bin/custody/pending value differs from accepted prefix.");
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Strategy;
 
@@ -14,7 +15,8 @@ public sealed partial class ActionQueueDispatchReadinessService
         ActionQueueEnvelope queue,
         ActionQueueItem item,
         StrategyCommitmentLedger currentLedger,
-        string currentStateHash)
+        string currentStateHash,
+        SnapshotEnvelope? currentSnapshot = null)
     {
         var result = new ActionQueueDispatchReadiness
         {
@@ -25,6 +27,14 @@ public sealed partial class ActionQueueDispatchReadinessService
             CurrentLedgerId = currentLedger.LedgerId,
             CurrentLedgerRevision = currentLedger.Revision
         };
+        if (item.OptionId is "executor.ship_inventory_item_to_bin" or "executor.sell_shop_item" &&
+            CommunityCenterShipmentProtection.BlockReason(currentSnapshot, currentLedger, IntParameter(item, "slot_index"),
+                Parameter(item, "qualified_item_id"), IntParameter(item, "quantity")) is { } reservedShippingReason)
+        {
+            result.Status = "blocked";
+            result.BlockingReasons = new[] { reservedShippingReason };
+            return result;
+        }
         if (item.OptionId == PreparedInventoryConsumptionContract.Consumer && currentLedger.PreparedInventoryConsumption is not null ||
             PreparedCookingConsumptionBinding.IsPresent(item.NormalizedCommand.Parameters))
         {

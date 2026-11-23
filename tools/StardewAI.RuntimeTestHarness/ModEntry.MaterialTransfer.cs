@@ -1,8 +1,10 @@
 using Microsoft.Xna.Framework;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewValley;
+using StardewValley.Locations;
 using StardewValley.Menus;
 using StardewValley.Objects;
 
@@ -426,7 +428,14 @@ public sealed partial class ModEntry
     {
         return string.IsNullOrWhiteSpace(chest.GlobalInventoryId) &&
             chest.SpecialChestType != Chest.SpecialChestTypes.JunimoChest &&
-            chest.owner.Value == Game1.player.UniqueMultiplayerID;
+            (chest.owner.Value == Game1.player.UniqueMultiplayerID ||
+                NativeStorageAccess.CanUseUnownedWoodenFarmChest(
+                    chest.owner.Value, Game1.player.UniqueMultiplayerID, chest.QualifiedItemId,
+                    Context.IsMainPlayer && !Context.IsMultiplayer && !Game1.IsMultiplayer && Game1.server is null,
+                    Game1.currentLocation is Farm && chest.GetType() == typeof(Chest) &&
+                    chest.playerChest.Value && !chest.fridge.Value && !chest.giftbox.Value &&
+                    chest.SpecialChestType == Chest.SpecialChestTypes.None,
+                    Game1.getAllFarmers().Select(farmer => farmer.UniqueMultiplayerID)));
     }
 
     private void CompleteMaterialTransfer(ActiveMaterialTransfer active)

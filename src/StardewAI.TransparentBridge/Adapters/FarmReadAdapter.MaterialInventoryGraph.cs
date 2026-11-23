@@ -1,6 +1,8 @@
 using Microsoft.Xna.Framework;
 using StardewAI.Contracts.State;
+using StardewAI.RuntimePrimitives;
 using StardewAI.TransparentBridge.State;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Inventories;
 using StardewValley.Locations;
@@ -180,6 +182,17 @@ public sealed partial class FarmReadAdapter
             player.UniqueMultiplayerID,
             globalInventoryId,
             actorOwnedContext: accessKind == "built_in_fridge");
+        if (NativeStorageAccess.CanUseUnownedWoodenFarmChest(
+                chest.owner.Value, player.UniqueMultiplayerID, chest.QualifiedItemId,
+                Context.IsMainPlayer && !Context.IsMultiplayer && !Game1.IsMultiplayer && Game1.server is null,
+                accessKind == "placed_chest" && locationRef.Location is Farm &&
+                chest.GetType() == typeof(Chest) && chest.playerChest.Value &&
+                !chest.fridge.Value && !chest.giftbox.Value &&
+                chest.SpecialChestType == Chest.SpecialChestTypes.None && globalInventoryId.Length == 0,
+                Game1.getAllFarmers().Select(farmer => farmer.UniqueMultiplayerID)))
+        {
+            ownership = new MaterialOwnership("singleplayer_unowned", true);
+        }
         var inventory = chest.GetItemsForPlayer(
             player.UniqueMultiplayerID);
         var capacity = chest.GetActualCapacity();

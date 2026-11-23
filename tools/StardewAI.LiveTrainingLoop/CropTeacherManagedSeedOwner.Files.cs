@@ -38,8 +38,17 @@ public sealed partial class CropTeacherManagedSeedOwner
         return JsonSerializer.Deserialize<T>(ContentAddressedJsonArtifactReader.ReadAllText(path), JsonOptions)
             ?? throw new InvalidDataException("Managed crop owner artifact is empty: " + path);
     }
-    private string RecordPath(int sequence, string kind) => Path.Combine(options.EvidenceDirectory, $"operation-{sequence:D6}-{kind}.json");
-    private string StepId(int sequence) => supportStepPrefix + sequence.ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
+    private string OperationEvidenceDirectory(int sequence) =>
+        HistoricalSegment(sequence)?.Prefix.SourceDirectory ?? options.EvidenceDirectory;
+    private string RecordPath(int sequence, string kind) => Path.Combine(OperationEvidenceDirectory(sequence), $"operation-{sequence:D6}-{kind}.json");
+    private string StepId(int sequence)
+    {
+        var segment = HistoricalSegment(sequence);
+        var recoveryHash = segment is null ? options.SavedPrefix is null ? null : headerHash
+            : segment.IsRecovery ? segment.HeaderHash : null;
+        var prefix = recoveryHash is null ? supportStepPrefix : options.RunId + ":saved-recovery:" + recoveryHash + ":owned-seed:";
+        return prefix + sequence.ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
+    }
     private void ValidateState()
     {
         ObjectDisposedException.ThrowIf(disposed, this);

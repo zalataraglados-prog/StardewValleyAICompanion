@@ -35,7 +35,8 @@ static partial class Program
             bool allowObjectiveSafeCapacityRecovery = false,
             bool requireFishingAttemptBlockedForCapacityRecovery = true,
             JsonObject? activeObjectiveContinuation = null,
-            IReadOnlyCollection<JsonObject>? suppressedObjectiveContinuations = null)
+            IReadOnlyCollection<JsonObject>? suppressedObjectiveContinuations = null,
+            IReadOnlySet<string>? retainedOutputItems = null)
     {
         if ((!capacityRecoveryOnly &&
              !options.UseStageOneCollectionTeacher) ||
@@ -151,7 +152,8 @@ static partial class Program
             typedRanking,
             snapshot,
             allowObjectiveSafeCapacityRecovery,
-            requireFishingAttemptBlockedForCapacityRecovery);
+            requireFishingAttemptBlockedForCapacityRecovery,
+            retainedOutputItems);
         if (capacityRecovery is not null && activeObjectiveContinuation is not null)
         {
             var rankedCandidates = ranking["ranked_event_candidates"]?

@@ -19,6 +19,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     private readonly string binScope;
     private readonly string binPlayer;
     private readonly CropTeacherTerminalVariantPlan? nativeVariants;
+    private readonly CropTeacherShippingBaseline? shippingBaseline;
     private readonly bool requireSaleStockReservations;
     internal string RetentionProofPath { get; }
     internal string QualifiedItemId { get; }
@@ -39,7 +40,8 @@ internal sealed partial class CropTeacherTerminalShippingSelection
     internal CropTeacherTerminalShippingTarget CreateTarget(int acceptedDepositCount) => new(
         RetentionProofPath, inputs.Hashes[RetentionProofPath], saveId, playerId, gameVersion, totalDay,
         QualifiedItemId, SlotIndex, Quality, UnitPrice, BinX, BinY, StandX, StandY, initialQuantity,
-        MinimumUnits, acceptedDepositCount) { NativeVariants = nativeVariants, RequireSaleStockReservations = requireSaleStockReservations };
+        MinimumUnits, acceptedDepositCount) { NativeVariants = nativeVariants, RequireSaleStockReservations = requireSaleStockReservations,
+            ShippingBaseline = shippingBaseline };
 
     internal CropTeacherTerminalShippingSelection(CropTeacherManagedProductionEvidence evidence,
         string nativePlanPath, string snapshotPath, string ledgerPath) : this(evidence, nativePlanPath, snapshotPath, ledgerPath, false) { }
@@ -143,11 +145,19 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         if (SlotIndex < 0 || Quality < 0 || (!useNativeVariants && checked((long)MinimumUnits * UnitPrice) < MinimumGrossRevenue))
             throw new InvalidDataException("Selected crop terminal quantity/price does not meet its original wave.");
         var bins = Field(source, "farm", "shipping_bins").EnumerateArray().Where(row => Boolean(row, "completed") &&
-            Boolean(row, "pending_settlement_value_complete") && Long(row, "pending_settlement_value") == 0 &&
+            Boolean(row, "pending_settlement_value_complete") &&
+            (Long(row, "pending_settlement_value") == 0 || ObservedPrefix is not null && Long(row, "pending_settlement_value") > 0) &&
             row.TryGetProperty("interaction_stand_tile_x", out var x) && x.TryGetInt32(out _) &&
             row.TryGetProperty("interaction_stand_tile_y", out var y) && y.TryGetInt32(out _) &&
             string.IsNullOrWhiteSpace(String(row, "interaction_stand_tile_blocked_reason"))).ToArray();
-        if (bins is not [var bin]) throw new InvalidDataException("Selected crop terminal requires the original exact empty completed shipping bin.");
+        if (bins is not [var bin]) throw new InvalidDataException("Selected crop terminal requires its original complete shipping bin.");
+        var pendingValue = Long(bin, "pending_settlement_value");
+        if (pendingValue > 0)
+        {
+            shippingBaseline = CropTeacherShippingBaseline.Read(bin, QualifiedItemId);
+            if (shippingBaseline.Value != pendingValue)
+                throw new InvalidDataException("Existing native shipping value includes stock from the selected crop.");
+        }
         BinX = Integer(bin, "tile_x"); BinY = Integer(bin, "tile_y");
         StandX = Integer(bin, "interaction_stand_tile_x"); StandY = Integer(bin, "interaction_stand_tile_y");
         binScope = String(bin, "bin_scope"); binPlayer = bin.GetProperty("player_id").ToString();

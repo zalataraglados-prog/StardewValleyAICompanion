@@ -54,6 +54,9 @@ public static class CropTeacherWateringRefillRecoveryPlanner
             approach.TileY == playerTileY;
         return new CropTeacherWateringRefillRecoveryDecision(
             atApproach ? null : approach,
-            atApproach ? batch.Tiles.Length : 0);
+            // The first watering action may refill the can and still be blocked
+            // on the way to the crop. Rebind from its native receipt before
+            // admitting any further watering actions.
+            atApproach ? 1 : 0);
     }
 }

@@ -21,7 +21,8 @@ public static class MasterAnglerNativeCatchReceiptBuilder
         var loweredSet = CurrentTeacherFrontierSupport.SingleSet(lowering.RequirementSets, row => row.RequirementSetId,
             "master_angler", "native catch lowering");
         CurrentMasterAnglerTeacherFrontierBuilder.ValidateSets(set, loweredSet);
-        var action = NativeExecutionActionSourceReader.Read(request.ActionQueuePath, request.ExecutionReceiptPath, request.AfterSnapshotPath);
+        var action = NativeExecutionActionSourceReader.ReadVerifiedProduct(request.ActionQueuePath, request.ExecutionReceiptPath,
+            request.AfterSnapshotPath, request.ProductAfterSnapshotPath);
         Require(inventory.GameVersion == action.Before.GameVersion, "Master Angler native authority version drifted.");
         Require(action.Result.OptionId is "executor.catch_fish" or "executor.collect_crab_pot",
             "Master Angler native collection requires a rod catch or trap harvest, not reward recovery or preparation.");
@@ -30,6 +31,14 @@ public static class MasterAnglerNativeCatchReceiptBuilder
             "Master Angler native source has a foreign run or date.");
         var before = CurrentMasterAnglerTeacherFrontierBuilder.ReadExactProgress(action.Before, set);
         var after = CurrentMasterAnglerTeacherFrontierBuilder.ReadExactProgress(action.After, set);
+        if (action.ProductAfter is { } productAfter)
+        {
+            var productProgress = CurrentMasterAnglerTeacherFrontierBuilder.ReadExactProgress(productAfter, set);
+            Require(TotalDay(productAfter) == day && productAfter.InGameTime.Value == action.After.InGameTime.Value &&
+                Value(productAfter, "player", "location_id").GetString() == Value(action.After, "player", "location_id").GetString() &&
+                after.All(row => productProgress[row.Key] == row.Value),
+                "Master Angler Product and native after captures disagree on the fishing outcome.");
+        }
         Require(before.All(row => !row.Value || after[row.Key]), "Master Angler native collection regressed.");
         var newlyCaught = before.Where(row => !row.Value && after[row.Key]).Select(row => row.Key).ToArray();
         Require(newlyCaught.Length == 1, "Master Angler native source has no single exact newly collected species.");

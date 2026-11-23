@@ -11,6 +11,9 @@ public sealed record MasterAnglerNativeCatchRequest
     [JsonPropertyName("action_queue_path")] public string ActionQueuePath { get; init; } = string.Empty;
     [JsonPropertyName("execution_receipt_path")] public string ExecutionReceiptPath { get; init; } = string.Empty;
     [JsonPropertyName("after_snapshot_path")] public string AfterSnapshotPath { get; init; } = string.Empty;
+    [JsonPropertyName("product_after_snapshot_path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProductAfterSnapshotPath { get; init; }
 }
 
 public sealed record MasterAnglerNativeCatchReceipt(

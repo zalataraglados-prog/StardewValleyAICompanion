@@ -41,7 +41,8 @@ public static class StageOneInventoryCapacityRecovery
         AvailabilityAwarePolicyPredictionEnvelope ranking,
         JsonObject snapshot,
         bool allowObjectiveSafeRelease = false,
-        bool requireFishingAttemptBlocked = true)
+        bool requireFishingAttemptBlocked = true,
+        IReadOnlySet<string>? retainedOutputItems = null)
     {
         var fishingAttemptBlocked = ranking.Availability.Options
             .Where(option => string.Equals(
@@ -65,6 +66,7 @@ public static class StageOneInventoryCapacityRecovery
         var caughtQualifiedItemId = ReadCaughtQualifiedItemId(snapshot);
         var releaseCandidates = ranking.RankedEventCandidates
             .Where(IsCapacityReleaseCandidate)
+            .Where(candidate => retainedOutputItems?.Contains(candidate.QualifiedItemId) != true)
             .ToArray();
         var immediateCandidates = releaseCandidates
             .Where(candidate => !IsDeferredTransitRecovery(candidate))

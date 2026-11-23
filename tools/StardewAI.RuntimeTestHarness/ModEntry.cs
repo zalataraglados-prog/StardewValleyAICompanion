@@ -633,9 +633,6 @@ public sealed partial class ModEntry : Mod
         TickVolcanoCombat();
         TickVolcanoAutoCombat();
         TickBreakContainer();
-        TickEmergencyCombatFood();
-        TickCombatMonster();
-        TickManualAutoCombat();
         TickConsumeFood();
         TickPickupDebris();
         TickSpawnedObjectPickup();
@@ -650,6 +647,11 @@ public sealed partial class ModEntry : Mod
         TickDescendLadder();
         TickDescendShaft();
         TickExitMine();
+        // Interrupted mine parents release travel before reactive combat sets
+        // the movement input consumed by the next native game update.
+        TickEmergencyCombatFood();
+        TickCombatMonster();
+        TickManualAutoCombat();
         TickShipInventoryToBin();
         TickMaterialTransferSafely();
         TickWorkbenchCraftSafely();
@@ -2646,41 +2648,7 @@ public sealed partial class ModEntry : Mod
         {
             executorInputTick++;
             EnsureHeadlessInputPump();
-            var hasActiveExecutorOperation = HasActiveExecutorOperation();
-            var shouldHoldStoryEventForDispatch =
-                !hasActiveExecutorOperation &&
-                HasExecutorOwnedStoryEventDispatchBoundary();
-            var hasPendingNativeEndOfNightTransition =
-                HasPendingNativeEndOfNightTransition(out _);
-            var shouldPauseForExecutorIdle =
-                config.FreezeClockWhileExecutorIdle &&
-                Context.IsWorldReady &&
-                !hasPendingNativeEndOfNightTransition &&
-                executorMovementLease.Direction is null &&
-                (shouldHoldStoryEventForDispatch ||
-                    pendingExecutions.IsEmpty &&
-                    !hasActiveExecutorOperation &&
-                    Game1.player.CanMove &&
-                    Game1.player.movementDirections.Count == 0);
-            if (config.FreezeClockWhileExecutorIdle && Game1.options is not null)
-            {
-                Game1.options.pauseWhenOutOfFocus = false;
-            }
-            if (shouldPauseForExecutorIdle)
-            {
-                Game1.gameTimeInterval = 0;
-                if (!Game1.paused)
-                {
-                    Game1.paused = true;
-                    executorIdlePauseApplied = true;
-                    executorIdlePauseEpoch++;
-                }
-            }
-            else if (executorIdlePauseApplied)
-            {
-                Game1.paused = false;
-                executorIdlePauseApplied = false;
-            }
+            UpdateExecutorIdlePause();
 
             if (!ApplyExecutorMovementInput(out var movementInputReason))
             {
@@ -2828,6 +2796,45 @@ public sealed partial class ModEntry : Mod
                 Monitor.Log($"Standalone ship summary recovery input failed once and was blocked: {ex}", LogLevel.Error);
                 CompleteBlockedShippingSummaryClose(summaryClose, "shipping_summary_input_dispatch_exception:" + ex.GetType().Name);
             }
+        }
+    }
+
+    private void UpdateExecutorIdlePause()
+    {
+        var hasActiveExecutorOperation = HasActiveExecutorOperation();
+        var shouldHoldStoryEventForDispatch =
+            !hasActiveExecutorOperation &&
+            HasExecutorOwnedStoryEventDispatchBoundary();
+        var hasPendingNativeEndOfNightTransition =
+            HasPendingNativeEndOfNightTransition(out _);
+        var shouldPauseForExecutorIdle =
+            config.FreezeClockWhileExecutorIdle &&
+            Context.IsWorldReady &&
+            !hasPendingNativeEndOfNightTransition &&
+            executorMovementLease.Direction is null &&
+            (shouldHoldStoryEventForDispatch ||
+                pendingExecutions.IsEmpty &&
+                !hasActiveExecutorOperation &&
+                Game1.player.CanMove &&
+                Game1.player.movementDirections.Count == 0);
+        if (config.FreezeClockWhileExecutorIdle && Game1.options is not null)
+        {
+            Game1.options.pauseWhenOutOfFocus = false;
+        }
+        if (shouldPauseForExecutorIdle)
+        {
+            Game1.gameTimeInterval = 0;
+            if (!Game1.paused)
+            {
+                Game1.paused = true;
+                executorIdlePauseApplied = true;
+                executorIdlePauseEpoch++;
+            }
+        }
+        else if (executorIdlePauseApplied)
+        {
+            Game1.paused = false;
+            executorIdlePauseApplied = false;
         }
     }
 

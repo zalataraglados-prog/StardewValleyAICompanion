@@ -137,6 +137,11 @@ namespace StardewAI.Core.Execution
                 return ValidateMineElevatorMenuPlan(action, snapshot);
             }
 
+            if (type == "JunimoNoteMenu")
+            {
+                return Infrastructure.JunimoNoteMenuCloseProjection.BlockReasons(snapshot);
+            }
+
             if (IsSafeCloseMenuType(type))
             {
                 return Array.Empty<string>();

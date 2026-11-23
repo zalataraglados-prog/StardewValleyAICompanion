@@ -10,6 +10,23 @@ namespace StardewAI.Core.Tests;
 public sealed class StageOneInventoryCapacityRecoveryTests
 {
     [Fact]
+    public void CropRecoveryKeepsCurrentHarvestForTerminalSettlement()
+    {
+        var ranking = Ranking(
+            ShippingCandidate("ship:parsnip", "(O)24", slotIndex: 11, estimatedTicks: 20, unitPrice: 35),
+            ShippingCandidate("ship:halibut", "(O)708", slotIndex: 10, estimatedTicks: 20, unitPrice: 160));
+        var retained = new HashSet<string>(StringComparer.Ordinal) { "(O)24" };
+
+        var decision = StageOneInventoryCapacityRecovery.TrySelect(ranking, Snapshot(string.Empty),
+            allowObjectiveSafeRelease: true, requireFishingAttemptBlocked: false, retainedOutputItems: retained);
+        Assert.Equal("(O)708", decision!.ReleasedQualifiedItemId);
+
+        retained.Add("(O)708");
+        Assert.Null(StageOneInventoryCapacityRecovery.TrySelect(ranking, Snapshot(string.Empty),
+            allowObjectiveSafeRelease: true, requireFishingAttemptBlocked: false, retainedOutputItems: retained));
+    }
+
+    [Fact]
     public void SelectsExactLatestCatchShippingChainWithoutLearnerSignals()
     {
         var ranking = Ranking(

@@ -154,7 +154,7 @@ public static partial class CropTeacherNativeVariantTerminalProof
             NativeControlCheckpoints = observed && sequence!.Evidence.Count == 0 ? null : sequence?.Evidence.ToArray(),
             // There is no scalar slot/price for this version. Each verified unit carries its own exact fields.
             SlotIndex = -1, UnitPrice = 0, SettledQuantity = deposits.Count,
-            SettledRevenue = checked((int)target.PendingValueAt(target.RequiredQuantity)),
+            SettledRevenue = checked((int)target.CropValueAt(target.RequiredQuantity)),
             RevenueRecurrenceManifestPath = recurrence.ManifestPath, RevenueRecurrenceManifestSha256 = recurrence.ManifestSha256,
             RevenueRecurrenceReceiptPath = recurrence.ReceiptPath, RevenueRecurrenceReceiptSha256 = recurrence.ReceiptSha256,
             NativeTerminalSettlementVerified = true, FormalProductTrainingAuthorized = false

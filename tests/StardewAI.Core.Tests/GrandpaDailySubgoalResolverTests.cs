@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Goals;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.Training;
@@ -166,10 +169,31 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
         Assert.NotEmpty(result.ConsideredDirectionIds);
     }
 
-    [Fact]
-    public void UnplantedSeedsRequireCropTeacherBeforeLowerPrioritySocialWork()
+    [Theory]
+    [InlineData(1, null, true)]
+    [InlineData(24, 4, true)]
+    [InlineData(27, 3, false)]
+    [InlineData(28, 4, false)]
+    [InlineData(27, 0, true)]
+    public void UnplantedSeedsYieldToReadyWorkWhenTheCatalogProvesSeasonalMaturityImpossible(
+        int day, int? growthDays, bool expectHandoff)
     {
         var snapshot = GrandpaSnapshot(withUnplantedSeedInventory: true);
+        if (growthDays is not null)
+        {
+            var state = new Dictionary<string, JsonElement>(snapshot.State);
+            var time = JsonNode.Parse(state["time"].GetRawText())!.AsObject();
+            time["day"]!["value"] = day;
+            state["time"] = JsonSerializer.SerializeToElement(time);
+            var farm = JsonNode.Parse(state["farm"].GetRawText())!.AsObject();
+            farm["crop_catalog"] = new JsonObject
+            {
+                ["status"] = "available",
+                ["value"] = new JsonArray(new JsonObject { ["seed_id"] = "472", ["grow_days"] = growthDays.Value })
+            };
+            state["farm"] = JsonSerializer.SerializeToElement(farm);
+            snapshot = SnapshotFromState(state);
+        }
         var socialCandidate = new PolicyEventCandidatePrediction
         {
             CandidateId = "social_talk:Abigail:Farm",
@@ -197,6 +221,15 @@ public sealed partial class GrandpaDirectionDailyCandidateBindingTests
             snapshot,
             GrandpaEvaluationGoalDefinition.StrategicGoal,
             new[] { socialCandidate });
+
+        if (!expectHandoff)
+        {
+            Assert.Equal("resolved", result.Status);
+            Assert.Equal("raise_friendships", result.DirectionId);
+            Assert.Equal(new[] { socialCandidate.CandidateId }, result.BoundCandidateIds);
+            Assert.Null(result.PlanningHandoff);
+            return;
+        }
 
         Assert.Equal("planning_handoff_required", result.Status);
         Assert.Equal("earn_money", result.DirectionId);

@@ -404,7 +404,8 @@ namespace StardewAI.Core.OptionRegistry
         private static EconomicCandidate[] SellCandidates(
             SnapshotEnvelope snapshot,
             SmallModelActionParameter[] boundParameters,
-            SaleStockBudget? saleStock = null)
+            SaleStockBudget? saleStock = null,
+            bool afterSafetyWait = false)
         {
             var inventory = ReadStateFieldValue(snapshot, "player", "inventory");
             if (!inventory.HasValue || inventory.Value.ValueKind != JsonValueKind.Array)
@@ -414,6 +415,11 @@ namespace StardewAI.Core.OptionRegistry
 
             var sellContext = ReadStateFieldValue(snapshot, "menus", "sell_context");
             var sellContextBlockReasons = SellContextBlockReasons(sellContext);
+            if (afterSafetyWait)
+            {
+                sellContextBlockReasons = sellContextBlockReasons
+                    .Where(reason => reason != "shop_menu_safety_timer_active").ToArray();
+            }
             var shopSellAvailable = sellContextBlockReasons.Length == 0;
             var categories = ReadIntArray(sellContext, "categories_to_sell");
             var tagGroups = ReadNestedStringArrays(sellContext, "tag_groups_to_sell");
@@ -461,6 +467,8 @@ namespace StardewAI.Core.OptionRegistry
                         Parameters = continuationParameters
                     };
                     saleStock?.LimitSale(candidate);
+                    if (afterSafetyWait && candidate.Quantity != stack)
+                        candidate.Available = false;
                     return candidate;
                 })
                 .Where(candidate => SaleIdentityMatches(
@@ -530,7 +538,7 @@ namespace StardewAI.Core.OptionRegistry
             var shippingUnitPrice = ReadInt(item, "sell_to_store_price");
             var availableStack = saleStock?.AvailableQuantity(slotIndex, qualifiedItemId, stack) ?? stack;
             if (availableStack < 1)
-                blockReasons.Add(saleStock!.BlockingReason);
+                blockReasons.Add(saleStock!.BlockingReason(slotIndex, qualifiedItemId));
 
             var fullShipmentContributes = false;
             var fullShipmentKnown = false;

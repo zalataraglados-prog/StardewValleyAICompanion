@@ -14,6 +14,12 @@ public sealed record CropProductionObligationProjection(
 
 public static class CropProductionObligationProjector
 {
+    public const int DaysPerSeason = 28;
+
+    public static bool CanMatureWithinSeason(int plantingDayOfSeason, int growthDays) =>
+        plantingDayOfSeason is >= 1 and <= DaysPerSeason &&
+        growthDays > 0 && growthDays <= DaysPerSeason - plantingDayOfSeason;
+
     public static CropProductionObligationProjection Project(
         int plantingTotalDay,
         int firstHarvestTotalDay,

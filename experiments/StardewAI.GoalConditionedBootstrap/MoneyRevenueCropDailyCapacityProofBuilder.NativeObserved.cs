@@ -94,7 +94,7 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
                     if (frame.Item.OptionId is "executor.move_to_tile" or "executor.traverse_connector")
                         movementTicks = checked(movementTicks + actual);
                     if (IsObservedRefill(frame.Result)) refillTicks = checked(refillTicks + actual);
-                    if (frame.Item.OptionId is "executor.plant_seed" or "executor.water_crop" or "executor.harvest_crop" &&
+                    if (frame.Result.Status == "applied" && frame.Item.OptionId is "executor.plant_seed" or "executor.water_crop" or "executor.harvest_crop" &&
                              frame.Result.TargetTileX is { } x && frame.Result.TargetTileY is { } y)
                         cropWork.Add((frame.Item.OptionId, frame.Result.TargetLocation, x, y));
                 }
@@ -112,6 +112,10 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
 
     private static VerifiedNativeExecutionQueue ReadObservedPrefixQueue(MoneyRevenueCropNativeLifecycleTransitionRequest row)
     {
+        var receipt = CurrentTeacherFrontierSupport.Read<QueueExecutionReceiptEnvelope>(row.ExecutionReceiptPath,
+            "native refill prefix receipt");
+        if (!receipt.Success && row.TransitionKind == "crop_actions")
+            return NativeExecutionActionSourceReader.ReadOwnedCropPrefix(row);
         var product = row.ExecutorVersion == PolicyTrajectoryVersionPins.ProductExecutor;
         var native = product
             ? NativeExecutionActionSourceReader.ReadSelectedProductActionQueue(row.QueuePath, row.BeforeSnapshotPath,

@@ -86,7 +86,8 @@ static partial class Program
             };
         }
 
-        if (step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch &&
+        if (!(options.UseManagedCropTeacher && options.UseJointDailyCalendar) &&
+            step.Stage == CropTeacherRunStageKinds.ExecuteCropBatch &&
             string.Equals(
                 step.ActionBatch?.OptionId,
                 "executor.harvest_crop",

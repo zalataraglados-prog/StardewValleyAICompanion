@@ -44,6 +44,8 @@ internal static partial class CropSeedResourceBoundary
                 SetHarvestComparisonField(after, compared, domain, name, current);
             }
         if (community is not null) SetHarvestComparisonField(after, compared, "world_progress", "community_center", community);
+        foreach (var (field, verified) in CompareHarvestQuests(before, after, qualifiedItemId, stock.Inventory.QuantityIncrease!.Value))
+            SetHarvestComparisonField(after, compared, "quests", field, verified);
         var priorHouse = Field(before, "world_progress", "marriage_house", required: false);
         var nextHouse = Field(after, "world_progress", "marriage_house", required: false);
         if (priorHouse is not null && nextHouse is not null)
@@ -57,9 +59,11 @@ internal static partial class CropSeedResourceBoundary
             }
         }
         foreach (var (domain, fields) in compared) view.State[domain] = JsonSerializer.SerializeToElement(fields);
-        Require(FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(before, out var priorBoundary) &&
-                FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(view, out var nextBoundary) && priorBoundary == nextBoundary,
-            "Harvest changed unrelated persistent resources/state.");
+        if (!FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(before, out var priorBoundary) ||
+            !FullShipmentRecoverySettlementBoundaryProjector.TryProjectExpectedResourceMutationInvariant(view, out var nextBoundary) ||
+            priorBoundary != nextBoundary)
+            throw new InvalidDataException("Harvest changed unrelated persistent resources/state: " +
+                string.Join(",", FullShipmentRecoverySettlementBoundaryProjector.ChangedExpectedResourceFields(before, view)));
         return new(stock);
     }
 

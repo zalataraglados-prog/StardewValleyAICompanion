@@ -54,6 +54,26 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
         Assert.Equal(
             "fishing",
             ExecutionSnapshotProfileSelector.ResolveForQueue(queue, "full"));
+        Assert.Equal(
+            "full",
+            ExecutionSnapshotProfileSelector.ResolveForQueue(
+                queue, "full", captureGoldenWalnutFreshSaveEvidence: true));
+    }
+
+    [Theory]
+    [InlineData("daily")]
+    [InlineData("shop")]
+    [InlineData("route")]
+    [InlineData("farm_layout")]
+    public void GoldenWalnutCaptureKeepsFullEvidenceForNarrowControlProfiles(string profile)
+    {
+        Assert.Equal(
+            profile,
+            ExecutionSnapshotProfileSelector.ResolveForQueue(null, profile));
+        Assert.Equal(
+            "full",
+            ExecutionSnapshotProfileSelector.ResolveForQueue(
+                null, profile, captureGoldenWalnutFreshSaveEvidence: true));
     }
 
     [Fact]

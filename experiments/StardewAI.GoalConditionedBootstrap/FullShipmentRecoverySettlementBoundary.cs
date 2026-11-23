@@ -180,13 +180,18 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
 
     internal static string[] ChangedPersistentFields(
         SnapshotEnvelope before,
-        SnapshotEnvelope after)
+        SnapshotEnvelope after) =>
+        ChangedStateFields(PersistentStateRows(before), PersistentStateRows(after));
+
+    private static string[] ChangedStateFields(
+        IEnumerable<KeyValuePair<string, JsonElement>> before,
+        IEnumerable<KeyValuePair<string, JsonElement>> after)
     {
-        var beforeRows = PersistentStateRows(before).ToDictionary(
+        var beforeRows = before.ToDictionary(
             pair => pair.Key,
             pair => SnapshotHash.CanonicalizeSemantic(pair.Value),
             StringComparer.Ordinal);
-        var afterRows = PersistentStateRows(after).ToDictionary(
+        var afterRows = after.ToDictionary(
             pair => pair.Key,
             pair => SnapshotHash.CanonicalizeSemantic(pair.Value),
             StringComparer.Ordinal);

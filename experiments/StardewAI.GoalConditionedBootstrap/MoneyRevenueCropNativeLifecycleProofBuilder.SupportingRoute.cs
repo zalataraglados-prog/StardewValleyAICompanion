@@ -42,6 +42,8 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         }
         if (transition.NativeAppliedItemCount is { } applied)
         {
+            if (transition.NativeObserved && transition.Queue.Items.Any(item => item.OptionId is WaterOption or HarvestOption))
+                return; // Loaded through the original native crop prefix and wire checks.
             Require(CropTeacherSeedPlantingReceipt.Validate(transition.Queue, transition.Before, transition.Receipt,
                     transition.After, transition.Request) == applied,
                 "Native crop lifecycle planting prefix differs from its original receipt.");

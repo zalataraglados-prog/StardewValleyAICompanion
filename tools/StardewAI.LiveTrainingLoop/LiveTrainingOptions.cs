@@ -104,6 +104,7 @@ public sealed partial class LiveTrainingOptions
     public bool StopAfterSocialObjectiveComplete { get; set; }
     public bool StopAfterCropTeacherFirstDay { get; set; }
     public bool ContinueAfterCropTeacherRun { get; set; }
+    public bool AllowManagedCollectionDailyPlanFallback { get; set; }
     public bool StandaloneCollectionTeacher { get; set; }
     public bool UseStageOneCollectionTeacher =>
         StandaloneCollectionTeacher ||
@@ -703,6 +704,10 @@ public sealed partial class LiveTrainingOptions
             {
                 options.ContinueAfterCropTeacherRun = true;
             }
+            else if (current == "--allow-managed-collection-daily-plan-fallback")
+            {
+                options.AllowManagedCollectionDailyPlanFallback = true;
+            }
             else if (current == "--continue-global-daily-plan-after-crop-teacher-run")
             {
                 options.ContinueGlobalDailyPlanAfterCropTeacherRun = true;
@@ -760,6 +765,16 @@ public sealed partial class LiveTrainingOptions
 
     public void ValidateCropTeacherResumeMode()
     {
+        if (AllowManagedCollectionDailyPlanFallback &&
+            (!ContinueAfterCropTeacherRun || !UseDailyPlan || !UseProductExecutor ||
+             !RequireExecutorFeedback || !RequireNativeSaveBoundary || !SkipTraining ||
+             !string.IsNullOrWhiteSpace(ManifestPath)))
+        {
+            throw new ArgumentException(
+                "--allow-managed-collection-daily-plan-fallback requires a managed crop " +
+                "continuation with daily planning, Product native feedback, a required " +
+                "native save boundary and training disabled without a manifest.");
+        }
         if (ContinueAfterCropTeacherRun &&
             string.IsNullOrWhiteSpace(
                 ResumeCropTeacherTransitionLedgerPath) && !UseManagedCropTeacher)

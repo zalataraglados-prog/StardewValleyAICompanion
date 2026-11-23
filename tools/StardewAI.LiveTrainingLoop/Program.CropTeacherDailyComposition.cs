@@ -15,6 +15,7 @@ static partial class Program
     {
         public string SourceSnapshotPath { get; init; } = string.Empty;
         public CropTeacherDailyDecisionReference? DecisionReference { get; init; }
+        public bool InventoryCapacityRecovery { get; init; }
         public IReadOnlySet<string> CompletedForeignCandidateIds { get; init; } = new HashSet<string>(StringComparer.Ordinal);
         public IReadOnlyDictionary<string, JsonObject> ForeignObjectiveContinuations { get; init; } =
             new Dictionary<string, JsonObject>(StringComparer.Ordinal);
@@ -57,6 +58,24 @@ static partial class Program
         if (OriginalWateringRefillApproachPreemptsComposition(next, request, snapshot)) return new(null, true, selection);
         await IngestCropTeacherManagedSnapshotAsync(http, options, owner.CurrentSnapshotPath, artifacts, snapshot).ConfigureAwait(false);
         selection = await RestoreCropTeacherDailySelectionAsync(owner, next.TotalDay, selection).ConfigureAwait(false);
+        if (next.ActionBatch?.OptionId == "executor.harvest_crop")
+        {
+            var source = artifacts.Read<JsonObject>(owner.CurrentSnapshotPath);
+            if (StageOneInventoryCapacityRecovery.HasFullInventory(source))
+            {
+                var retainedOutputItems = ledger.CropPlantingCommitments
+                    .Where(commitment => plan.CoveredCommitmentIds.Contains(commitment.CommitmentId, StringComparer.Ordinal))
+                    .Select(commitment => commitment.HarvestItemQualifiedId).ToHashSet(StringComparer.Ordinal);
+                var recovered = await ComposeHarvestCapacityRecoveryAsync(http, options, iteration, next.TotalDay, owner,
+                    snapshot, source, selection, retainedOutputItems).ConfigureAwait(false);
+                if (recovered is not null)
+                {
+                    artifacts.Validate();
+                    return recovered;
+                }
+            }
+        }
+        if (selection?.InventoryCapacityRecovery == true) selection = null;
         if (selection?.TotalDay == next.TotalDay)
         {
             var refreshed = await RefreshCropTeacherDailySelectionAsync(http, options, iteration, plan, request,
@@ -105,6 +124,49 @@ static partial class Program
         return new(selectedStep, false, decision);
     }
 
+    private static async Task<ComposedCropDispatch?> ComposeHarvestCapacityRecoveryAsync(HttpClient http, LiveTrainingOptions options,
+        int iteration, int day, CropTeacherManagedSeedOwner owner, SnapshotEnvelope snapshot, JsonObject source,
+        CropTeacherDailySelection? selection, IReadOnlySet<string> retainedOutputItems)
+    {
+        if (selection?.InventoryCapacityRecovery == true &&
+            selection.Lease.Candidates.SingleOrDefault() is { } pending &&
+            !selection.CompletedForeignCandidateIds.Contains(pending.CandidateId) &&
+            !retainedOutputItems.Contains(ReadString(pending.RankedCandidate, "qualified_item_id")))
+            return await PrepareCropTeacherSelectedOtherGoalAsync(http, options, iteration, snapshot, selection, pending, owner)
+                .ConfigureAwait(false);
+
+        var recovery = await TryBuildStageOneCollectionTeacherQueueAsync(http, options, iteration,
+            source.ToJsonString(JsonOptions), source, snapshot.StateHash, capacityRecoveryOnly: true,
+            allowObjectiveSafeCapacityRecovery: true, requireFishingAttemptBlockedForCapacityRecovery: false,
+            retainedOutputItems: retainedOutputItems).ConfigureAwait(false);
+        if (recovery.Queue is null)
+        {
+            // A full backpack can still receive an item into an existing stack. The native harvest verifies each tile.
+            if (recovery.Status == "not_applicable_inventory_capacity_recovery" &&
+                source["state"]?["player"]?["inventory"]?["value"] is JsonArray inventory &&
+                inventory.OfType<JsonObject>().Any(slot => retainedOutputItems.Contains(ReadString(slot, "qualified_item_id")) &&
+                    slot["stack"]?.GetValue<int>() < slot["maximum_stack_size"]?.GetValue<int>()))
+                return null;
+            throw new InvalidDataException("Managed harvest inventory capacity recovery: " + recovery.Status + ":" + recovery.Detail);
+        }
+        var ranking = (JsonObject)recovery.Ranking!.DeepClone();
+        ranking["inventory_capacity_recovery"] = true;
+        var rankingPath = Path.Combine(options.SnapshotDir, $"crop-harvest-capacity-ranking-{iteration:D4}.json");
+        await WritePortfolioJournalFileAsync(rankingPath, ranking.ToJsonString(JsonOptions)).ConfigureAwait(false);
+        var plan = JsonSerializer.Deserialize<SmallModelPlanEnvelope>(
+            ContentAddressedJsonArtifactReader.ReadAllText(recovery.PlanPath), JsonOptions)!;
+        var lease = SelectedQueueDecisionLease.CreateFromPlan(plan, ranking);
+        var selected = lease.Candidates.Single();
+        if (selected.CandidateId != recovery.SelectedCandidateId || selected.OptionId != "economy.ship_items")
+            throw new InvalidDataException("Managed harvest capacity recovery lost its selected inventory release.");
+        var decision = new CropTeacherDailySelection(day, plan.GoalId, lease, new HashSet<string>(StringComparer.Ordinal),
+            recovery.PlanPath, rankingPath) { SourceSnapshotPath = owner.CurrentSnapshotPath, InventoryCapacityRecovery = true };
+        decision = decision with { DecisionReference = await owner.SaveDailyDecisionAsync(iteration,
+            decision.SourceSnapshotPath, decision.PlanPath, decision.RankingPath, decision.OwnedCandidateIds).ConfigureAwait(false) };
+        return await PrepareCropTeacherSelectedOtherGoalAsync(http, options, iteration, snapshot, decision, selected, owner)
+            .ConfigureAwait(false);
+    }
+
     private static async Task<CropTeacherDailySelection?> RestoreCropTeacherDailySelectionAsync(
         CropTeacherManagedSeedOwner owner, int totalDay, CropTeacherDailySelection? selection)
     {
@@ -112,12 +174,14 @@ static partial class Program
         var retained = await owner.ReadDailyDecisionAsync().ConfigureAwait(false);
         if (retained is null || retained.TotalDay != totalDay) return null;
         var artifacts = new CropSeedRuntimeArtifacts(new Dictionary<string, string>());
+        var ranking = artifacts.Read<JsonObject>(retained.RankingPath);
         var restored = new CropTeacherDailySelection(retained.TotalDay, retained.GoalId,
             SelectedQueueDecisionLease.CreateFromPlan(artifacts.Read<SmallModelPlanEnvelope>(retained.PlanPath),
-                artifacts.Read<JsonObject>(retained.RankingPath)), retained.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal),
+                ranking), retained.OwnedCandidateIds.ToHashSet(StringComparer.Ordinal),
             retained.PlanPath, retained.RankingPath)
         {
             SourceSnapshotPath = retained.SourceSnapshotPath, DecisionReference = retained.Reference,
+            InventoryCapacityRecovery = ranking["inventory_capacity_recovery"]?.GetValue<bool>() == true,
             CompletedForeignCandidateIds = retained.CompletedForeignCandidateIds,
             ForeignObjectiveContinuations = retained.ForeignObjectiveContinuations
         };

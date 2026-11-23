@@ -1263,7 +1263,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     StageOneCollectionFallbackPolicy.ShouldYieldToDailyPlan(
                         options.RequireGoldenWalnutSourceScheduleReady,
                         collectionTeacher.Status,
-                        collectionTeacher.Detail);
+                        collectionTeacher.Detail,
+                        options.AllowManagedCollectionDailyPlanFallback);
                 if (collectionTeacher.Attempted)
                 {
                     var relaxedMasterAnglerContinuation =
@@ -1504,7 +1505,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
     executionSnapshotProfile = ExecutionSnapshotProfileSelector.ResolveForQueue(
         queue,
-        executionSnapshotProfile);
+        executionSnapshotProfile,
+        options.CaptureGoldenWalnutFreshSaveEvidence);
     var queuePath = sharedSourceOperationForExecution?.SharedSourceStart?.QueuePath ??
         Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
     if (sharedSourceOperationForExecution is null)

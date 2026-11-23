@@ -311,6 +311,9 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             LetterViewerMenu letterViewerMenu =>
                 (Field(ReadLetterViewerMenuState(letterViewerMenu), "LetterViewerMenu public mail/page/interactable/attachment/quest fields", tick, AdapterId),
                     Array.Empty<string>()),
+            JunimoNoteMenu junimoNoteMenu =>
+                (Field(new { kind = "junimo_note", ready_to_close = junimoNoteMenu.readyToClose() },
+                    "JunimoNoteMenu.readyToClose()", tick, AdapterId), Array.Empty<string>()),
             MineElevatorMenu mineElevatorMenu =>
                 (Field(ReadMineElevatorMenuState(mineElevatorMenu), "MineElevatorMenu public elevators and locked native destination rules", tick, AdapterId),
                     Array.Empty<string>()),

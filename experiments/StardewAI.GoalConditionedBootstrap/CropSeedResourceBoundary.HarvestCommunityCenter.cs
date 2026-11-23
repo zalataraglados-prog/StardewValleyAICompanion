@@ -31,7 +31,11 @@ internal static partial class CropSeedResourceBoundary
             Require(Int(prior, "bundle_id") == Int(current, "bundle_id"), "Harvest community-center bundle order/identity changed.");
             VerifyCommunityCandidateInventory(prior, before);
             VerifyCommunityCandidateInventory(current, after);
-            // Keep every backing progress/reward/mail/ingredient/unknown field in the original resource comparison.
+            // Reward capacity is a live inventory preview. Retain all fields that describe the reward itself.
+            if (prior["reward"] is JsonObject priorReward && current["reward"] is JsonObject currentReward &&
+                priorReward["inventory_accepts_reward"] is JsonValue priorCapacity && priorCapacity.TryGetValue<bool>(out _) &&
+                currentReward["inventory_accepts_reward"] is JsonValue currentCapacity && currentCapacity.TryGetValue<bool>(out _))
+                currentReward["inventory_accepts_reward"] = priorCapacity.DeepClone();
             current["donation_candidates"] = prior["donation_candidates"]?.DeepClone();
         }
         EqualHarvestResourceField("world_progress", "community_center", first, next);

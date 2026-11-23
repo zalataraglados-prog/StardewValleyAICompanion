@@ -10,6 +10,8 @@ public sealed partial class LiveTrainingOptions
     {
         var copy = (LiveTrainingOptions)MemberwiseClone();
         copy.UseOwnedSupportingQueueBoundary = true;
+        // The owner verifies only consecutive applied actions followed by at most one blocked attempt.
+        copy.ContinueAfterBlockedQueueItems = false;
         return copy;
     }
 

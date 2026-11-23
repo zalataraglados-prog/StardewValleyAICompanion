@@ -14,6 +14,7 @@ public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory
     public bool UseSelectedRefillResourceEffects { get; init; }
     public bool UseNativeRefillOutcomeAuthority { get; init; }
     public CropTeacherNativeSaveBinding? NativeSaveBinding { get; init; }
+    public CropTeacherSavedOwnerPrefix? SavedPrefix { get; init; }
 }
 
 public sealed record CropTeacherNativeSaveBinding(string SaveIsolationPath, string SaveSlot);
@@ -119,6 +120,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     private readonly Dictionary<string, string> fixedHashes;
     private readonly Dictionary<string, string> frontierHashes = new(PathComparer);
     private readonly string headerHash;
+    private readonly SavedHistorySegment[] savedHistory;
     private readonly string saveId;
     private readonly string playerId;
     private readonly string supportStepPrefix;
@@ -143,13 +145,14 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
 
     private CropTeacherManagedSeedOwner(CropTeacherManagedSeedOwnerOptions options, MoneyRevenueCropNativeProductionRunPlan plan,
         FileStream lease, Func<string, string, Task> write, Dictionary<string, string> fixedHashes, string headerHash,
-        string saveId, string playerId, string supportStepPrefix)
+        string saveId, string playerId, string supportStepPrefix, SavedHistorySegment[] savedHistory)
     {
         this.options = options; this.plan = plan; this.lease = lease; this.write = write;
         this.fixedHashes = fixedHashes; this.headerHash = headerHash;
+        this.savedHistory = savedHistory;
         this.saveId = saveId; this.playerId = playerId;
         this.supportStepPrefix = supportStepPrefix;
-        headSnapshotPath = options.InitialSnapshotPath; headLedgerPath = options.InitialLedgerPath; lastAcceptedHash = headerHash;
+        headSnapshotPath = options.InitialSnapshotPath; headLedgerPath = options.InitialLedgerPath; lastAcceptedHash = HistoryHeaderHash;
     }
 
     public static async Task<CropTeacherManagedSeedOwner> OpenAsync(CropTeacherManagedSeedOwnerOptions value,
@@ -203,6 +206,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
             header["native_refill_outcome_authority"] = true;
         if (options.NativeSaveBinding is { } binding)
             header["native_save_binding"] = JsonSerializer.SerializeToNode(binding, JsonOptions);
+        var savedHistory = ReadSavedHistory(options, header, hashes);
         var headerPath = Path.Combine(options.EvidenceDirectory, "owner-intent.json");
         if (Directory.Exists(options.EvidenceDirectory) && !File.Exists(headerPath) &&
             Directory.EnumerateFileSystemEntries(options.EvidenceDirectory).Any(path => Path.GetFileName(path) != "owner.lock"))
@@ -221,8 +225,10 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
                     throw new InvalidDataException("Managed crop owner does not match its retained original identity.");
             }
             else await write(headerPath, header.ToJsonString(JsonOptions)).ConfigureAwait(false);
-            var prefix = SupportStepPrefix(options, ledger, hashes[options.NativeRunPlanPath]);
-            var owner = new CropTeacherManagedSeedOwner(options, plan, lease, write, hashes, HashFile(headerPath), ledger.SaveId, ledger.PlayerId, prefix);
+            var originalOptions = savedHistory.Length == 0 ? options : options with { EvidenceDirectory = savedHistory[0].Prefix.SourceDirectory };
+            var prefix = SupportStepPrefix(originalOptions, ledger, hashes[options.NativeRunPlanPath]);
+            var owner = new CropTeacherManagedSeedOwner(options, plan, lease, write, hashes, HashFile(headerPath),
+                ledger.SaveId, ledger.PlayerId, prefix, savedHistory);
             owner.LoadIndex();
             return owner;
         }

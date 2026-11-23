@@ -947,7 +947,7 @@ public sealed partial class ModEntry : Mod
             };
         }
 
-        if (!IsSafeCloseMenuType(beforeType))
+        if (!IsSafeCloseMenuType(beforeType) && menu is not JunimoNoteMenu)
         {
             return BlockedWithPrimitive(request, "close_menu", "menus.active_menu.is_open=false", CloseMenuObservedEffect(), "close_menu_type_not_whitelisted");
         }

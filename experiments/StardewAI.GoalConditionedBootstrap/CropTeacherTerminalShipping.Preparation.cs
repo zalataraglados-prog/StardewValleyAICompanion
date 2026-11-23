@@ -47,7 +47,7 @@ public sealed partial class CropTeacherTerminalShipping
                     proof.CropProductionPlanSha256 == hashes[Path.GetFullPath(source.RunRequest.CropProductionPlanPath)] &&
                     proof.HarvestItemQualifiedId == target.QualifiedItemId && proof.HarvestTotalDay == target.TotalDay &&
                     target.RequiredQuantity == proof.MinimumUnits && target.RequiredQuantity > 0 && proof.MinimumGrossRevenue > 0 &&
-                     target.UnitPrice > 0 && (nativeVariants ? target.PendingValueAt(target.RequiredQuantity) >= proof.MinimumGrossRevenue :
+                     target.UnitPrice > 0 && (nativeVariants ? target.CropValueAt(target.RequiredQuantity) >= proof.MinimumGrossRevenue :
                          checked((long)target.UnitPrice * target.RequiredQuantity) >= proof.MinimumGrossRevenue && target.InitialQuantity >= target.RequiredQuantity) &&
                      target.SlotIndex >= 0 && target.Quality >= 0 &&
                     target.AcceptedDepositCount >= 0 && target.AcceptedDepositCount < target.RequiredQuantity &&

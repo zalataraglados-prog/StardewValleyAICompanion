@@ -22,6 +22,21 @@ public sealed class StageOneCollectionFallbackPolicyTests
             StageOneCollectionFallbackPolicy.EmptyCurrentCandidateMembershipReason));
     }
 
+    [Fact]
+    public void ManagedContinuationCanOptIntoTheSameExactFallback()
+    {
+        Assert.True(StageOneCollectionFallbackPolicy.ShouldYieldToDailyPlan(
+            requireGoldenWalnutSourceScheduleReady: false,
+            StageOneCollectionFallbackPolicy.NoCurrentCandidateStatus,
+            StageOneCollectionFallbackPolicy.EmptyCurrentCandidateMembershipReason,
+            allowManagedContinuationFallback: true));
+        Assert.False(StageOneCollectionFallbackPolicy.ShouldYieldToDailyPlan(
+            requireGoldenWalnutSourceScheduleReady: false,
+            StageOneCollectionFallbackPolicy.NoCurrentCandidateStatus,
+            "candidate_membership_is_ambiguous",
+            allowManagedContinuationFallback: true));
+    }
+
     [Theory]
     [InlineData(
         "blocked_authoritatively_tied_top_candidates",

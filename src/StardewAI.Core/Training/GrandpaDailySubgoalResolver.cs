@@ -8,6 +8,7 @@ using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Goals;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Strategy;
 using StardewAI.Core.WorldModel;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
@@ -274,12 +275,35 @@ namespace StardewAI.Core.Training
                 return false;
             }
 
-            return seeds.Value.EnumerateArray().Any(seed =>
+            return !CatalogProvesSeasonalMaturityImpossible(snapshot) && seeds.Value.EnumerateArray().Any(seed =>
                 seed.ValueKind == JsonValueKind.Object &&
                 ReadInt(seed, "stack") > 0 &&
                 ReadBool(seed, "crop_catalog_match") &&
                 !string.IsNullOrWhiteSpace(
                     ReadString(seed, "qualified_item_id")));
+        }
+
+        private static bool CatalogProvesSeasonalMaturityImpossible(SnapshotEnvelope snapshot)
+        {
+            if (!ReadableStatus(ReadStateFieldStatus(snapshot, "time", "day")) ||
+                !ReadableStatus(ReadStateFieldStatus(snapshot, "farm", "crop_catalog")))
+            {
+                return false;
+            }
+
+            var day = ReadStateFieldInt(snapshot, "time", "day");
+            var catalog = ReadStateFieldValue(snapshot, "farm", "crop_catalog");
+            if (day is < 1 or > CropProductionObligationProjector.DaysPerSeason ||
+                catalog is not { ValueKind: JsonValueKind.Array } rows || rows.GetArrayLength() == 0)
+            {
+                return false;
+            }
+
+            return rows.EnumerateArray().All(crop =>
+            {
+                var growthDays = ReadInt(crop, "grow_days");
+                return growthDays > 0 && !CropProductionObligationProjector.CanMatureWithinSeason(day, growthDays);
+            });
         }
 
         private static GrandpaDailySubgoalResolution CropProductionTeacherHandoff(

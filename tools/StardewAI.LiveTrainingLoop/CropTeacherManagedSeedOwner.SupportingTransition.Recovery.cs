@@ -32,7 +32,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         if (!JsonNode.DeepEquals(CreateSupportingTransitionIntent(operation.Record, scope), artifacts.Read<JsonObject>(intentPath)) ||
             artifacts.Hashes[intentPath] != Text(operation.Record, "original_intent_sha256"))
             throw new InvalidDataException("Managed supporting route original runtime intent changed.");
-        var reply = await CropTeacherSeedRuntimeRecovery.ReadReplyAsync(options, options.BackendUrl, root, output, artifacts,
+        var reply = await CropTeacherSeedRuntimeRecovery.ReadReplyAsync(OperationRecoveryOptions(operation), options.BackendUrl, root, output, artifacts,
             "marker", "commit", scope.RebindRequest, post, write).ConfigureAwait(false);
         var verified = scope.VerifyRebindReply(reply.Deserialize<ReservationPortfolioCommitResult>(JsonOptions)
             ?? throw new InvalidDataException("Managed supporting route original marker reply is empty."));

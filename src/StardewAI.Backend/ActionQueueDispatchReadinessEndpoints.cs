@@ -44,7 +44,7 @@ internal static class ActionQueueDispatchReadinessEndpoints
             !store.Snapshots.TryGetValue(stateHash, out var snapshot))
             return Results.UnprocessableEntity(new { detail = "state_hash does not match an ingested snapshot" });
 
-        var result = service.Evaluate(queue, item, repository.Get(snapshot), snapshot.StateHash);
+        var result = service.Evaluate(queue, item, repository.Get(snapshot), snapshot.StateHash, snapshot);
         store.AppendAudit(
             result.Ready ? "ActionQueueDispatchReady" : "ActionQueueDispatchBlocked",
             snapshot.GameTick, snapshot.StateHash);

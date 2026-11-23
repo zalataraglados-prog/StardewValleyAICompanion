@@ -917,14 +917,30 @@ public sealed partial class ModEntry : Mod
     {
         ReleaseMovementIncidentalDialogueButton(move);
         StopAllMovement();
-        activeTileMove = null;
 
         var request = move.Pending.Request;
         var observedLocation = Game1.currentLocation?.NameOrUniqueName ?? string.Empty;
+        var expectedLocationReached = string.Equals(
+            observedLocation, request.ExpectedTargetLocation, StringComparison.Ordinal);
+        if (config.FreezeClockWhileExecutorIdle && expectedLocationReached &&
+            !Game1.player.CanMove && !Game1.eventUp && !Game1.dialogueUp &&
+            Game1.activeClickableMenu is null && Game1.currentMinigame is null)
+        {
+            // The map can change before native movement control returns to the farmer.
+            move.Tick++;
+            if (!config.DisableMovementTimeouts && move.Tick > move.MaxTicks)
+                CompleteBlockedMove(move, "connector_arrival_control_timeout");
+            return;
+        }
+
+        activeTileMove = null;
+        if (config.FreezeClockWhileExecutorIdle && expectedLocationReached)
+            UpdateExecutorIdlePause();
+
         var observedTile = Game1.player.TilePoint;
         var reasons = new List<string>();
 
-        if (!string.Equals(observedLocation, request.ExpectedTargetLocation, StringComparison.Ordinal))
+        if (!expectedLocationReached)
         {
             reasons.Add("connector_unexpected_target_location");
         }
@@ -938,10 +954,7 @@ public sealed partial class ModEntry : Mod
             }
         }
 
-        var verified = string.Equals(
-            observedLocation,
-            request.ExpectedTargetLocation,
-            StringComparison.Ordinal);
+        var verified = expectedLocationReached;
         if (move.SewerUnlockObserved)
         {
             if (!Game1.player.mailReceived.Contains("OpenedSewer"))

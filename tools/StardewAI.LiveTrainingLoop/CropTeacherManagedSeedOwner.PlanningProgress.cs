@@ -57,7 +57,7 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private IEnumerable<(int Sequence, string Path, string Hash, JsonObject Certificate)> ReadAcceptedPlanningCertificates()
     {
-        var previous = headerHash; var expectedSequence = 1;
+        var previous = HistoryHeaderHash; var expectedSequence = 1;
         foreach (var (sequence, path, hash) in acceptedHistory)
         {
             if (HashFile(path) != hash) throw new InvalidDataException("Accepted planning certificate changed.");

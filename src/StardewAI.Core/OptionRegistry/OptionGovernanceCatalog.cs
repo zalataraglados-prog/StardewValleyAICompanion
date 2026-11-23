@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Options;
 using StardewAI.Core.Execution;
@@ -99,7 +100,7 @@ namespace StardewAI.Core.OptionRegistry
                     : policy.SemanticKind == OptionSemanticKind.CompositeOptionSpec
                         ? ParameterSchemaPolicy.CandidateBoundParameters
                         : ParameterSchemaPolicy.PrimitiveActionParameters;
-            spec.RequiredFactPolicy = CreateRequiredFactPolicy();
+            spec.RequiredFactPolicy = CreateRequiredFactPolicy(spec.RequiredStateFactors);
             spec.RegistrationStatus = capability.RegistrationStatus;
             spec.ReadStatus = capability.ReadStatus;
             spec.CandidateStatus = capability.CandidateStatus;
@@ -478,9 +479,9 @@ namespace StardewAI.Core.OptionRegistry
             return result;
         }
 
-        private static RequiredFactPolicy CreateRequiredFactPolicy()
+        private static RequiredFactPolicy CreateRequiredFactPolicy(string[] requiredStateFactors)
         {
-            return new RequiredFactPolicy
+            var policy = new RequiredFactPolicy
             {
                 Mode = RequiredFactPolicyMode.AllRequiredFailClosed,
                 DefaultRule = new RequiredFactRule
@@ -521,6 +522,23 @@ namespace StardewAI.Core.OptionRegistry
                     AllowedDerivationIds = Array.Empty<string>()
                 }
             };
+
+            var defaults = policy.DefaultRule;
+            policy.FactOverrides = new[] { "farm.chests", "current_location.chests" }
+                .Intersect(requiredStateFactors, StringComparer.Ordinal)
+                .Select(chestProjection => new RequiredFactRule
+                {
+                    StateFactor = chestProjection,
+                    AllowedStatuses = defaults.AllowedStatuses,
+                    MinimumConfidence = defaults.MinimumConfidence,
+                    MaximumAgeTicks = defaults.MaximumAgeTicks,
+                    RequiredProvenanceKinds = defaults.RequiredProvenanceKinds,
+                    AllowedAdapterIds = defaults.AllowedAdapterIds
+                        .Append("vanilla_1_6_storage_infrastructure").ToArray(),
+                    AllowedDerivationIds = defaults.AllowedDerivationIds
+                }).ToArray();
+
+            return policy;
         }
 
         private static bool ValidFactRule(RequiredFactRule rule)

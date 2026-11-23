@@ -21,6 +21,7 @@ static partial class Program
                 optionId,
                 "executor.transfer_material",
                 StringComparison.Ordinal) &&
+            optionId is not ("executor.ship_inventory_item_to_bin" or "executor.sell_shop_item") &&
             !string.Equals(
                 optionId,
                 "inventory.transfer_item",

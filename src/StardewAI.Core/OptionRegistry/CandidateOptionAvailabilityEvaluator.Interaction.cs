@@ -480,6 +480,11 @@ namespace StardewAI.Core.OptionRegistry
                 return new[] { "close_menu_type_unknown" };
             }
 
+            if (type == "JunimoNoteMenu")
+            {
+                return Infrastructure.JunimoNoteMenuCloseProjection.BlockReasons(snapshot);
+            }
+
             if (IsSafeCloseMenuType(type))
             {
                 return Array.Empty<string>();

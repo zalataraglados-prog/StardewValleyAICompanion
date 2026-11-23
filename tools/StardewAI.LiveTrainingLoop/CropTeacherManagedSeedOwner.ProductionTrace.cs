@@ -75,7 +75,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var transitions = new List<CropTeacherManagedProductionTransition>();
             var sharedReturns = new List<CropTeacherManagedSharedSourceReturn>();
             var readbacks = new List<CropTeacherManagedSavedReadback>();
-            var previous = headerHash;
+            var previous = HistoryHeaderHash;
             foreach (var (sequence, path, hash) in acceptedHistory)
             {
                 Pin(path, hash);
@@ -146,7 +146,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                     CropTeacherSharedSourceMarkerReference? marker = null;
                     if (scope.ReleasesTransferLease)
                     {
-                        var journal = PortfolioMutationRequestJournal.Describe(options.BackendUrl, options.PortfolioJournalDirectory,
+                        var journal = PortfolioMutationRequestJournal.Describe(options.BackendUrl, OperationJournalDirectory(sequence),
                             "commit", scope.RebindRequest, JsonOptions);
                         marker = new(journal.RequestPath, Path.Combine(runtime, "marker-reply.json"), journal.JournalPath,
                             options.BackendUrl, StoredPath(accepted, "after_ledger_path"));

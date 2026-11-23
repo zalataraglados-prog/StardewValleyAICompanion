@@ -37,6 +37,7 @@ namespace StardewAI.Core.Execution
                 action.OptionId == "executor.advance_story_event_minigame" ||
                 IsBoundedLetterViewerSettleWait(action, snapshot) ||
                 IsBoundedShopMenuReadinessWait(action, snapshot) ||
+                IsBoundedShopSaleReadinessWait(action, snapshot) ||
                  IsBoundedLevelUpMenuInputSettleWait(action, snapshot) ||
                 (action.OptionId == "executor.sleep" &&
                     string.Equals(

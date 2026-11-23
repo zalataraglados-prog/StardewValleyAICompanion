@@ -29,6 +29,21 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             return false;
         }
 
+        projection = new FullShipmentExpectedResourceMutationInvariant(
+            "full_shipment_expected_resource_mutation_invariant.v1",
+            saveId,
+            playerId,
+            snapshot.GameVersion,
+            totalDayValue,
+            HashCanonical(ExpectedResourceMutationRows(snapshot)));
+        return true;
+    }
+
+    internal static string[] ChangedExpectedResourceFields(SnapshotEnvelope before, SnapshotEnvelope after) =>
+        ChangedStateFields(ExpectedResourceMutationRows(before), ExpectedResourceMutationRows(after));
+
+    private static List<KeyValuePair<string, JsonElement>> ExpectedResourceMutationRows(SnapshotEnvelope snapshot)
+    {
         var rows = new List<KeyValuePair<string, JsonElement>>();
         foreach (var domain in snapshot.State.OrderBy(
                      pair => pair.Key,
@@ -61,14 +76,7 @@ internal static partial class FullShipmentRecoverySettlementBoundaryProjector
             }
         }
 
-        projection = new FullShipmentExpectedResourceMutationInvariant(
-            "full_shipment_expected_resource_mutation_invariant.v1",
-            saveId,
-            playerId,
-            snapshot.GameVersion,
-            totalDayValue,
-            HashCanonical(rows));
-        return true;
+        return rows;
     }
 
     private static bool ExpectedResourceMutationField(

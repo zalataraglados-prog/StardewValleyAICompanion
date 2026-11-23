@@ -85,7 +85,7 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             row.GetProperty("tile_y").GetInt32() == target.BinTileY).ToArray();
         Require(bins.Length == 1 && bins[0].GetProperty("interaction_stand_tile_x").GetInt32() == target.StandTileX &&
             bins[0].GetProperty("interaction_stand_tile_y").GetInt32() == target.StandTileY &&
-            bins[0].GetProperty("pending_settlement_value").GetInt64() == 0, "selected bin/stand differs.");
+            bins[0].GetProperty("pending_settlement_value").GetInt64() == target.PendingValueAt(0), "selected bin/stand differs.");
 
         var starts = trace.Transitions.Select((row, index) => (row, index))
             .Where(pair => Same(pair.row.NativeTransition.BeforeSnapshotPath, productionHead)).ToArray();
@@ -201,7 +201,7 @@ internal static partial class CropTeacherTerminalSettlementEvidence
             (target.NativeVariants is not null ? proof.SchemaVersion == (observedPrefix is not null ?
                 "crop_teacher_native_variant_terminal_proof.v3" : checkpoints.Count == 0 ?
                 "crop_teacher_native_variant_terminal_proof.v1" : "crop_teacher_native_variant_terminal_proof.v2") &&
-                proof.SettledRevenue == target.PendingValueAt(target.RequiredQuantity) : proof.UnitPrice == target.UnitPrice && proof.SlotIndex == target.SlotIndex) &&
+                proof.SettledRevenue == target.CropValueAt(target.RequiredQuantity) : proof.UnitPrice == target.UnitPrice && proof.SlotIndex == target.SlotIndex) &&
             proof.HarvestItemQualifiedId == target.QualifiedItemId &&
             proof.SettledRevenue >= retention.MinimumGrossRevenue && proof.TerminalActionAfterStateHash == final.StateHash,
             "original terminal proof differs from selected target/final head.");

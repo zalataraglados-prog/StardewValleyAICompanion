@@ -25,7 +25,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
         var currentTotalDay = ReadStateInt(snapshot, "time", "total_days");
         var currentSeason = ReadStateString(snapshot, "time", "season");
         var currentDay = ReadStateInt(snapshot, "time", "day");
-        var seasonEnd = checked(currentTotalDay + 28 - currentDay);
+        var seasonEnd = checked(currentTotalDay + CropProductionObligationProjector.DaysPerSeason - currentDay);
         var wateringSupply = ReadWateringSupply(snapshot);
         var stock = ReadSeedStock(snapshot);
         var catalog = ReadStateValue(snapshot, "farm", "crop_catalog");
@@ -56,8 +56,7 @@ public static partial class MoneyRevenueCropProductionTeacherDecisionBuilder
                 if (!seasons.Contains(currentSeason,
                         StringComparer.OrdinalIgnoreCase))
                     reasons.Add("not_current_season");
-                if (growDays <= 0 || checked(currentTotalDay + growDays) >
-                    seasonEnd)
+                if (!CropProductionObligationProjector.CanMatureWithinSeason(currentDay, growDays))
                     reasons.Add("cannot_mature_in_current_season");
                 if (minStack <= 0 || unitPrice <= 0)
                     reasons.Add("non_positive_conservative_output");

@@ -75,15 +75,48 @@ public sealed class VerifierGateTests
         Assert.Contains("required_fact_provenance_denied", result.BlockingReasons);
     }
 
-    [Fact]
-    public void UnknownAdapterFailsClosedTests()
+    [Theory]
+    [InlineData("unknown_mod_adapter")]
+    [InlineData("vanilla_1_6_storage_infrastructure")]
+    public void UnapprovedClockAdapterFailsClosed(string adapter)
     {
         var result = new StardewAI.Core.Verifier.Verifier().Verify(
-            Snapshot(100, Field("time", "time", "600", adapter: "unknown_mod_adapter")),
+            Snapshot(100, Field("time", "time", "600", adapter: adapter)),
             Registry("executor.wait_ticks"));
 
         Assert.False(result.ReadEligible);
         Assert.Contains("required_fact_adapter_denied", result.BlockingReasons);
+    }
+
+    [Theory]
+    [InlineData("executor.craft_storage_item", "farm", "vanilla_1_6_storage_infrastructure", true)]
+    [InlineData("executor.craft_storage_item", "farm", "unregistered_storage_adapter", false)]
+    [InlineData("executor.place_storage", "current_location", "vanilla_1_6_storage_infrastructure", true)]
+    [InlineData("executor.place_storage", "current_location", "unregistered_storage_adapter", false)]
+    public void StorageRequiresRecognizedNativeChestProjection(
+        string optionId, string chestSection, string adapter, bool eligible)
+    {
+        var snapshot = Snapshot(
+            100,
+            Field("player", "location_id", "\"Farm\""),
+            Field("player", "inventory", "[]"),
+            Field("player", "storage_crafting", "{}"),
+            Field("player", "storage_placement", "{}"),
+            Field(chestSection, "chests", "{}", adapter: adapter),
+            Field("farm", "material_inventory_graph", "{}", adapter: "vanilla_1_6_material_inventory_graph"),
+            Field("locations", "collision_grid", "{}"),
+            Field("menus", "active_menu", "{}"));
+
+        var result = new StardewAI.Core.Verifier.Verifier().Verify(
+            snapshot,
+            Registry(optionId));
+
+        Assert.Equal(eligible, result.ReadEligible);
+        if (!eligible)
+        {
+            Assert.Equal(new[] { chestSection + ".chests" }, result.MissingStateFactors);
+            Assert.Contains("required_fact_adapter_denied", result.BlockingReasons);
+        }
     }
 
     [Fact]

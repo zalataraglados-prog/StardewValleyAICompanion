@@ -11,9 +11,11 @@ public static class StageOneCollectionFallbackPolicy
     public static bool ShouldYieldToDailyPlan(
         bool requireGoldenWalnutSourceScheduleReady,
         string status,
-        string detail)
+        string detail,
+        bool allowManagedContinuationFallback = false)
     {
-        return requireGoldenWalnutSourceScheduleReady &&
+        return (requireGoldenWalnutSourceScheduleReady ||
+                allowManagedContinuationFallback) &&
             string.Equals(
                 status,
                 NoCurrentCandidateStatus,

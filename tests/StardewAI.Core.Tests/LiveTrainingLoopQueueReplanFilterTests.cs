@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Nodes;
 using StardewAI.LiveTrainingLoop;
 
@@ -5,6 +6,22 @@ namespace StardewAI.Core.Tests;
 
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
+    [Fact]
+    public void OwnedSupportingQueueStopsAtTheFirstBlockedItem()
+    {
+        var globalOptions = new LiveTrainingOptions { ContinueAfterBlockedQueueItems = true };
+        var makeOwnedOptions = typeof(LiveTrainingOptions).GetMethod(
+            "WithOwnedSupportingQueueBoundary", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var ownedOptions = Assert.IsType<LiveTrainingOptions>(makeOwnedOptions.Invoke(globalOptions, null));
+
+        var result = QueueReplanFilter.DecideAfterExecution("blocked", ownedOptions.ContinueAfterBlockedQueueItems,
+            useDailyPlan: false, hasExecutorOverride: false, afterSnapshotFresh: true, canAttemptMoreItems: true,
+            requiresFreshSnapshotReplan: false);
+
+        Assert.True(result.ShouldStop);
+        Assert.True(globalOptions.ContinueAfterBlockedQueueItems);
+    }
+
     [Fact]
     public void ResolvedGoalCompilesOnlyExactBoundCandidates()
     {

@@ -24,6 +24,23 @@ public sealed class NativeCropHarvestCommunityCenterBoundaryTests
         Assert.Equal(original, JsonSerializer.Serialize(new[] { before, after }));
     }
 
+    [Fact]
+    public void LastFreeSlotChangesRewardCapacityPreviewWithoutChangingRewardProgress()
+    {
+        var (before, after) = Fixture(0, 1);
+        Center(before, row => row["bundle_rows"]![0]!["reward"] = JsonSerializer.SerializeToNode(
+            new CommunityCenterBundleRewardRef { QualifiedItemId = "(O)388", Stack = 10, InventoryAcceptsReward = true }));
+        Center(after, row => row["bundle_rows"]![0]!["reward"] = JsonSerializer.SerializeToNode(
+            new CommunityCenterBundleRewardRef { QualifiedItemId = "(O)388", Stack = 10, InventoryAcceptsReward = false }));
+        before.StateHash = SnapshotHash.ComputeStateHash(before.State);
+        after.StateHash = SnapshotHash.ComputeStateHash(after.State);
+        Assert.True(Read(before, after)!["value"]!["bundle_rows"]![0]!["reward"]!["inventory_accepts_reward"]!.GetValue<bool>());
+
+        Center(after, row => row["bundle_rows"]![0]!["reward"]!["stack"] = 11);
+        after.StateHash = SnapshotHash.ComputeStateHash(after.State);
+        Assert.Throws<InvalidDataException>(() => Read(before, after));
+    }
+
     [Theory]
     [InlineData("completion-bit")]
     [InlineData("reward")]

@@ -24,7 +24,8 @@ internal static partial class NativeExecutionActionSourceReader
 
     private static VerifiedNativeExecutionQueue ReadQueueCore(string queuePath, string beforePath, string receiptPath,
         string afterPath, string runId, string candidateId, NativeProductBoundary productBoundary,
-        string expectedExecutorVersion = PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor, bool appliedNativeWork = false)
+        string expectedExecutorVersion = PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor, bool appliedNativeWork = false,
+        MoneyRevenueCropNativeLifecycleTransitionRequest? ownedCropPrefix = null)
     {
         queuePath = RequiredFile(queuePath);
         beforePath = RequiredFile(beforePath);
@@ -37,13 +38,17 @@ internal static partial class NativeExecutionActionSourceReader
         ValidateSnapshot(after);
         var receipt = ReadTyped<QueueExecutionReceiptEnvelope>(receiptPath, "queue_execution_receipt.v1");
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(receiptPath, "Native sequential receipt");
-        var reasons = appliedNativeWork
-            ? QueueExecutionReceiptValidator.ValidateAppliedNativeWork(queue, before, receipt, after, runId,
-                expectedExecutorVersion, candidateId, queue.StateHash)
-            : QueueExecutionReceiptValidator.Validate(queue, before, receipt, after, runId,
-            expectedExecutorVersion, candidateId, queue.StateHash,
-            requireTeacherPreferenceStateRebound: false);
-        Require(reasons.Length == 0, "Native sequential queue proof rejected: " + string.Join(",", reasons));
+        if (ownedCropPrefix is not null)
+            ValidateOwnedCropPrefix(queue, before, receipt, after, ownedCropPrefix);
+        else
+        {
+            var reasons = appliedNativeWork
+                ? QueueExecutionReceiptValidator.ValidateAppliedNativeWork(queue, before, receipt, after, runId,
+                    expectedExecutorVersion, candidateId, queue.StateHash)
+                : QueueExecutionReceiptValidator.Validate(queue, before, receipt, after, runId,
+                    expectedExecutorVersion, candidateId, queue.StateHash, requireTeacherPreferenceStateRebound: false);
+            Require(reasons.Length == 0, "Native sequential queue proof rejected: " + string.Join(",", reasons));
+        }
         if (appliedNativeWork && !receipt.SelectedCandidateCompleted) VerifyNativeWorkObjectiveContinuation(queue, raw);
         Require(SamePath(afterPath, RequiredFile(Text(raw, "after_snapshot_path"))) &&
             receipt.StepResults.All(step => !step.TeacherPreferenceStateRebound),
@@ -56,7 +61,10 @@ internal static partial class NativeExecutionActionSourceReader
         {
             var step = receipt.StepResults[index];
             var resultPath = RequiredFile(Text(rows[index], "execution_path"));
-            var frame = appliedNativeWork
+            var frame = ownedCropPrefix is not null && step.Status == "blocked"
+                ? ReadFrameCore(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary,
+                    appliedNativeWork: false, blockedCropAttempt: true)
+                : appliedNativeWork
                 ? ReadAppliedNativeWorkFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary)
                 : ReadFrame(queuePath, resultPath, RequiredFile(step.AfterSnapshotPath), queue.StateHash, productBoundary);
             Require(frame.Result.RunId == runId && frame.Item.QueueItemId == queue.Items[index].QueueItemId &&
@@ -64,6 +72,7 @@ internal static partial class NativeExecutionActionSourceReader
                 frame.Before.GameTick == step.BeforeGameTick && frame.After.GameTick == step.AfterGameTick &&
                 frame.Result.PrimitiveKind == step.PrimitiveKind &&
                 frame.Result.PrimitiveVerificationStatus == step.PrimitiveVerificationStatus &&
+                (ownedCropPrefix is null || frame.Result.BlockReasons.ToHashSet(StringComparer.Ordinal).SetEquals(step.BlockReasons)) &&
                 Text(rows[index], "execution_request_nonce") == frame.Request.RequestNonce &&
                 nonces.Add(frame.Request.RequestNonce) &&
                 EqualJson(JsonSerializer.SerializeToElement(frame.Result.ChangedFacts, JsonDefaults.Options), step.ChangedFacts),

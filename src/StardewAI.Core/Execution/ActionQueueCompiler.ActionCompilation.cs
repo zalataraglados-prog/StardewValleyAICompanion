@@ -287,6 +287,10 @@ namespace StardewAI.Core.Execution
             blocking.AddRange(ValidateVolcanoNativePrimitivePlan(action, snapshot));
             blocking.AddRange(ValidateNativeMiningPrimitivePlan(action, snapshot));
             blocking.AddRange(ValidateShippingBinPrimitivePlan(action));
+            if (action.OptionId is "executor.ship_inventory_item_to_bin" or "executor.sell_shop_item" &&
+                CommunityCenterShipmentProtection.BlockReason(snapshot, commitmentLedger, ReadIntParameter(action, "slot_index"),
+                    ReadParameter(action, "qualified_item_id") ?? string.Empty, ReadIntParameter(action, "quantity")) is { } reservedShippingReason)
+                blocking.Add(reservedShippingReason);
             blocking.AddRange(ValidateMaterialTransferPlan(action, snapshot));
             blocking.AddRange(CropSaleStockTransferPreflight.Evaluate(action.OptionId, action.Parameters, snapshot, commitmentLedger));
             blocking.AddRange(CropSaleStockConsumptionPreflight.Evaluate(action.OptionId, action.Parameters, snapshot, commitmentLedger));

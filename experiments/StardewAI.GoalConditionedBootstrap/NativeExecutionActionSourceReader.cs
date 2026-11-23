@@ -20,10 +20,17 @@ internal static partial class NativeExecutionActionSourceReader
         .Where(field => field.Name is not null).ToDictionary(field => field.Name!, field => field.Type, StringComparer.Ordinal);
 
     internal static VerifiedNativeExecutionAction Read(string actionQueuePath, string executionReceiptPath, string afterSnapshotPath)
-    {
-        var frame = ReadFrame(actionQueuePath, executionReceiptPath, afterSnapshotPath, null);
-        return new(frame.Queue, frame.Item, frame.Result, frame.Request, frame.Before, frame.After, frame.Endpoint, frame.SourceSha256);
-    }
+        => ToVerifiedAction(ReadFrame(actionQueuePath, executionReceiptPath, afterSnapshotPath, null));
+
+    internal static VerifiedNativeExecutionAction ReadVerifiedProduct(string actionQueuePath, string executionReceiptPath,
+        string afterSnapshotPath, string? productAfterSnapshotPath)
+        => ToVerifiedAction(ReadFrameCore(actionQueuePath, executionReceiptPath, afterSnapshotPath,
+            compiledStateHash: null, productBoundary: NativeProductBoundary.NativeAction,
+            appliedNativeWork: false, productAfterSnapshotPath: productAfterSnapshotPath));
+
+    private static VerifiedNativeExecutionAction ToVerifiedAction(NativeExecutionActionFrame frame)
+        => new(frame.Queue, frame.Item, frame.Result, frame.Request, frame.Before, frame.After, frame.Endpoint,
+            frame.SourceSha256) { ProductAfter = frame.ProductAfter };
 
     // Only ReadQueue supplies an origin hash, after validating the complete immutable queue chain.
     private static NativeExecutionActionFrame ReadFrame(string actionQueuePath, string executionReceiptPath,
@@ -35,7 +42,8 @@ internal static partial class NativeExecutionActionSourceReader
         => ReadFrameCore(actionQueuePath, executionReceiptPath, afterSnapshotPath, compiledStateHash, productBoundary, appliedNativeWork: true);
 
     private static NativeExecutionActionFrame ReadFrameCore(string actionQueuePath, string executionReceiptPath,
-        string afterSnapshotPath, string? compiledStateHash, NativeProductBoundary productBoundary, bool appliedNativeWork)
+        string afterSnapshotPath, string? compiledStateHash, NativeProductBoundary productBoundary, bool appliedNativeWork,
+        string? productAfterSnapshotPath = null, bool blockedCropAttempt = false)
     {
         var resultPath = RequiredFile(executionReceiptPath);
         var raw = CurrentTeacherFrontierSupport.Read<JsonElement>(resultPath, "Native action");
@@ -94,30 +102,51 @@ internal static partial class NativeExecutionActionSourceReader
             Text(requestRaw, "schema_version") == "training_execution_request.v1" &&
             Text(requestRaw, "execution_mode") == queue.ExecutionMode && Text(requestRaw, "actor") == actor.ActorId &&
             Text(requestRaw, "save_isolation_path") == native.SaveIsolationPath && !string.IsNullOrWhiteSpace(native.SaveIsolationPath) &&
-            result.Status == "applied" && result.FeedbackAvailable &&
-            (appliedNativeWork
+            result.Status == (blockedCropAttempt ? "blocked" : "applied") && result.FeedbackAvailable &&
+            (blockedCropAttempt ? result.PrimitiveVerificationStatus is "blocked" or "observed_mismatch" : appliedNativeWork
                 ? TrainingExecutionVerification.IsAcceptedProgress(result.Status, result.PrimitiveVerificationStatus, result.OptionId)
                 : result.PrimitiveVerificationStatus == "verified") &&
             (appliedNativeWork
                 ? QueueExecutionReceiptValidator.ReceiptPrimitiveIdentityMatches(item, command!.Steps, result.PrimitiveKind)
-                : result.PrimitiveKind == result.OptionId["executor.".Length..]) && result.BlockReasons is { Length: 0 } &&
+                : result.PrimitiveKind == result.OptionId["executor.".Length..]) &&
+            (blockedCropAttempt ? result.BlockReasons is { Length: > 0 } : result.BlockReasons is { Length: 0 }) &&
             Text(raw, "execution_request_sha256") == Text(journal.Metadata, "raw_request_sha256") &&
             Text(raw, "execution_request_nonce") == native.RequestNonce,
             "Native request/result identity or verification drifted.");
         ValidateWireParameters(requestRaw, command!);
         var endpoint = Text(journal.Metadata, "executor_url");
+        SnapshotEnvelope? productAfter = null;
         if (productBoundary != NativeProductBoundary.None && Uri.TryCreate(endpoint, UriKind.Absolute, out var productUri) &&
             productUri.AbsolutePath == "/api/v1/product/execute")
-            VerifySelectedProduct(productUri, journal, raw, result, before, after,
+        {
+            if (!string.IsNullOrWhiteSpace(productAfterSnapshotPath))
+            {
+                productAfterSnapshotPath = RequiredFile(productAfterSnapshotPath);
+                productAfter = ReadTyped<SnapshotEnvelope>(productAfterSnapshotPath, "snapshot.v1");
+                ValidateSnapshot(productAfter);
+                Require(productAfter.GameTick == after.GameTick && productAfter.GameVersion == after.GameVersion &&
+                    productAfter.BridgeVersion == after.BridgeVersion &&
+                    Identity(productAfter.SaveId) == Identity(after.SaveId) &&
+                    Identity(productAfter.PlayerId) == Identity(after.PlayerId),
+                    "Product and native after snapshots do not bind the same game frame.");
+            }
+
+            VerifySelectedProduct(productUri, journal, raw, result, before, productAfter ?? after,
                 requireTillingObservation: productBoundary == NativeProductBoundary.Tilling);
+        }
         else
-            Require(Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" &&
+        {
+            Require(string.IsNullOrWhiteSpace(productAfterSnapshotPath) &&
+                Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" &&
                 uri.AbsolutePath == "/api/v1/training/execute", "Source is not a native training executor request.");
+        }
         var hashes = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var file in new[] { ("queue", queuePath), ("result", resultPath), ("before", beforePath),
             ("after", afterPath), ("journal", journalPath), ("request_gzip", journalPath + ".gz") })
             hashes[file.Item1] = CurrentTeacherFrontierSupport.HashFile(file.Item2);
-        return new(queue, item, result, native, before, after, endpoint, hashes, beforePath, afterPath);
+        if (productAfter is not null)
+            hashes["product_after"] = CurrentTeacherFrontierSupport.HashFile(productAfterSnapshotPath!);
+        return new(queue, item, result, native, before, after, endpoint, hashes, beforePath, afterPath) { ProductAfter = productAfter };
     }
 
     private static string Text(JsonElement row, string name) => CurrentTeacherFrontierSupport.RequiredString(row, name);
@@ -151,8 +180,14 @@ internal static partial class NativeExecutionActionSourceReader
 
 internal sealed record VerifiedNativeExecutionAction(ActionQueueEnvelope Queue, ActionQueueItem Item,
     TrainingExecutionResult Result, TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After,
-    string Endpoint, IReadOnlyDictionary<string, string> SourceSha256);
+    string Endpoint, IReadOnlyDictionary<string, string> SourceSha256)
+{
+    internal SnapshotEnvelope? ProductAfter { get; init; }
+}
 
 internal sealed record NativeExecutionActionFrame(ActionQueueEnvelope Queue, ActionQueueItem Item,
     TrainingExecutionResult Result, TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After,
-    string Endpoint, IReadOnlyDictionary<string, string> SourceSha256, string BeforeSnapshotPath, string AfterSnapshotPath);
+    string Endpoint, IReadOnlyDictionary<string, string> SourceSha256, string BeforeSnapshotPath, string AfterSnapshotPath)
+{
+    internal SnapshotEnvelope? ProductAfter { get; init; }
+}

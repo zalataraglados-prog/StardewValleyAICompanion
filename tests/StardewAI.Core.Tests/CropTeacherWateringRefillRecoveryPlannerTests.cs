@@ -24,7 +24,7 @@ public sealed class CropTeacherWateringRefillRecoveryPlannerTests
     }
 
     [Fact]
-    public void ExistingWaterOrArrivalAtApproachDoesNotPreemptWaterBatch()
+    public void ExistingWaterLimitsBatchAndEmptyCanAtApproachAdmitsOneAction()
     {
         var target = new MoneyRevenueCropPlantingTile(8, 9);
 
@@ -44,7 +44,7 @@ public sealed class CropTeacherWateringRefillRecoveryPlannerTests
             8,
             9);
         Assert.Null(atApproach.ApproachTile);
-        Assert.Equal(6, atApproach.ExecutableTileCount);
+        Assert.Equal(1, atApproach.ExecutableTileCount);
     }
 
     [Fact]
