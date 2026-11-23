@@ -445,8 +445,8 @@
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedNativeDaySave.ps1",
-      "sha256": "AA9F2C57E9B233554504AF45E362B0BC4331EA1B6759E04A366FDB062211F4EE",
-      "git_blob_oid": "360e4e11b71e238280d3ed59777a212441ecb8ad"
+      "sha256": "F3A72C2A444CBBB55190855F3100D381AA497334EF459A7177DB7DC41AF0C508",
+      "git_blob_oid": "2a61ec627406c4cb7a35e9b0ce568432ae686dfe"
     },
     {
       "path": "experiments/r2-lab-controller/Restart-IsolatedVerifiedDay.ps1",
@@ -470,8 +470,8 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T00:53:22.7025488+08:00",
-  "controller_revision_note": "Retention defaults and the native-save command are bounded at 600 without deleting prior artifacts. Native soil probe binds ExpectedTotalDay throughout, and its original controller hoe selection / original compiler walk both passed at total_day32. Native source replay for both actions passed. Mining fresh selection continues to bind the same candidate and preserves original execution guards.",
+  "updated_at": "2026-11-24T00:59:19.6915155+08:00",
+  "controller_revision_note": "Native save retains one recovery.stabilize_day candidate because the original parser binds explicit save-boundary parameters to exactly one option. The attempted two-option invocation was rejected before dispatch and is retained in the lab. The corrected single-candidate command saved Summer6 through the original native-save control loop and verifier; a new process read back the identical actual main save. Retention remains bounded at 600.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
     "sha256": "D3F19E0B533D914DCD9570444AB55992082666A5757C1FA2C44BDACB772E6BFF",
@@ -516,6 +516,48 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer05-patched-native-empty-soil-20261124-evidence\\original-reader-0438.json",
       "sha256": "405D325F37F03300C8E833B68FFA9223ABDFBE81B5B889D42E948ADA864E7BAE",
       "git_blob_oid": "054f14a804944c98083e12a07fbe7f1a5af2a876"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer06-save-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-native-save-20261124-v2\\verified.json",
+      "sha256": "3E8D625EDCA8849B04FD1D3DD1DBF9C96D20FA0809FD23D62722E4C00528665C",
+      "git_blob_oid": "39a610653ce774d7a970c95a4cce28bd2be2b9a7"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer06-cold-readback-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-native-cold-readback-20261124\\verified-readback.json",
+      "sha256": "7CD85D8BF4243522DEBC0DA0117F3C8605900F05274B6D3CEADB00983FA8E8F0",
+      "git_blob_oid": "bf2b8916017b424775c651f76c7778dcec8f2947"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/spring27-global-source-binding.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\original-source-binding.json",
+      "sha256": "828341AED4B25C90E7AE851ECECE76FE94618BC679784E66B91D9E31C64BA9C3",
+      "git_blob_oid": "b15d51db3da944ef7ef0c06664ac2655993ae703"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/spring27-no-supplied-forecast-manifest.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-no-supplied-forecast-manifest.json",
+      "sha256": "2E38EB66D4C58FB463359F9FD7F92B6684175CCCB4AF7A0A69E8E822EDDBBD4C",
+      "git_blob_oid": "0ca33eb227e3e9fdefb3137d9f3659482b82f9f4"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/spring27-island-preference-request.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-island-native-catch-preference-request.json",
+      "sha256": "B33B5EF862C18519F942D9520049D56901182FBBAFF955F06A9035182ED22C78",
+      "git_blob_oid": "db31076ec7f425da0dab3e905eec2e3a3b84fc4b"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/spring27-island-preference-rejection.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-island-native-catch-preference.json",
+      "sha256": "CA45BF0C1AE9A662D9F3819BA60D5C7AA00CDE4D8D4D4432AFEE7B6511981EF8",
+      "git_blob_oid": "2c7ffc55d2d6524fde834e65d49e4e538be58006"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/spring27-island-axis-denominator-summary.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-island-axis-denominator-summary.json",
+      "sha256": "CF5FB70DED6FB0E3B3D18A70B13CD117AC1DF4F2C7847FC5BF763F5F375E33F2",
+      "git_blob_oid": "163d30fd790ef6df905274d79e88e440a602a025"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -527,5 +569,31 @@
     "native_empty_hoe_dirt_walk_verified": true,
     "native_source_replay_verified": true,
     "scope": "Combined isolated lab Bridge; actual Summer5 ordinary-mine floor6, tile21,36. The original reader separately accepted native hoe and walk sources."
+  },
+  "latest_saved_checkpoint": {
+    "total_day": 33,
+    "season": "summer",
+    "day_of_month": 6,
+    "time": 600,
+    "cash": 2961,
+    "health": 100,
+    "deepest_mine": 6,
+    "lake_fish_completed_ingredients": 4,
+    "native_save_control_loop_verified": true,
+    "independent_saved_xml_verified": true,
+    "same_actual_main_cold_readback_verified": true,
+    "main_sha256": "A9AB4D6D8C30A1BC42949D3CCDB85DC2B42F0CA699D1D1B6322838A6C18BCF2A",
+    "runtime_attempt": "summer06-native-cold-readback-20261124"
+  },
+  "latest_offline_island_selection": {
+    "source_total_day": 26,
+    "source_state_hash": "8ef35b94e94f833bf73f99703d8c4efef0616f2ba7aa6881404e7ac018627a6a",
+    "strategy_ledger_revision": 329,
+    "scope": "Only three island-native fish requirements; an offline prerequisite diagnostic, not a complete cross-root L3 selection.",
+    "provided_forecast_snapshot_count": 0,
+    "status": "blocked_portfolio_teacher_preference",
+    "selection_disposition": "InvalidDenominator",
+    "selected_proposal_emitted": false,
+    "reason": "All three scoped opportunity denominators remain incomplete. Original location axis records approach/path/date/connector-evidence blockers for the six native island occurrences."
   }
 }

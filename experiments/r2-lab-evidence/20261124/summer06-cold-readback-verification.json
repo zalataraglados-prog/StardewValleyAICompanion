@@ -1,0 +1,13 @@
+{
+  "same_actual_save_verified": true,
+  "run_id": "r2-global-daily-20261117-171253",
+  "save_id": "ProofFarm",
+  "player_id": "319842636613009663",
+  "total_day": 33,
+  "cash": 2961,
+  "state_hash": "199069e6ac0735de542cbe221d86b726299cd674bd8eeb1b0cd7ffbd9417a075",
+  "game_tick": 124,
+  "source_main_sha256": "A9AB4D6D8C30A1BC42949D3CCDB85DC2B42F0CA699D1D1B6322838A6C18BCF2A",
+  "harness_sha256": "D3F19E0B533D914DCD9570444AB55992082666A5757C1FA2C44BDACB772E6BFF",
+  "formal_training_authorized": false
+}

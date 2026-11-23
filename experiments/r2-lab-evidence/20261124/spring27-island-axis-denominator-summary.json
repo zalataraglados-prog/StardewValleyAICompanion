@@ -1,0 +1,1039 @@
+{
+  "scope": "Three authoritative island-native Master Angler requirements at the original Spring27 cold-readback snapshot and original ledger revision329. This is an offline diagnostic, not a selected full L3 route.",
+  "provided_forecast_snapshot_count": 0,
+  "provided_forecast_scope": "Original saved-day snapshot has no forecast_request; no later Summer fishing observations were supplied as Spring27 forecasts.",
+  "axis_reports": [
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-current-native-calendar-resolution.json",
+      "sha256": "3E83B34514EFF80C95A0D2F047090CAA99E363A0174F6311DE3F5ED5B4B95923",
+      "status": "partial_static_sources_explicitly_blocked",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "blocking_reasons": []
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-calendar-current-day.json",
+      "sha256": "A04E5026B2D9FCA042D70240B1411F3DAB2B8DCA438B722C3BA913CC55DB6EEF",
+      "status": "partial_target_date_calendar_axis_source_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "calendar_axis_resolved": true,
+          "static_window_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "calendar_axis_resolved": true,
+          "static_window_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "calendar_axis_resolved": true,
+          "static_window_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "calendar_axis_resolved": true,
+          "static_window_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "calendar_axis_resolved": true,
+          "static_window_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "calendar_axis_resolved": true,
+          "static_window_matches_target_date": true,
+          "blocking_reasons": []
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-unlock-current-day.json",
+      "sha256": "F5AD2FDA1005B49716FF96387927FC0AB1A075CC5AA6CFB463C01A40A41EA6E9",
+      "status": "partial_target_date_unlock_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "static_window_matches_target_date": true,
+          "unlock_axis_status": "resolved_unlock_state_match_downstream_pending",
+          "unlock_axis_resolved": true,
+          "unlock_state_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "static_window_matches_target_date": true,
+          "unlock_axis_status": "resolved_unlock_state_match_downstream_pending",
+          "unlock_axis_resolved": true,
+          "unlock_state_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "static_window_matches_target_date": true,
+          "unlock_axis_status": "resolved_unlock_state_match_downstream_pending",
+          "unlock_axis_resolved": true,
+          "unlock_state_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "static_window_matches_target_date": true,
+          "unlock_axis_status": "resolved_unlock_state_match_downstream_pending",
+          "unlock_axis_resolved": true,
+          "unlock_state_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "static_window_matches_target_date": true,
+          "unlock_axis_status": "resolved_unlock_state_match_downstream_pending",
+          "unlock_axis_resolved": true,
+          "unlock_state_matches_target_date": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "calendar_axis_status": "resolved_target_date_inside_static_window_downstream_pending",
+          "static_window_matches_target_date": true,
+          "unlock_axis_status": "resolved_unlock_state_match_downstream_pending",
+          "unlock_axis_resolved": true,
+          "unlock_state_matches_target_date": true,
+          "blocking_reasons": []
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-festival-current-day.json",
+      "sha256": "39722DFD4E633909B0C085E6E61A23AEF4B118396910781B5FAA6F6CB7897B81",
+      "status": "partial_target_date_festival_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "calendar_condition_axis_status": "resolved_no_calendar_conditions",
+          "calendar_condition_axis_resolved": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "calendar_condition_axis_status": "resolved_no_calendar_conditions",
+          "calendar_condition_axis_resolved": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "calendar_condition_axis_status": "resolved_no_calendar_conditions",
+          "calendar_condition_axis_resolved": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "calendar_condition_axis_status": "resolved_no_calendar_conditions",
+          "calendar_condition_axis_resolved": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "calendar_condition_axis_status": "resolved_no_calendar_conditions",
+          "calendar_condition_axis_resolved": true,
+          "blocking_reasons": []
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "calendar_condition_axis_status": "resolved_no_calendar_conditions",
+          "calendar_condition_axis_resolved": true,
+          "blocking_reasons": []
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-location-current-day.json",
+      "sha256": "E7511DFFE5872703DA7CAFE8975563DC81C94B05B11F154FAE634FCD47E6BF9A",
+      "status": "partial_target_date_location_route_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "location_route_axis_status": "blocked_location_route_evidence",
+          "location_route_axis_resolved": false,
+          "location_route_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "location_route_axis_status": "blocked_location_route_evidence",
+          "location_route_axis_resolved": false,
+          "location_route_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "location_route_axis_status": "blocked_location_route_evidence",
+          "location_route_axis_resolved": false,
+          "location_route_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "location_route_axis_status": "blocked_location_route_evidence",
+          "location_route_axis_resolved": false,
+          "location_route_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "location_route_axis_status": "blocked_location_route_evidence",
+          "location_route_axis_resolved": false,
+          "location_route_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "location_route_axis_status": "blocked_location_route_evidence",
+          "location_route_axis_resolved": false,
+          "location_route_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-facility-current-day.json",
+      "sha256": "47DA84D2FE9BF5D61981FA95801146A682B4053075FF6F24008E9AEA664A304E",
+      "status": "partial_target_date_facility_capacity_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "facility_capacity_axis_status": "blocked_upstream_location_route_axis",
+          "facility_capacity_axis_resolved": false,
+          "facility_capacity_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "facility_capacity_axis_status": "blocked_upstream_location_route_axis",
+          "facility_capacity_axis_resolved": false,
+          "facility_capacity_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "facility_capacity_axis_status": "blocked_upstream_location_route_axis",
+          "facility_capacity_axis_resolved": false,
+          "facility_capacity_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "facility_capacity_axis_status": "blocked_upstream_location_route_axis",
+          "facility_capacity_axis_resolved": false,
+          "facility_capacity_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "facility_capacity_axis_status": "blocked_upstream_location_route_axis",
+          "facility_capacity_axis_resolved": false,
+          "facility_capacity_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "facility_capacity_axis_status": "blocked_upstream_location_route_axis",
+          "facility_capacity_axis_resolved": false,
+          "facility_capacity_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-resource-current-day.json",
+      "sha256": "44387221EEE059012EDE46113C2A79EA2D0482EA02E2CD003D7E40A1DCCDA5D0",
+      "status": "partial_target_date_resource_inputs_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "resource_input_axis_status": "blocked_upstream_facility_capacity_axis",
+          "resource_input_axis_resolved": false,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "resource_input_axis_status": "blocked_upstream_facility_capacity_axis",
+          "resource_input_axis_resolved": false,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "resource_input_axis_status": "blocked_upstream_facility_capacity_axis",
+          "resource_input_axis_resolved": false,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "resource_input_axis_status": "blocked_upstream_facility_capacity_axis",
+          "resource_input_axis_resolved": false,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "resource_input_axis_status": "blocked_upstream_facility_capacity_axis",
+          "resource_input_axis_resolved": false,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "resource_input_axis_status": "blocked_upstream_facility_capacity_axis",
+          "resource_input_axis_resolved": false,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-currency-current-day.json",
+      "sha256": "A9C4E97CAF75ED907DF4D26DB60B0B7BA099855D87F098142DBA92920E44F204",
+      "status": "partial_target_date_currency_budget_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "currency_axis_status": "blocked_upstream_resource_input_axis",
+          "currency_axis_resolved": false,
+          "currency_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "currency_axis_status": "blocked_upstream_resource_input_axis",
+          "currency_axis_resolved": false,
+          "currency_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "currency_axis_status": "blocked_upstream_resource_input_axis",
+          "currency_axis_resolved": false,
+          "currency_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "currency_axis_status": "blocked_upstream_resource_input_axis",
+          "currency_axis_resolved": false,
+          "currency_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "currency_axis_status": "blocked_upstream_resource_input_axis",
+          "currency_axis_resolved": false,
+          "currency_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "currency_axis_status": "blocked_upstream_resource_input_axis",
+          "currency_axis_resolved": false,
+          "currency_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-reservation-current-day.json",
+      "sha256": "C4E35CFC8ECB1092A2945223F1DDCE080B6E7CD57F8D4C3949D73FDFC1C4E36F",
+      "status": "partial_target_date_inventory_reservation_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "reservation_axis_status": "blocked_upstream_currency_budget_axis",
+          "reservation_axis_resolved": false,
+          "inventory_reservation_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "reservation_axis_status": "blocked_upstream_currency_budget_axis",
+          "reservation_axis_resolved": false,
+          "inventory_reservation_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "reservation_axis_status": "blocked_upstream_currency_budget_axis",
+          "reservation_axis_resolved": false,
+          "inventory_reservation_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "reservation_axis_status": "blocked_upstream_currency_budget_axis",
+          "reservation_axis_resolved": false,
+          "inventory_reservation_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "reservation_axis_status": "blocked_upstream_currency_budget_axis",
+          "reservation_axis_resolved": false,
+          "inventory_reservation_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "reservation_axis_status": "blocked_upstream_currency_budget_axis",
+          "reservation_axis_resolved": false,
+          "inventory_reservation_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-processing-current-day.json",
+      "sha256": "FBD292C4398DAA2CCD42C8F394DF93C0EA983004BF135CD432F8E0F8F2D17FFC",
+      "status": "partial_target_date_processing_lead_time_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "processing_lead_time_axis_status": "blocked_upstream_inventory_reservation_axis",
+          "processing_lead_time_axis_resolved": false,
+          "processing_lead_time_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "processing_lead_time_axis_status": "blocked_upstream_inventory_reservation_axis",
+          "processing_lead_time_axis_resolved": false,
+          "processing_lead_time_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "processing_lead_time_axis_status": "blocked_upstream_inventory_reservation_axis",
+          "processing_lead_time_axis_resolved": false,
+          "processing_lead_time_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "processing_lead_time_axis_status": "blocked_upstream_inventory_reservation_axis",
+          "processing_lead_time_axis_resolved": false,
+          "processing_lead_time_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "processing_lead_time_axis_status": "blocked_upstream_inventory_reservation_axis",
+          "processing_lead_time_axis_resolved": false,
+          "processing_lead_time_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "processing_lead_time_axis_status": "blocked_upstream_inventory_reservation_axis",
+          "processing_lead_time_axis_resolved": false,
+          "processing_lead_time_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-fishing-probability-no-supplied-forecast.json",
+      "sha256": "3F3DF344DD3EDACBF9AAE276CE9917B14904F78E3FB5651EDB17B7B783AB83E9",
+      "status": "partial_target_date_fishing_probability_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "probability_axis_resolved": true,
+          "retry_blocking_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "probability_axis_resolved": true,
+          "retry_blocking_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "probability_axis_resolved": true,
+          "retry_blocking_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "probability_axis_resolved": true,
+          "retry_blocking_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "probability_axis_resolved": true,
+          "retry_blocking_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "probability_axis_resolved": true,
+          "retry_blocking_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-stochastic-retry-no-supplied-forecast.json",
+      "sha256": "CB8EA01D6478B551797CFCDE87ACC5577159BBDC5368F21A10F3E082649B3284",
+      "status": "partial_target_date_stochastic_retry_budget_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "stochastic_retry_axis_status": "blocked_upstream_processing_lead_time_axis",
+          "stochastic_retry_axis_resolved": false,
+          "stochastic_retry_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "stochastic_retry_axis_status": "blocked_upstream_processing_lead_time_axis",
+          "stochastic_retry_axis_resolved": false,
+          "stochastic_retry_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "stochastic_retry_axis_status": "blocked_upstream_processing_lead_time_axis",
+          "stochastic_retry_axis_resolved": false,
+          "stochastic_retry_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "stochastic_retry_axis_status": "blocked_upstream_processing_lead_time_axis",
+          "stochastic_retry_axis_resolved": false,
+          "stochastic_retry_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "stochastic_retry_axis_status": "blocked_upstream_processing_lead_time_axis",
+          "stochastic_retry_axis_resolved": false,
+          "stochastic_retry_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "stochastic_retry_axis_status": "blocked_upstream_processing_lead_time_axis",
+          "stochastic_retry_axis_resolved": false,
+          "stochastic_retry_budget_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-daily-time-energy-no-supplied-forecast.json",
+      "sha256": "990FE57943E838F839924E8A56C2A0499F38A60F64C46A8FDCF792997A803105",
+      "status": "partial_target_date_daily_time_energy_budget_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "daily_time_energy_axis_status": "blocked_upstream_stochastic_retry_axis",
+          "daily_time_energy_axis_resolved": false,
+          "daily_time_energy_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "daily_time_energy_axis_status": "blocked_upstream_stochastic_retry_axis",
+          "daily_time_energy_axis_resolved": false,
+          "daily_time_energy_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "daily_time_energy_axis_status": "blocked_upstream_stochastic_retry_axis",
+          "daily_time_energy_axis_resolved": false,
+          "daily_time_energy_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "daily_time_energy_axis_status": "blocked_upstream_stochastic_retry_axis",
+          "daily_time_energy_axis_resolved": false,
+          "daily_time_energy_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "daily_time_energy_axis_status": "blocked_upstream_stochastic_retry_axis",
+          "daily_time_energy_axis_resolved": false,
+          "daily_time_energy_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "daily_time_energy_axis_status": "blocked_upstream_stochastic_retry_axis",
+          "daily_time_energy_axis_resolved": false,
+          "daily_time_energy_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-target-date-opportunity-cost-no-supplied-forecast.json",
+      "sha256": "56931D4607EB453EA592B946E463D0E12E5E5FF50597E1060D466ED0FD3A08EE",
+      "status": "partial_target_date_opportunity_cost_axis_blocks",
+      "island_route_count": 6,
+      "island_routes": [
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:836:0:0",
+          "opportunity_cost_axis_status": "blocked_upstream_daily_time_energy_axis",
+          "opportunity_cost_axis_resolved": false,
+          "opportunity_cost_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:0",
+          "opportunity_cost_axis_status": "blocked_upstream_daily_time_energy_axis",
+          "opportunity_cost_axis_resolved": false,
+          "opportunity_cost_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:1",
+          "opportunity_cost_axis_status": "blocked_upstream_daily_time_energy_axis",
+          "opportunity_cost_axis_resolved": false,
+          "opportunity_cost_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:837:0:2",
+          "opportunity_cost_axis_status": "blocked_upstream_daily_time_energy_axis",
+          "opportunity_cost_axis_resolved": false,
+          "opportunity_cost_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:0",
+          "opportunity_cost_axis_status": "blocked_upstream_daily_time_energy_axis",
+          "opportunity_cost_axis_resolved": false,
+          "opportunity_cost_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        },
+        {
+          "route_occurrence_id": "master_angler:master_angler:item:838:0:1",
+          "opportunity_cost_axis_status": "blocked_upstream_daily_time_energy_axis",
+          "opportunity_cost_axis_resolved": false,
+          "opportunity_cost_matches_target_date": null,
+          "non_matching_reasons": [],
+          "blocking_reasons": [
+            "future_route_connector_approach_unreachable",
+            "future_route_connector_not_allowed_on_date",
+            "future_route_edge_coordinates_or_chain_incomplete",
+            "future_route_graph_path_missing"
+          ]
+        }
+      ]
+    }
+  ],
+  "selected_route_available": false,
+  "formal_training_authorized": false
+}

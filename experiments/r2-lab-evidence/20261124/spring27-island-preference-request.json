@@ -1,0 +1,21 @@
+{
+  "schema_version": "acquisition_route_portfolio_teacher_preference_request.v1",
+  "request_id": "r2-spring27-island-native-catch-20261124",
+  "goal_id": "grandpa.maximum_21",
+  "snapshot_state_hash": "8ef35b94e94f833bf73f99703d8c4efef0616f2ba7aa6881404e7ac018627a6a",
+  "expected_ledger_revision": 329,
+  "scoped_requirements": [
+    {
+      "requirement_set_id": "master_angler",
+      "requirement_id": "master_angler:item:836"
+    },
+    {
+      "requirement_set_id": "master_angler",
+      "requirement_id": "master_angler:item:837"
+    },
+    {
+      "requirement_set_id": "master_angler",
+      "requirement_id": "master_angler:item:838"
+    }
+  ]
+}

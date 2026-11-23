@@ -1,0 +1,37 @@
+{
+  "original_native_readback_report": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\Spring15\u672C\u673A\u7EED\u8DD1\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\managed-owner\\reload-entry-8e4d823316c44fd58eb80afbd8b1020a\\managed-owner-resume.json",
+  "original_native_readback_report_sha256": "aaf0f73ebb7fdaa6aefddcb36ba08559d1af88e84d7f4e3d43faf12502ce45c6",
+  "source_snapshot": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\Spring15\u672C\u673A\u7EED\u8DD1\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\managed-owner\\reload-entry-8e4d823316c44fd58eb80afbd8b1020a\\native-load\\loaded-snapshot.json",
+  "source_snapshot_sha256": "e1778343d4576d698fd1ebd1a893e4bcb853b5287015f1120d2d318dcfe82b49",
+  "source_strategy_ledger": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\Spring15\u672C\u673A\u7EED\u8DD1\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\managed-owner\\reload-entry-8e4d823316c44fd58eb80afbd8b1020a\\readback-runtime\\teacher-ledgers\\0e382c0cbb2ead95f3a1e649c1f6f5526e06fe19156a3a4df0a74feec7d6523f.json",
+  "source_strategy_ledger_sha256": "0e382c0cbb2ead95f3a1e649c1f6f5526e06fe19156a3a4df0a74feec7d6523f",
+  "source_state_hash": "8ef35b94e94f833bf73f99703d8c4efef0616f2ba7aa6881404e7ac018627a6a",
+  "run_id": "r2-global-daily-20261117-171253",
+  "requested_goal": "goal.grandpa_max_score_year3",
+  "goal_resolution": {
+    "schema_version": "planning_goal_resolution.v1",
+    "status": "planning_handoff_required",
+    "requested_goal_id": "goal.grandpa_max_score_year3",
+    "effective_goal_id": "goal.economy.earn_money",
+    "direction_id": "earn_money",
+    "demand_family": "economy",
+    "reason": "crop_production_teacher_handoff_required",
+    "source_state_hash": "8ef35b94e94f833bf73f99703d8c4efef0616f2ba7aa6881404e7ac018627a6a",
+    "bound_candidate_ids": [],
+    "binding_rule_id": "grandpa.direct.earn_money",
+    "considered_direction_ids": [
+      "earn_money"
+    ],
+    "planning_handoff": {
+      "schema_version": "planning_goal_handoff.v1",
+      "handoff_kind": "crop_production_teacher",
+      "required_snapshot_profiles": [
+        "farm_layout"
+      ],
+      "requested_capability": "establish_initial_crop_production",
+      "automatic_dispatch_required": true
+    }
+  },
+  "queue_status": "blocked",
+  "native_dispatch_performed": false
+}

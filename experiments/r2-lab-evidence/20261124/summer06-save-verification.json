@@ -1,0 +1,36 @@
+{
+  "run_id": "r2-global-daily-20261117-171253",
+  "save_id": "ProofFarm",
+  "player_id": "319842636613009663",
+  "total_day": 33,
+  "season": "summer",
+  "day_of_month": 6,
+  "time": 600,
+  "cash": 2961,
+  "health": 100,
+  "deepest_mine": 6,
+  "before_state_hash": "a3e540f9c28462f7ba39cf0383cd06d12b25e31907a28783b10577b53cd2a7f4",
+  "after_state_hash": "5728a2c4f1f31a0a3af443161839251394825aa2631fbd82aafaf0add6806dea",
+  "native_save_boundary_verified": true,
+  "independent_saved_xml_verified": true,
+  "previous_main_sha256": "F8335194CE3F9AEC4ED0D7CCF5957F72C31E9DC61850D60318A4C6B57C1B95B0",
+  "files": [
+    {
+      "name": "ProofFarm_454459038",
+      "sha256": "A9AB4D6D8C30A1BC42949D3CCDB85DC2B42F0CA699D1D1B6322838A6C18BCF2A"
+    },
+    {
+      "name": "ProofFarm_454459038_old",
+      "sha256": "F8335194CE3F9AEC4ED0D7CCF5957F72C31E9DC61850D60318A4C6B57C1B95B0"
+    },
+    {
+      "name": "SaveGameInfo",
+      "sha256": "B45C0F7FF8A028F7986C99066D45248F511F61A62B2E9EF68411D3518B35085D"
+    },
+    {
+      "name": "SaveGameInfo_old",
+      "sha256": "F480D4589CCA94544CC557DC403FC2DC4C759763EFF5FBE94B48275907E27138"
+    }
+  ],
+  "formal_training_authorized": false
+}

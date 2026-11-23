@@ -1,0 +1,42 @@
+{
+  "schema_version": "acquisition_route_portfolio_teacher_preference.v1",
+  "status": "blocked_portfolio_teacher_preference",
+  "request_id": "r2-spring27-island-native-catch-20261124",
+  "goal_id": "grandpa.maximum_21",
+  "snapshot_state_hash": "8ef35b94e94f833bf73f99703d8c4efef0616f2ba7aa6881404e7ac018627a6a",
+  "community_center_provenance": {
+    "uses_current_community_center_denominator": false,
+    "community_center_bundle_mode": "",
+    "community_center_denominator_sha256": "",
+    "community_center_source_state_hash": "",
+    "community_center_snapshot_sha256": ""
+  },
+  "expected_ledger_revision": 329,
+  "preference_request_sha256": "b33b5ef862c18519f942d9520049d56901182fbbaff955f06a9035182ed22c78",
+  "requirement_inventory_sha256": "3a170e1cd0fe0675c1e56ca3bbdbc52da77b0a303ed054d2d7baf431fb7425c4",
+  "opportunity_cost_sha256": "56931d4607eb453ea592b946e463d0e12e5e5ff50597e1060d466ed0fd3a08ee",
+  "strategy_ledger_sha256": "0e382c0cbb2ead95f3a1e649c1f6f5526e06fe19156a3a4df0a74feec7d6523f",
+  "snapshot_sha256": "e1778343d4576d698fd1ebd1a893e4bcb853b5287015f1120d2d318dcfe82b49",
+  "prior_supporting_transition_replan_sha256": "",
+  "selection_policy_id": "complete_portfolio_denominator_unique_strict_pareto.v1",
+  "selection_disposition": "InvalidDenominator",
+  "candidate_limit": 4096,
+  "candidate_denominator_count": 0,
+  "candidate_denominator_complete": false,
+  "admitted_candidate_count": 0,
+  "pareto_frontier_count": 0,
+  "candidate_evaluations": [],
+  "selected_proposal": null,
+  "selected_admission": null,
+  "pairwise_preferences": [],
+  "teacher_preference_label_eligible": false,
+  "formal_training_authorized": false,
+  "uses_learner_rank_or_score": false,
+  "emits_negative_labels_for_unavailable_portfolios": false,
+  "blocking_reasons": [
+    "portfolio_teacher_scoped_opportunity_denominator_incomplete:master_angler/master_angler%3Aitem%3A836",
+    "portfolio_teacher_scoped_opportunity_denominator_incomplete:master_angler/master_angler%3Aitem%3A837",
+    "portfolio_teacher_scoped_opportunity_denominator_incomplete:master_angler/master_angler%3Aitem%3A838"
+  ],
+  "admission_policy": "The Teacher derives the complete bounded portfolio denominator from authoritative requirement selection rules and all target-date Pareto route occurrences. It evaluates every generated proposal through the existing atomic admission preflight. A preference label exists only when one admitted aggregate cost vector strictly Pareto-dominates every other admitted portfolio. Incomparable or equal frontier portfolios remain blocked; learner scores, caller candidate lists, scalarized currencies and unavailable portfolios never create preference labels. The selected proposal still requires atomic commit, ordered execution and portfolio completion evidence, so formal training authorization remains false."
+}

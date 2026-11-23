@@ -29,8 +29,9 @@ $slot = Join-Path $session.save_root $session.slot
 $beforeMain = (Get-FileHash -LiteralPath (Join-Path $slot $session.slot) -Algorithm SHA256).Hash
 $template = Join-Path $RunDirectory 'summer04-native-save-20261123\native-boundary-arguments.json'
 $arguments = [string[]](Get-Content -LiteralPath $template -Raw | ConvertFrom-Json)
-# Profession menus need their existing planned choice, rather than repeated sleep.
-$arguments[[Array]::IndexOf($arguments, '--daily-plan-candidate-options') + 1] = 'recovery.stabilize_day,skills.choose_profession'
+# The explicit save-boundary parameter binds exactly one existing candidate.
+# A required profession choice is a separate planned action, never another sleep.
+$arguments[[Array]::IndexOf($arguments, '--daily-plan-candidate-options') + 1] = 'recovery.stabilize_day'
 $arguments[[Array]::IndexOf($arguments, '--max-persisted-iterations') + 1] = '600'
 foreach ($binding in @{
     '--run-id' = $session.run_id
@@ -48,6 +49,7 @@ foreach ($key in $settings.Keys) { [Environment]::SetEnvironmentVariable($key, $
 $dotnet = ($session.processes | Where-Object role -eq 'backend').exe
 & $dotnet @arguments *> (Join-Path $proof.FullName 'native-boundary.log')
 $code = $LASTEXITCODE
+if ($code -ne 0) { throw ('Original native save command failed; retain and inspect ' + (Join-Path $proof.FullName 'native-boundary.log')) }
 $result = Get-Content -LiteralPath (Join-Path $proof.FullName 'native-boundary.log') -Raw | ConvertFrom-Json
 if ($code -ne 0 -or $result.status -cne 'ok' -or !$result.native_save_boundary_verified) { throw 'Original native save verifier did not accept the boundary.' }
 $afterBody = (Invoke-WebRequest -Uri $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL -TimeoutSec 20).Content
