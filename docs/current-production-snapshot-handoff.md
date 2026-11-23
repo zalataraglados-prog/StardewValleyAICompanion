@@ -1,5 +1,29 @@
 # Current Production Snapshot Handoff
 
+## Latest270: Native Prerequisite Still Absent; Actual Entry and Frames Checked
+
+The exact same-session SDL probe used the game's installed SDL2.dll without
+starting the game: the only display selected Microsoft GDI Generic OpenGL1.1,
+with neither required framebuffer extension. No device/driver changes.
+Current 270 preflight confirms immutable inputs/ports/disk and graphics_ready=false;
+no replacement game, ledger mutation or service has been launched.
+
+The copied-save launcher now uses the existing real `continue-live-crop-managed-owner`
+entry. Its offline actual entry preflight reached the native-process check and
+rejected the intentional no-process session; no dataset rows or actions.
+Retained 267/268 real frames show a second launch boundary: at the same tick124,
+the first full observation had not populated the daily quest presentation, while
+the later raw hash matched the first real item receipt. The old same-live kernel
+rejects the first-to-later difference; only `quests.daily_quest_offer` differed.
+After the graphics prerequisite, preserve the initial observation and bind the
+next actual full frame, checking the same tick/hash before submitting the marker.
+Do not normalize the offer out of the source or change the existing comparator.
+
+Only launch the new270 isolated package when graphics is actually available.
+Owner/runtime handoff remains summer3 water, native growth, and summer4 save;
+evaluate original accepted owner evidence, not the first-day stop's exit code.
+No change to full production, Stage5->570->569, or formal training status.
+
 ## Latest269: Existing Owner Source Verified Offline; Native Load Blocked
 
 Default-null DeveloperSavedSourcePath on the EXISTING owner preserves immutable

@@ -1,5 +1,32 @@
 # 夏3保存点的隔离开发恢复
 
+## 270实机接续准备
+
+同一Windows会话、游戏原`SDL2.dll`的隐藏窗口探针只见一个SDL显示输出，实际
+renderer为`GDI Generic`，OpenGL `1.1.0`，无`GL_ARB_framebuffer_object`和
+`GL_EXT_framebuffer_object`。这是当前会话不可用的直接证据，不等同认定
+GTX1050禁用是唯一原因。探针没有启动SMAPI或改变设备设置。新实机未启动。
+
+静态核对修正了恢复脚本遗漏的`continue-live-crop-managed-owner`子命令，调用
+真实已编译Main入口离线验证：到达原同进程检查，并按预期拒绝无进程的测试
+session，没有服务/动作/数据行。冻结Bridge/Harness和开发读回二进制沿用原SHA
+逐个校验，不再因新owner代码变化误拒确实未改的游戏运行组件。
+
+旧实际运行中，首份全量读和首次动作前全量读均在tick124；唯一变化字段为
+`quests.daily_quest_offer`。已有映射先读底层字段，后读取任务描述，后续帧
+才显示填充后的文本及对应指纹。原同进程比较拒绝这两份不同哈希；后帧哈希
+与当次真实首个动作的before一致，按原持久字段比较内核也没有超出此前四项
+已明确核对的分支差异。新接续保留首份原始帧，在世界就绪后取下一份真实帧
+作为读回/重绑定来源，提交前另做同tick/哈希复核，不忽略字段或改写帧。
+
+本机图形会话可用后再开新隔离包；未变更之前的269失败包、原存档或旧记录。
+预检通过原文件/二进制/磁盘/端口检查，但报告`graphics_ready=false`。
+仓库外脚本依次为`Invoke-Block267SavedDayRecovery.ps1 -OwnerSourceFix -AfterGraphicsRecovery -Launch`
+与`Invoke-Block268RecoveredGlobalLoop.ps1 -OwnerSourceFix -AfterGraphicsRecovery -Run`。
+原`--stop-after-crop-teacher-first-day`在显式开发来源下停于恢复日后的保存点；
+旧Main可将该有界停机记为`incomplete`，不能按退出码判断生长结果。须核实新
+owner的浇水与夏3→4真实保存回执，以及同一批作物的实际生长，才算本日闭合。
+
 ## 269接续实现与尚未完成的实机验证
 
 已在现有owner补`DeveloperSavedSourcePath`，默认空，不建立第二套执行器。
