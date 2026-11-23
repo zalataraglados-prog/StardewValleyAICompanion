@@ -496,9 +496,9 @@ static partial class Program
             throw new InvalidDataException(
                 "crop_teacher_site_preparation_layout_empty");
         }
-        var refillPreparationTiles =
-            layout.WateringRefillPreparationTiles ??
-            Array.Empty<MoneyRevenueCropPlantingTile>();
+        var protection = step.Reason == CropTeacherDebrisProtection.Reason;
+        var refillPreparationTiles = protection ? Array.Empty<MoneyRevenueCropPlantingTile>() :
+            layout.WateringRefillPreparationTiles ?? Array.Empty<MoneyRevenueCropPlantingTile>();
         var preparationTiles = layout.Tiles
             .Concat(refillPreparationTiles)
             .Distinct()
@@ -547,9 +547,8 @@ static partial class Program
                 "crop_teacher_site_preparation_ingest_drifted");
         }
 
-        var approach = SelectCropTeacherSiteApproach(
-            snapshot,
-            preparationTiles);
+        // The original clearance action already moves to its adjacent tool stand.
+        var approach = protection ? null : SelectCropTeacherSiteApproach(snapshot, preparationTiles);
         if (approach is not null)
         {
             return await BuildCropTeacherSiteApproachQueueAsync(
@@ -573,6 +572,8 @@ static partial class Program
             WateringRefillPreparationTiles = refillPreparationTiles,
             FormalProductTrainingAuthorized = false
         };
+        if (protection)
+            request.SchemaVersion = CropTeacherDebrisProtection.RequestSchema;
         var prefix = CropTeacherArtifactPrefix(options, iteration, "site");
         var requestPath = prefix + "-request.json";
         var planPath = prefix + "-plan.json";
@@ -582,7 +583,7 @@ static partial class Program
         if (plan.PreparationTotalDay != step.TotalDay ||
             plan.CommitmentId != step.CommitmentId ||
             plan.PreparationStateHash != stateHash ||
-            plan.TileCount != preparationTiles.Length ||
+            (!protection && plan.TileCount != preparationTiles.Length) ||
             plan.PlantingTileCount != layout.Tiles.Length ||
             plan.WateringRefillPreparationTileCount !=
                 refillPreparationTiles.Length ||
@@ -595,6 +596,8 @@ static partial class Program
             .SelectNextExecutableStep(plan);
         if (pending is null)
         {
+            if (protection)
+                throw new InvalidDataException("crop_teacher_debris_protection_frontier_changed_before_compile");
             return new CropTeacherControlQueueBuildResult(
                 null,
                 planPath,

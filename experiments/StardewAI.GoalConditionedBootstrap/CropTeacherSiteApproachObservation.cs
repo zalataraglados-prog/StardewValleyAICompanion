@@ -12,7 +12,8 @@ public sealed partial class CropTeacherSiteApproachObservation
     private readonly CropTeacherRetainedInputs inputs;
 
     private CropTeacherSiteApproachObservation(string runRequestPath, string sourcePath, string ledgerPath,
-        IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string observationPath)
+        IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string observationPath,
+        bool protectionOnly = false)
     {
         var paths = new[] { runRequestPath, sourcePath, ledgerPath, observationPath }.Select(Path.GetFullPath)
             .Distinct(CropTeacherSeedTransferNativeOutcome.PathComparer).ToArray();
@@ -43,17 +44,20 @@ public sealed partial class CropTeacherSiteApproachObservation
             row.Status == StrategyCommitmentStatuses.Active && commitmentIds.Contains(commitmentId, StringComparer.Ordinal));
         TotalDay = NativeExecutionSourceSupport.TotalDay(accepted);
         var location = Value(accepted, "player", "location_id");
-        Require(crop is not null && TotalDay <= crop.PlantingTotalDay && source.CropLocation == "Farm" &&
+        Require(crop is not null && (protectionOnly
+                    ? TotalDay >= crop.PlantingTotalDay && TotalDay < crop.LastInSeasonHarvestTotalDay
+                    : TotalDay <= crop.PlantingTotalDay) && source.CropLocation == "Farm" &&
                 location.ValueKind == JsonValueKind.String && location.GetString() == "Farm",
             "Site approach observation is outside its original active Farm/date obligation.");
         var layout = source.RunRequest.LayoutIntents.Single(row => row.CommitmentId == commitmentId);
-        var preparation = layout.Tiles.Concat(layout.WateringRefillPreparationTiles ?? Array.Empty<MoneyRevenueCropPlantingTile>()).ToArray();
+        var preparation = protectionOnly ? layout.Tiles :
+            layout.Tiles.Concat(layout.WateringRefillPreparationTiles ?? Array.Empty<MoneyRevenueCropPlantingTile>()).ToArray();
         Require(layout.Tiles.Length == crop!.TileCount && preparation.Length == preparation.Distinct().Count(),
             "Site approach observation changed or overlapped its original preparation layout.");
         var context = ReadContext(accepted, observed, preparation);
-        Target = CropSiteApproachSelection.Select(Int(Value(accepted, "player", "tile_x")),
+        Target = protectionOnly ? null : CropSiteApproachSelection.Select(Int(Value(accepted, "player", "tile_x")),
             Int(Value(accepted, "player", "tile_y")), preparation.Select(tile => (tile.TileX, tile.TileY)).ToArray(), context);
-        if (Target is null)
+        if (!protectionOnly && Target is null)
         {
             var x = Int(Value(accepted, "player", "tile_x")); var y = Int(Value(accepted, "player", "tile_y"));
             Require(context.Any(tile => tile.TileX == x && tile.TileY == y && tile.MapPassable &&
@@ -69,6 +73,10 @@ public sealed partial class CropTeacherSiteApproachObservation
     public static CropTeacherSiteApproachObservation Open(string runRequestPath, string sourcePath, string ledgerPath,
         IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string observationPath) =>
         new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, observationPath);
+
+    internal static CropTeacherSiteApproachObservation OpenForProtectedLayout(string runRequestPath, string sourcePath, string ledgerPath,
+        IReadOnlyCollection<string> commitmentIds, string commitmentId, string stepId, string observationPath) =>
+        new(runRequestPath, sourcePath, ledgerPath, commitmentIds, commitmentId, stepId, observationPath, protectionOnly: true);
     public string SourcePath { get; }
     public string ObservationPath { get; }
     public string SourceStateHash { get; }

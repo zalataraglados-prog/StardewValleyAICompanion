@@ -74,7 +74,8 @@ public static partial class CropTeacherRunPlanner
         IReadOnlySet<string>? preparedCommitmentIds = null,
         IReadOnlySet<string>? completedHarvestTileKeys = null,
         IReadOnlySet<string>? completedDayBoundaryKeys = null,
-        StrategyCommitmentLedger? resourceLedger = null)
+        StrategyCommitmentLedger? resourceLedger = null,
+        bool protectEstablishedCrops = false)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(request);
@@ -229,6 +230,24 @@ public static partial class CropTeacherRunPlanner
                 totalDay,
                 commitmentId: nextBatch.Source.CommitmentId,
                 reason: nextBatch.Result.ReplanReason);
+        }
+
+        if (protectEstablishedCrops && runDay.NativeSleepRequired && resourceLedger is not null)
+        {
+            foreach (var layout in request.LayoutIntents)
+            {
+                var crop = resourceLedger.CropPlantingCommitments.SingleOrDefault(commitment =>
+                    commitment.CommitmentId == layout.CommitmentId &&
+                    commitment.Status == StrategyCommitmentStatuses.Active &&
+                    totalDay >= commitment.PlantingTotalDay && totalDay < commitment.LastInSeasonHarvestTotalDay);
+                if (crop is null || !plan.CoveredCommitmentIds.Contains(layout.CommitmentId, StringComparer.Ordinal) ||
+                    !CropTeacherDebrisProtection.HasLiveLayout(snapshot, layout.Tiles, crop.SeedQualifiedItemId) ||
+                    CropTeacherDebrisProtection.ReadFrontier(snapshot, layout.Tiles).Count == 0) continue;
+                return Step(currentLocation == plan.LocationId
+                        ? CropTeacherRunStageKinds.PrepareSite : CropTeacherRunStageKinds.RouteToFarm,
+                    totalDay, commitmentId: layout.CommitmentId, targetLocationId: plan.LocationId,
+                    reason: CropTeacherDebrisProtection.Reason);
+            }
         }
 
         var cropWorkRequiresFarm = nextBatch is not null;
