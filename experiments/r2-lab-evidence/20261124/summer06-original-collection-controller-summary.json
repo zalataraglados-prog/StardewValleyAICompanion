@@ -1,0 +1,63 @@
+{
+  "schema_version": "r2_lab_bounded_collection_control_summary.v1",
+  "created_at": "2026-11-24T01:14:49.1537910+08:00",
+  "run_id": "r2-global-daily-20261117-171253",
+  "requested_goal": "goal.world_progress.complete_community_center",
+  "teacher_report_goal": "grandpa.maximum_21",
+  "source_main_sha256": "A9AB4D6D8C30A1BC42949D3CCDB85DC2B42F0CA699D1D1B6322838A6C18BCF2A",
+  "status": "ok",
+  "attempts_started": 7,
+  "verified_actions": 6,
+  "required_verified_actions": 6,
+  "original_controller_terminal": true,
+  "initial_selected_target": "(O)149",
+  "initial_selected_window": "Beach, total_day33, 06:00 inclusive to13:00 exclusive",
+  "native_selected_target_met": false,
+  "new_native_collection_items": [
+    "(O)130",
+    "(O)146"
+  ],
+  "after_total_day": 33,
+  "after_time": 730,
+  "after_location": "Farm",
+  "after_cash": 2961,
+  "after_health": 100,
+  "after_empty_slots": 1,
+  "observed_existing_control_branches": [
+    "rolling cross-location fishing route",
+    "inventory_capacity exact_latest_catch_singleton recovery",
+    "current-location four-crop watering preemption"
+  ],
+  "current_unsaved_progress": true,
+  "latest_sealed_checkpoint": "summer06-native-save-20261124-v2",
+  "initial_preference_independently_recomputed": true,
+  "all_new_native_outcomes_independently_replayed": false,
+  "selected_island_l3_route_verified": false,
+  "formal_training_authorized": false,
+  "source_files": [
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\arguments.json",
+      "sha256": "53AB2806E4F8421D02C3A5287392943F791D0554270398C2F4A478E8E4AA9B97"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\scope.json",
+      "sha256": "9CC7EC5E661396E943CA5EDDAD85E84D2D65D85C69958A4B1EFFFD8FE20A390A"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\before.json",
+      "sha256": "2DE080B47A582132E0C63488A9AED2C201DD0860BA5DAE344E95335F7CA9103F"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\after.json",
+      "sha256": "121C26B47B0330A920E5E41D6083465AC12158E07EEC72DC023112790EFACDD5"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\controller.log",
+      "sha256": "E3BD90F747220654B0A7C42DBED8E1EA3826288F21CB96B1D389F44353E0E938"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\initial-teacher-selection-replay-summary.json",
+      "sha256": "62B6E801F66A39D00A208D6854EECA74D4A9122904104061A0D97D62F5C57F6D"
+    }
+  ]
+}

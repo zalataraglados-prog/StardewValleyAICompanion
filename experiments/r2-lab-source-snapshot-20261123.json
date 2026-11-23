@@ -470,7 +470,7 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T00:59:19.6915155+08:00",
+  "updated_at": "2026-11-24T01:14:49.3463759+08:00",
   "controller_revision_note": "Native save retains one recovery.stabilize_day candidate because the original parser binds explicit save-boundary parameters to exactly one option. The attempted two-option invocation was rejected before dispatch and is retained in the lab. The corrected single-candidate command saved Summer6 through the original native-save control loop and verifier; a new process read back the identical actual main save. Retention remains bounded at 600.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
@@ -558,6 +558,24 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步全局选线-20261124\\spring27-island-axis-denominator-summary.json",
       "sha256": "CF5FB70DED6FB0E3B3D18A70B13CD117AC1DF4F2C7847FC5BF763F5F375E33F2",
       "git_blob_oid": "163d30fd790ef6df905274d79e88e440a602a025"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer06-original-collection-controller-summary.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\handoff-summary.json",
+      "sha256": "C01C88E382519060F2B217EDFC9E381E7569A5D98EBE3F22D572D39E3477AF4C",
+      "git_blob_oid": "c1c2a8bf3d4cab971b92b87953cc0a586d5aa5d1"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer06-original-collection-controller-arguments.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\arguments.json",
+      "sha256": "53AB2806E4F8421D02C3A5287392943F791D0554270398C2F4A478E8E4AA9B97",
+      "git_blob_oid": "44bda7f4e037251593a989f4516a878c41008d9e"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer06-initial-teacher-selection-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\initial-teacher-selection-replay-summary.json",
+      "sha256": "62B6E801F66A39D00A208D6854EECA74D4A9122904104061A0D97D62F5C57F6D",
+      "git_blob_oid": "5ecce9b086365cf1a0439774bde668617866a83e"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -595,5 +613,18 @@
     "selection_disposition": "InvalidDenominator",
     "selected_proposal_emitted": false,
     "reason": "All three scoped opportunity denominators remain incomplete. Original location axis records approach/path/date/connector-evidence blockers for the six native island occurrences."
+  },
+  "latest_bounded_collection_control": {
+    "summary": "experiments/r2-lab-evidence/20261124/summer06-original-collection-controller-summary.json",
+    "original_controller_terminal": true,
+    "native_attempts": 7,
+    "verified_actions": 6,
+    "new_native_collection_items": [
+      "(O)130",
+      "(O)146"
+    ],
+    "current_unsaved_progress": true,
+    "latest_actual_sealed_day": 33,
+    "selected_island_l3_route_verified": false
   }
 }

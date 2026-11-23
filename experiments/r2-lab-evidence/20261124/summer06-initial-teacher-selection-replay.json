@@ -1,0 +1,12 @@
+{
+  "existing_builder_recomputed": true,
+  "selected_candidate_equal": true,
+  "source_state_hash": "9d8376115d381556c03bcbc7ae765cfe37c04062a2e52711a1f4961f9a24bad8",
+  "selected_candidate_id": "master-angler:route:(O)149:Beach:location_rule:Beach:13:28:55:600:1300:FarmHouse:route:FarmHouse:3,12:warp:to=Farm:arrival=64,15",
+  "selection_reason": "earliest_action_deadline_time_exclusive",
+  "teacher_eligible": true,
+  "original_file_sha256": "D7265E5785EC9E8FE9F296FC6FFB5F5921338E07E15D98AF403D7C647B936A7E",
+  "replay_file_sha256": "AFA54B5A4553C735ECF0CF970C307C7C3B8B33B30EC50552260E85B01115077B",
+  "formal_training_authorized": false,
+  "scope": "One current-state collection Teacher choice, not the whole island L3 route."
+}
