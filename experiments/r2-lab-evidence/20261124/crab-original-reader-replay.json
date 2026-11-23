@@ -1,0 +1,66 @@
+{
+  "reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "reader_assembly": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\c42508c1-managed-lab\\live-training-loop-season-bound\\StardewAI.GoalConditionedBootstrap.dll",
+  "reader_assembly_sha256": "E3C593F01E25F8E72E2D9B1B3278B87BB16268AA1142982447C723F7B5E3AB43",
+  "original_native_source_replay_verified": true,
+  "run_id": "r2-global-daily-20261117-171253",
+  "queue_id": "queue.0fab63e2a2944e70b68fc0d71379741c",
+  "queue_item_id": "queue_item.663a48b05ffb4cadacbe3b1f1e8b2f71",
+  "option_id": "executor.combat_monster",
+  "native_status": "applied",
+  "before_state_hash": "d4893d93eb245b29caa9f036ad9fd4c8cab3418be7af39fb55d67ea18be370ce",
+  "after_state_hash": "7522c6982acb3c0258528cb0dab57628f7b9c363788942b5a53ca7d431c2cc94",
+  "before_game_tick": 5430,
+  "after_game_tick": 5722,
+  "combat_target_runtime_identity": "02B7F2FF",
+  "combat_target_defeated": true,
+  "combat_attack_count": 9,
+  "combat_hit_count": 9,
+  "combat_damage_taken": 12,
+  "native_changed_facts": [
+    {
+      "Path": "combat.route_clearance[21,6]",
+      "Before": "object:(O)32:Stone",
+      "After": "clear"
+    },
+    {
+      "Path": "mining.monsters[02B7F2FF].shell_health",
+      "Before": "5",
+      "After": "4"
+    },
+    {
+      "Path": "mining.monsters[02B7F2FF].waiter",
+      "Before": "False",
+      "After": "False"
+    },
+    {
+      "Path": "mining.monsters[target].health",
+      "Before": "30",
+      "After": "-3"
+    },
+    {
+      "Path": "player.health",
+      "Before": "100",
+      "After": "88"
+    },
+    {
+      "Path": "player.skills.combat.experience",
+      "Before": "3",
+      "After": "7"
+    },
+    {
+      "Path": "player.inventory.stack_signature",
+      "Before": "0:(T)Pickaxe:1|1:(W)0:1|2:(T)WateringCan:1|3:(T)Hoe:1|4:(O)378:1|5:(O)382:1|8:(T)BambooPole:1",
+      "After": "0:(T)Pickaxe:1|1:(W)0:1|2:(T)WateringCan:1|3:(T)Hoe:1|4:(O)378:1|5:(O)382:1|6:(O)390:1|8:(T)BambooPole:1"
+    }
+  ],
+  "source_sha256": {
+    "queue": "c762d2a1afea61a4c7ef9d2c93f4b58da3f0a986c06cc97c1d63ec8ece8cf3ed",
+    "result": "4c7d2c1ac0f5ebbf44060e8b5769ae521977b27148feb0d8a0b96b9ecefcd62a",
+    "before": "1f7b75e8065c7d47e07edee57a3de1a512002c9a9ee4e95fde047894acdb10d7",
+    "after": "a58bdf0496ab35639ee08c13281ce5cf54f31612cc567a861a5d32a57e149c62",
+    "journal": "c80eb64d7e6756e0d5e0faf63e3060c14aac7192eb7e74b4d7390860e587b20a",
+    "request_gzip": "4932604aeaa82926a6dcba4bedc03bda99e8f4cf42d0d5cfa56fff0ad5450477"
+  },
+  "formal_training_authorized": false
+}

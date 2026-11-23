@@ -1,0 +1,83 @@
+{
+  "run_id": "r2-global-daily-20261117-171253",
+  "save_id": "ProofFarm",
+  "player_id": "319842636613009663",
+  "total_day": 32,
+  "season": "summer",
+  "day_of_month": 5,
+  "time": 600,
+  "cash": 2961,
+  "health": 100,
+  "deepest_mine": 2,
+  "before_state_hash": "98a31441d8f5dbc363dada91d39338f3ed7e5dc66b30959579d5c02a9bfd89ce",
+  "after_state_hash": "80260adb2e29448a286b6091f3e5175ec6956cbcb4ef84115a22663507d3150a",
+  "native_save_boundary_verified": true,
+  "independent_saved_xml_verified": true,
+  "original_control_loop_boundary_verified": false,
+  "completion_method": "Existing NativeSaveBoundaryVerifier.Evaluate on original summer4 archive and actual summer5 save, with original sleep, planned profession and bounded native wait; no second sleep.",
+  "profession_id": 6,
+  "lake_saved_flags": [
+    "true",
+    "true",
+    "true",
+    "true",
+    "true",
+    "true",
+    "true",
+    "true",
+    "true",
+    "true",
+    "true",
+    "true"
+  ],
+  "lake_live_completed_ingredients": 4,
+  "previous_main_sha256": "42AFD66117A51063CEF8FA8B5784144D27AE1BDCA6E21515CA418B80149BBC90",
+  "files": [
+    {
+      "name": "ProofFarm_454459038",
+      "sha256": "F8335194CE3F9AEC4ED0D7CCF5957F72C31E9DC61850D60318A4C6B57C1B95B0"
+    },
+    {
+      "name": "ProofFarm_454459038_old",
+      "sha256": "42AFD66117A51063CEF8FA8B5784144D27AE1BDCA6E21515CA418B80149BBC90"
+    },
+    {
+      "name": "SaveGameInfo",
+      "sha256": "F480D4589CCA94544CC557DC403FC2DC4C759763EFF5FBE94B48275907E27138"
+    },
+    {
+      "name": "SaveGameInfo_old",
+      "sha256": "71E662F6C90E2FC40816E75A364A6E4CAF1620E72AC7E324C1A73CF90341C9B3"
+    }
+  ],
+  "completion_receipts": [
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\execution-0331-item-0001.json",
+      "sha256": "B1148CB174855BA0DA3F49A99E707FFAFEA442EFDB4A498139E39F5F83398BE6",
+      "option": "executor.sleep",
+      "status": "blocked",
+      "reason": [
+        "post_sleep_profession_choice_requires_planned_selection"
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\execution-0332-item-0001.json",
+      "sha256": "44D061C8A6C7BBB5FB2159ECBD4BB6F7263DA8EE4BC59EAB0ECB6FDB97421645",
+      "option": "executor.close_menu",
+      "status": "applied",
+      "reason": [
+        "level_up_menu_completed_with_native_perks"
+      ]
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\execution-0333-item-0001.json",
+      "sha256": "9991C797BE4DB166A4F1748DEA4C8DA6078035DB2442FD017A0598AD55C124F3",
+      "option": "executor.wait_ticks",
+      "status": "applied",
+      "reason": [
+        "bounded_wait_window_elapsed"
+      ]
+    }
+  ],
+  "formal_training_authorized": false
+}

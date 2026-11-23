@@ -6,7 +6,9 @@ param(
     [Parameter(Mandatory)][string]$ExpectedStateHash,
     [Parameter(Mandatory)][string]$GoalId,
     [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$Attempt,
-    [object[]]$CandidateParameters = @()
+    [object[]]$CandidateParameters = @(),
+    [switch]$UseOriginalFreshSelection,
+    [ValidateRange(1,1000000)][int]$MaxPersistedIterations = 400
 )
 
 $ErrorActionPreference = 'Stop'
@@ -29,7 +31,10 @@ foreach ($service in $live.processes) {
     }
 }
 $snapshot = Invoke-RestMethod -Uri $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL -TimeoutSec 15
-if ($snapshot.state_hash -ne $ExpectedStateHash -or $settings.STARDEWAI_PRODUCT_ALLOWED_SAVE_ROOT -ne $live.save_root) {
+if ($settings.STARDEWAI_PRODUCT_ALLOWED_SAVE_ROOT -ne $live.save_root -or
+    $snapshot.state.environment.training_run_id.value -cne $live.run_id -or
+    $snapshot.save_id.value -cne 'ProofFarm' -or $snapshot.player_id.value -cne '319842636613009663' -or
+    (!$UseOriginalFreshSelection -and $snapshot.state_hash -ne $ExpectedStateHash)) {
     throw 'The fresh game or isolation binding no longer matches the selected decision.'
 }
 foreach ($setting in $settings.Keys) { [Environment]::SetEnvironmentVariable($setting, $settings[$setting], 'Process') }
@@ -42,7 +47,7 @@ $arguments = [Collections.Generic.List[string]]::new([string[]]@(
     '--use-product-executor', '--skip-training', '--use-daily-plan', '--daily-plan-candidate-options', $selected.option_id,
     '--daily-plan-max-candidates', '1', '--daily-plan-candidate-kind', $selected.kind, '--daily-plan-candidate-id', $CandidateId,
     '--execution-snapshot-profile', 'full', '--snapshot-artifact-mode', 'content_addressed_gzip', '--artifact-retention-mode', 'stop',
-    '--max-attempts', '1', '--required-verified-actions', '1', '--max-persisted-iterations', '400',
+    '--max-attempts', '1', '--required-verified-actions', '1', '--max-persisted-iterations', $MaxPersistedIterations.ToString(),
     '--sleep-ms', '1000', '--after-snapshot-wait-ms', '500', '--continue-after-blocked-queue-items',
     '--emit-queue-execution-receipt', '--max-queue-item-attempts', '12', '--save-isolation-path', $live.save_root, '--save-slot', $live.slot
 ))
@@ -59,6 +64,9 @@ $selection = [ordered]@{
     source_state_hash = $ExpectedStateHash
     selected_candidate = $selected.candidate_id
     option_id = $selected.option_id
+    pre_controller_state_hash = $snapshot.state_hash
+    original_controller_fresh_selection = [bool]$UseOriginalFreshSelection
+    fresh_selection_scope = 'Original live loop re-ranks and compiles only the same goal, option, candidate kind/id and parameters on its freshly captured source; original Product/native precondition guards remain active.'
 }
 $selection | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output.FullName 'bound-selection.json') -Encoding utf8
 $dotnet = $live.processes | Where-Object role -eq 'backend' | Select-Object -ExpandProperty exe

@@ -53,7 +53,7 @@ for($step=1;$step -le $MaximumStages;$step++) {
         CandidateId=$candidate.candidate_id; ExpectedStateHash=$before.state_hash; GoalId=$goal
         Attempt=($Attempt+'-'+$step); CandidateParameters=$parameters
     }
-    & (Join-Path $PSScriptRoot 'Invoke-IsolatedRankedQueue.ps1') @bound
+    & (Join-Path $PSScriptRoot 'Invoke-IsolatedRankedQueue.ps1') @bound -UseOriginalFreshSelection -MaxPersistedIterations 600
     $nativeExit=$LASTEXITCODE
     $result=(Invoke-WebRequest -Uri $bridge -TimeoutSec 15).Content
     $after=$result|ConvertFrom-Json

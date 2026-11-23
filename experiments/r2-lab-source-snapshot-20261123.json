@@ -400,8 +400,8 @@
   "controller_files": [
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedRankedQueue.ps1",
-      "sha256": "156D30DE076E8D61400C354EF65DC9F29AEEE618837330A478406901859BF379",
-      "git_blob_oid": "cab81d6c79a9df75448318eebf1e9af148c6f96b"
+      "sha256": "A1303D2FCFBC5D9294EA5F0E59B64F86524535AA559515C6B4394027946C3E3C",
+      "git_blob_oid": "e095f505a58c274e35a2a59d202dd4163e9d9867"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedMapApproach.ps1",
@@ -435,8 +435,8 @@
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedOrdinaryMineCheckpoint.ps1",
-      "sha256": "7FBDD8C96B17337351C05294B022F5E309A7C2621CA9FC1BCA9DE8FCC5644C18",
-      "git_blob_oid": "cb9b2562939ee1688e97a896ac029179bb939b30"
+      "sha256": "CA63CAF19C80DE53D6316F1E8400C807D9AFD16FDFEDBB604B861E31725924BF",
+      "git_blob_oid": "ced1b19417bd72afc54bdc139c8f9a956a5c114d"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedMinePassabilityProbe.ps1",
@@ -457,21 +457,48 @@
       "path": "experiments/r2-lab-controller/planner-prerequisite/Resolve-PrerequisiteRouteWithFarm.ps1",
       "sha256": "AFE1AE1CD813F3799F480D988D768FFF4C4CED4470559A952D222CD8EF33C0C0",
       "git_blob_oid": "0f045eab891ca1030abf655769e82292861139c5"
+    },
+    {
+      "path": "experiments/r2-lab-controller/Replay-IsolatedNativeActionSource.ps1",
+      "sha256": "94C82E6129BB6F4770C8D4E8359BB55317DDE562B0C1116E730CBBE9D5424DA0",
+      "git_blob_oid": "19db479b18756a66e350496fa7a765db91c33034"
     }
   ],
   "execution_layout": "Controllers depend on the retained D-drive lab layout, pinned published binaries, authority dictionaries, and original receipts; these are not bundled.",
-  "validation": "This snapshot contains the accumulated isolated experiment delta. Validation of individual fixes is recorded in PRs #592/#593 and the retained lab reports; no all-green or whole-snapshot production claim.",
+  "validation": "Individual fixes: PR #592 132/132 focused, PR #593 114/114 focused, PR #594 111/111 focused; each own-head full CI succeeded. This accumulated lab snapshot has not been certified as a whole production build.",
   "raw_save_or_game_binaries_included": false,
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-23T23:57:45.0126367+08:00",
-  "controller_revision_note": "Restart now also requires retained stop evidence when starting again from the verified saved morning after intentionally discarding an unsaved failed mine experiment. Native shell-recovery verification is still pending.",
+  "updated_at": "2026-11-24T00:44:28.1855509+08:00",
+  "controller_revision_note": "Mining optionally delegates fresh selection/compilation of the same fixed candidate to the existing controller, recording both observed hashes without bypassing native preconditions. Mining artifact retention is bounded at 600. Added an invocation wrapper for the original verified-Product source reader. Restart retains explicit evidence when discarding an unsaved failed experiment.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
     "sha256": "D3F19E0B533D914DCD9570444AB55992082666A5757C1FA2C44BDACB772E6BFF",
-    "native_crab_recovery_verified": false,
+    "native_crab_recovery_verified": true,
     "clean_main_fix_commit": "818a7c1ddc00ea5398b7eb3eb2dff81730e6bab3",
-    "clean_main_fix_pr": 594
-  }
+    "clean_main_fix_pr": 594,
+    "native_replay_report": "experiments/r2-lab-evidence/20261124/crab-original-reader-replay.json"
+  },
+  "evidence_files": [
+    {
+      "path": "experiments/r2-lab-evidence/20261124/sturgeon-independent-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer04-lake-target-outcome-20261123\\independent-replay.json",
+      "sha256": "47097A1DC1FB99FAB3F59E3F792C2DC6A2E66968464DEA282AB64666B9CBDA57",
+      "git_blob_oid": "7929cb301fe1ee11633894cc9d04687fd1bb7e1a"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer05-save-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer05-native-save-20261123\\verified.json",
+      "sha256": "E6876AE29EC9F3FCB0B975CC15AE26E7267B60016E93D9CF2EA12382D1A6BEE9",
+      "git_blob_oid": "eb9a457fa8f3f0f0526e78f59b57274c4bea3cb5"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/crab-original-reader-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer05-native-crab-shell-recovery-probe-20261124\\original-reader-replay.json",
+      "sha256": "AE8387F1246CB350066B12CFDF5D6FCF5EA7BBD665EEC77D9415FAE41B936653",
+      "git_blob_oid": "5e73afccf085a059b688dcd7f589bc705dc93f95"
+    }
+  ],
+  "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries."
 }
