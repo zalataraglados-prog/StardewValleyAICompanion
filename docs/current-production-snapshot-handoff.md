@@ -1,5 +1,30 @@
 # Current Production Snapshot Handoff
 
+## Latest271: Native Copied Summer3 Day Closed, Saved Summer4
+
+Process-local hash-pinned MSYS2 Mesa llvmpipe on the existing game SDL passed a
+hidden GL4.6 framebuffer probe. The actual isolated game loaded those exact
+WGL DLLs and the copied original summer3 save; no system GPU/driver/registry
+or original game-directory changes. Silent, hidden, CPU2, BelowNormal.
+
+The original source rebind and same-live managed owner entry succeeded with
+the stabilized actual frame. Main ran10iterations/7verified primary actions;
+the child owner accepted9operations including native water4+2+2, one native
+refill, and original overnight at sequence9. All8 same planted blueberry
+tiles advanced a day (days-to-harvest-with-water11->10). Independently captured
+summer4 disk save matches the owner-accepted witness fingerprint
+54fb4a23522effaf85db0baa34829ec6a5955bed3dcd9619caeed9c9379b7218.
+Business proof b75decfb1b2a850f9460b594077a21c30bad04afd0d6f0347c9d59f4c9bd53d9,
+external block271-managed-global-loop. Exit2 is the bounded
+crop_teacher_managed_first_day_saved_owner_retained stop, not the outcome test.
+All owned game/services closed after verification; no summer4 work dispatched.
+Original saved41, old42-47 and ledger486 remain byte-identical. No formal data.
+
+NEXT: existing production evidence must explicitly compose the accepted
+parent prefix, developer-only loaded-source segment and child native evidence;
+do not issue old strict reload credit or whole-lifecycle credit from child-only
+history. Reuse this accepted day; no replay. Stage5->570->569/formal stay OPEN.
+
 ## Latest270: Native Prerequisite Still Absent; Actual Entry and Frames Checked
 
 The exact same-session SDL probe used the game's installed SDL2.dll without
