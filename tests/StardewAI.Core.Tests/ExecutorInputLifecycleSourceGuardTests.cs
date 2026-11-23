@@ -1,7 +1,47 @@
+using System.Text.RegularExpressions;
+using StardewAI.RuntimePrimitives;
+
 namespace StardewAI.Core.Tests;
 
 public sealed class ExecutorInputLifecycleSourceGuardTests
 {
+    [Theory]
+    [InlineData("TickMineStone")]
+    [InlineData("TickResourceClump")]
+    [InlineData("TickBreakContainer")]
+    [InlineData("TickPickupDebris")]
+    [InlineData("TickPlaceStaircase")]
+    [InlineData("TickDescendLadder")]
+    [InlineData("TickDescendShaft")]
+    [InlineData("TickExitMine")]
+    public void InterruptedMineParentDoesNotClearTheSameTickCombatMovement(string parentTick)
+    {
+        var source = ReadRepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.cs");
+        var start = source.IndexOf("private void OnExecutorUpdateTicked(", StringComparison.Ordinal);
+        Assert.True(start >= 0);
+        var end = source.IndexOf("CaptureExecutorDiagnosticFrame(\"update_ticked\")", start, StringComparison.Ordinal);
+        Assert.True(end > start);
+        var calls = Regex.Matches(source[start..end], @"^\s*(Tick\w+)\([^;]*\);", RegexOptions.Multiline)
+            .Select(match => match.Groups[1].Value).ToArray();
+        Assert.Single(calls, call => call == parentTick);
+        Assert.Single(calls, call => call == "TickCombatMonster");
+
+        // Replay the actual dispatch order using the shared movement primitive.
+        // The interrupted parent releases travel; reactive combat must leave its
+        // approach direction held for the next native game update.
+        var movement = new MovementLease();
+        foreach (var call in calls)
+        {
+            if (call == parentTick)
+                movement.ForceRelease("parent_yields_to_combat", 1);
+            if (call == "TickCombatMonster")
+                Assert.True(movement.Acquire("runtime_executor", 1, 1, out _));
+        }
+
+        Assert.Equal("runtime_executor", movement.Owner);
+        Assert.Equal(1, movement.Direction);
+    }
+
     [Fact]
     public void MovementUsesSingleLeaseInsteadOfLooseDirectionField()
     {
