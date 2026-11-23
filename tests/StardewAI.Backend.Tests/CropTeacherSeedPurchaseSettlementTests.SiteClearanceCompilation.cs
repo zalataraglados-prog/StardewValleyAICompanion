@@ -6,6 +6,52 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
+    [Fact]
+    public void SiteClearanceProtectionCompilesReachableDebrisPastABlockedNeighbor()
+    {
+        var f = new SiteTillFiles(frontier: "protection");
+        using var host = f.F.Runtime;
+
+        Assert.Collection(f.SitePlan.Steps,
+            blocked =>
+            {
+                Assert.Equal((2, 0), (blocked.TileX, blocked.TileY));
+                Assert.Equal("blocked", blocked.PlanStatus);
+            },
+            reachable =>
+            {
+                Assert.Equal((1, 1), (reachable.TileX, reachable.TileY));
+                Assert.Equal("clear_then_fresh_snapshot_rebind", reachable.PlanStatus);
+            });
+
+        var scope = f.OpenClear();
+        Assert.Equal(new MoneyRevenueCropPlantingTile(1, 1), scope.Target);
+        Assert.Equal("(O)784", scope.ClearSourceId);
+        Assert.False(scope.NativeOutcomeVerified);
+        Assert.False(scope.FormalProductTrainingAuthorized);
+        Assert.Equal(0, f.F.Runtime.Handler.Commits);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SiteClearanceProtectionRejectsDriftBetweenBoundedObservationAndAcceptedFarm(bool cropLost)
+    {
+        var f = new SiteTillFiles(frontier: "protection", prepareSource: source =>
+            ChangeState(source.Before, "farm", farm =>
+            {
+                if (cropLost)
+                    farm["crops"]!["value"]!.AsArray().RemoveAt(0);
+                else
+                    farm["objects"]!["value"]!.AsArray()[1]!["qualified_item_id"] = "(O)676";
+            }));
+        using var host = f.F.Runtime;
+
+        var error = Assert.Throws<InvalidDataException>(() => f.OpenClear());
+        Assert.Contains("not bound to the accepted live crop layout and debris source", error.Message);
+        Assert.Equal(0, f.F.Runtime.Handler.Commits);
+    }
+
     [Theory]
     [InlineData("clear", 0)]
     [InlineData("access", 1)]
