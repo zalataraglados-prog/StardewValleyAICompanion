@@ -14,6 +14,7 @@ public sealed record CropTeacherManagedSeedOwnerOptions(string EvidenceDirectory
     public bool UseSelectedRefillResourceEffects { get; init; }
     public bool UseNativeRefillOutcomeAuthority { get; init; }
     public CropTeacherNativeSaveBinding? NativeSaveBinding { get; init; }
+    public string? DeveloperSavedSourcePath { get; init; }
 }
 
 public sealed record CropTeacherNativeSaveBinding(string SaveIsolationPath, string SaveSlot);
@@ -133,6 +134,7 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
     private Action? liveHeadGuard;
     private bool disposed;
     private bool faulted;
+    private DeveloperSavedSource? developerSavedSource;
     public CropTeacherManagedSeedOperation? Pending { get; private set; }
     public bool HeadRecoveryRequired { get; private set; }
     public string CurrentSnapshotPath => headSnapshotPath;
@@ -164,7 +166,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
             EvidenceDirectory = Path.GetFullPath(value.EvidenceDirectory), BackendUrl = CropTeacherSeedLifecycleRuntime.NormalizeBackendOrigin(value.BackendUrl),
             NativeRunPlanPath = Path.GetFullPath(value.NativeRunPlanPath), InitialSnapshotPath = Path.GetFullPath(value.InitialSnapshotPath),
             InitialLedgerPath = Path.GetFullPath(value.InitialLedgerPath), PortfolioJournalDirectory = Path.GetFullPath(value.PortfolioJournalDirectory),
-            NativeSaveBinding = NormalizeNativeSaveBinding(value.NativeSaveBinding)
+            NativeSaveBinding = NormalizeNativeSaveBinding(value.NativeSaveBinding),
+            DeveloperSavedSourcePath = value.DeveloperSavedSourcePath is null ? null : Path.GetFullPath(value.DeveloperSavedSourcePath)
         };
         if (SamePath(options.EvidenceDirectory, Path.GetPathRoot(options.EvidenceDirectory)!))
             throw new IOException("Managed crop owner cannot own a drive root.");
@@ -184,6 +187,13 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
             throw new IOException("Managed crop owner output overlaps retained input files.");
         hashes[Path.GetFullPath(plan.RequestPath)] = plan.RequestSha256;
         hashes[Path.GetFullPath(plan.CropProductionPlanPath)] = plan.CropProductionPlanSha256;
+        var savedSource = options.DeveloperSavedSourcePath is null ? null : ReadDeveloperSavedSource(options, plan, snapshot);
+        if (savedSource is not null)
+            foreach (var (path, hash) in savedSource.InputHashes)
+            {
+                if (Within(options.EvidenceDirectory, path)) throw new IOException("Developer saved source overlaps its new owner output.");
+                hashes[path] = hash;
+            }
         foreach (var (path, hash) in hashes)
             if (HashFile(path) != hash) throw new InvalidDataException("Managed crop owner inputs changed during original plan validation.");
         var header = new JsonObject
@@ -203,6 +213,8 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
             header["native_refill_outcome_authority"] = true;
         if (options.NativeSaveBinding is { } binding)
             header["native_save_binding"] = JsonSerializer.SerializeToNode(binding, JsonOptions);
+        if (options.DeveloperSavedSourcePath is { } developerSourcePath)
+            header["developer_saved_source_path"] = developerSourcePath;
         var headerPath = Path.Combine(options.EvidenceDirectory, "owner-intent.json");
         if (Directory.Exists(options.EvidenceDirectory) && !File.Exists(headerPath) &&
             Directory.EnumerateFileSystemEntries(options.EvidenceDirectory).Any(path => Path.GetFileName(path) != "owner.lock"))
@@ -222,7 +234,14 @@ public sealed partial class CropTeacherManagedSeedOwner : IAsyncDisposable
             }
             else await write(headerPath, header.ToJsonString(JsonOptions)).ConfigureAwait(false);
             var prefix = SupportStepPrefix(options, ledger, hashes[options.NativeRunPlanPath]);
+            if (savedSource is not null) prefix += "saved-source:" + hashes[options.DeveloperSavedSourcePath!] + ":";
             var owner = new CropTeacherManagedSeedOwner(options, plan, lease, write, hashes, HashFile(headerPath), ledger.SaveId, ledger.PlayerId, prefix);
+            if (savedSource is not null)
+            {
+                owner.developerSavedSource = savedSource;
+                owner.headSnapshotPath = savedSource.SnapshotPath;
+                owner.headLedgerPath = savedSource.LedgerPath;
+            }
             owner.LoadIndex();
             return owner;
         }

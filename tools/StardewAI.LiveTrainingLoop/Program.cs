@@ -126,6 +126,7 @@ var cropTeacherPreparedCommitmentIds = new HashSet<string>(
     StringComparer.Ordinal);
 var cropTeacherControlAttemptsStarted = 0;
 var cropTeacherFirstDayCompleted = false;
+int? developerSavedSourceTotalDay = null;
 var cropTeacherRunCompleted = false;
 var cropTeacherReplanRequired = false;
 var cropTeacherReplanReason = string.Empty;
@@ -244,6 +245,7 @@ if (continueManagedOwner)
     cropTeacherManagedOwner.Attach(continued.Owner, continued.GameProcess);
     activeCropTeacherRunPlanRequest = continued.Source.RunPlanRequest;
     activeCropTeacherRunPlan = continued.Source.RunPlan;
+    developerSavedSourceTotalDay = continued.Source.DeveloperSavedSourceTotalDay;
     lastPlanningHandoffNativeRunPlanPath = continued.Source.NativeRunPlanPath;
     AppendProgress(options, continueLiveManagedOwner ? "crop_teacher_managed_live_run_continued" : "crop_teacher_managed_run_continued", 0, continued.Restore.StateHash, string.Empty,
         "owner=" + options.ResumeManagedCropOwnerDirectory + " original_plan=" + continued.Source.NativeRunPlanPath +
@@ -730,7 +732,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             activeCropTeacherTransitionLedger,
             managedOwner);
         if (!cropTeacherFirstDayCompleted &&
-            (cropStep.TotalDay > activeCropTeacherRunPlan.FirstTotalDay ||
+            (cropStep.TotalDay > (developerSavedSourceTotalDay ?? activeCropTeacherRunPlan.FirstTotalDay) ||
              cropStep.Stage == CropTeacherRunStageKinds.Complete))
         {
             cropTeacherFirstDayCompleted = true;

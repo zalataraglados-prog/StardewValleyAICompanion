@@ -17,42 +17,48 @@ public sealed partial class CropTeacherManagedSeedOwner
             ValidateState();
             if (Pending is not null || HeadRecoveryRequired)
                 throw new InvalidOperationException("Recover the original owner before reading accepted planning progress.");
-            var harvest = new HashSet<string>(StringComparer.Ordinal);
-            var nights = new HashSet<string>(StringComparer.Ordinal);
+            var harvest = developerSavedSource is null ? new HashSet<string>(StringComparer.Ordinal) :
+                new HashSet<string>(developerSavedSource.Progress.CompletedHarvestTileKeys, StringComparer.Ordinal);
+            var nights = developerSavedSource is null ? new HashSet<string>(StringComparer.Ordinal) :
+                new HashSet<string>(developerSavedSource.Progress.CompletedDayBoundaryKeys, StringComparer.Ordinal);
             // Consume the original index's small acceptance certificates, not historical snapshot graphs.
             foreach (var (sequence, _, _, accepted) in ReadAcceptedPlanningCertificates())
             {
-                var kind = accepted["operation_kind"]?.GetValue<string>();
-                if (kind == "overnight_control")
-                {
-                    var from = accepted["from_total_day"]!.GetValue<int>();
-                    if (accepted["native_outcome_verified"]?.GetValue<bool>() != true ||
-                        accepted["native_overnight_control_verified"]?.GetValue<bool>() != true ||
-                        accepted["native_save_boundary_verified"]?.GetValue<bool>() != true || from < 0 ||
-                        accepted["to_total_day"]!.GetValue<int>() != checked(from + 1))
-                        throw new InvalidDataException("Accepted planning night lacks its original native save boundary.");
-                    nights.Add(CropTeacherTransitionLedger.DayBoundaryKey(from));
-                }
-                else if (kind == "crop_harvest")
-                {
-                    if (accepted["native_outcome_verified"]?.GetValue<bool>() != true ||
-                        accepted["native_harvest_prefix_verified"]?.GetValue<bool>() != true)
-                        throw new InvalidDataException("Accepted planning harvest lacks its original native prefix.");
-                    var intentPath = RecordPath(sequence, "intent");
-                    var intentHash = Text(accepted, "admission_sha256");
-                    if (HashFile(intentPath) != intentHash) throw new InvalidDataException("Accepted harvest admission changed.");
-                    var step = Read<JsonObject>(intentPath)["harvest_step"]!.Deserialize<CropTeacherRunStep>(JsonOptions)!;
-                    var tiles = accepted["applied_tiles"]!.Deserialize<MoneyRevenueCropPlantingTile[]>(JsonOptions)!;
-                    if (HashFile(intentPath) != intentHash || tiles.Length != accepted["applied_tile_count"]!.GetValue<int>())
-                        throw new InvalidDataException("Accepted planning harvest prefix changed.");
-                    foreach (var tile in tiles)
-                        harvest.Add(CropTeacherTransitionLedger.HarvestTileKey(step.CommitmentId, step.TotalDay, tile.TileX, tile.TileY));
-                }
+                AddAcceptedPlanningProgress(accepted, RecordPath(sequence, "intent"), harvest, nights);
             }
             ValidateState();
             return new(harvest, nights);
         }
         finally { gate.Release(); }
+    }
+
+    private static void AddAcceptedPlanningProgress(JsonObject accepted, string intentPath, ISet<string> harvest, ISet<string> nights)
+    {
+        var kind = accepted["operation_kind"]?.GetValue<string>();
+        if (kind == "overnight_control")
+        {
+            var from = accepted["from_total_day"]!.GetValue<int>();
+            if (accepted["native_outcome_verified"]?.GetValue<bool>() != true ||
+                accepted["native_overnight_control_verified"]?.GetValue<bool>() != true ||
+                accepted["native_save_boundary_verified"]?.GetValue<bool>() != true || from < 0 ||
+                accepted["to_total_day"]!.GetValue<int>() != checked(from + 1))
+                throw new InvalidDataException("Accepted planning night lacks its original native save boundary.");
+            nights.Add(CropTeacherTransitionLedger.DayBoundaryKey(from));
+        }
+        else if (kind == "crop_harvest")
+        {
+            if (accepted["native_outcome_verified"]?.GetValue<bool>() != true ||
+                accepted["native_harvest_prefix_verified"]?.GetValue<bool>() != true)
+                throw new InvalidDataException("Accepted planning harvest lacks its original native prefix.");
+            var intentHash = Text(accepted, "admission_sha256");
+            if (HashFile(intentPath) != intentHash) throw new InvalidDataException("Accepted harvest admission changed.");
+            var step = Read<JsonObject>(intentPath)["harvest_step"]!.Deserialize<CropTeacherRunStep>(JsonOptions)!;
+            var tiles = accepted["applied_tiles"]!.Deserialize<MoneyRevenueCropPlantingTile[]>(JsonOptions)!;
+            if (HashFile(intentPath) != intentHash || tiles.Length != accepted["applied_tile_count"]!.GetValue<int>())
+                throw new InvalidDataException("Accepted planning harvest prefix changed.");
+            foreach (var tile in tiles)
+                harvest.Add(CropTeacherTransitionLedger.HarvestTileKey(step.CommitmentId, step.TotalDay, tile.TileX, tile.TileY));
+        }
     }
 
     private IEnumerable<(int Sequence, string Path, string Hash, JsonObject Certificate)> ReadAcceptedPlanningCertificates()

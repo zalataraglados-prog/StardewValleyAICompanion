@@ -1,5 +1,44 @@
 # Current Production Snapshot Handoff
 
+## Latest269: Existing Owner Source Verified Offline; Native Load Blocked
+
+Default-null DeveloperSavedSourcePath on the EXISTING owner preserves immutable
+original plan/initial inputs, imports accepted parent planning certificates
+through saved41, binds the copied snapshot/rebound ledger and exact native
+process origin, and namespaces child operations by source hash. Original42-47,
+ledger486 and original save remain unchanged; strict reload and old executors
+are not weakened. Resume uses the same owner. The existing first-day stop switch
+uses the saved source's day only in this explicit developer fork; original plan
+dates and ordinary/default behavior remain unchanged.
+
+Focused/adjacent Backend86/86 passed. A separate OFFLINE check with real retained
+267 snapshot/268 marker reply/readback and original41 prefix imported2nights,
+selected route_to_farm and reopened the same child source without replay. TRX
+21ac40df2ab4dc833f72036014909d1f508ae4b6d3fec808aff19ea1634f18c9;
+retained-source report2885698d871cad0364cb5c16da6a391efe352d3b85795d5271856ee4a5cf0194.
+Neither result proves a current live process, water/growth or whole lifecycle.
+
+The new269 copied summer3 game16764 failed graphics initialization BEFORE save
+load or actions: NoSuitableGraphicsDeviceException/missing framebuffer extension.
+Readonly device discovery also reports GTX1050 disabled/code22; causality not
+fully established. No driver/device changes; owner question pending. Only the
+exact owned failed process was closed; logs/copy retained, original hashes
+unchanged. No269 Backend/Product/Main/ledger mutation or new save occurred.
+
+NEXT remains real copied summer3 water->growth->save, after graphics recovery,
+in a new isolated evidence package using the tested existing-owner attachment.
+Never relaunch/overwrite the failed package or replay13accepted days. Full
+production aggregation must explicitly handle parent-prefix/developer-load
+provenance; child-only trace cannot certify the complete original lifecycle.
+Stage5->570->569 and formal training remain OPEN.
+
+Owner separately authorized AGY claude-opus-4-6-thinking. First no-tools review
+returned nonempty/exit0 in560.70s, but included unrelated retained context and
+omitted requested negative cases: provisional review6/10, coding UNRATED.
+No actionable fix, paid correction or widened permissions. Original exchange
+and assessment: external agy-20261118/saved269-opus; skill updated. OpenAI pause
+and other provider restrictions unchanged. All local task handles terminal.
+
 ## Latest267/268: Saved-Day Fork Saved, But Crop Ownership Was Not Restored
 
 PR591 ownCI44224280514 succeeded; normally merged main3a878870 and exact merged
