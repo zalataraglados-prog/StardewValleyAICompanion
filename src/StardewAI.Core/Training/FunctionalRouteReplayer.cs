@@ -26,10 +26,12 @@ internal static class FunctionalRouteReplayer
         var evidence = Read<FunctionalRouteEvidence>(path);
         Require(evidence.SchemaVersion == SchemaVersion && evidence.NativeActions is { Length: > 0 } &&
             evidence.Snapshot is not null && evidence.CompileRequest is not null && evidence.CompileResponse is not null &&
-            evidence.NativeActions.All(action => action is not null && action.Queue is not null && action.Receipt is not null && action.AfterSnapshot is not null) &&
+            evidence.NativeActions.All(action => action is not null && action.Queue is not null && action.Receipt is not null && action.AfterSnapshot is not null &&
+                action.BeforeSnapshot is not null && action.RequestJournal is not null && action.RequestGzip is not null) &&
             !string.IsNullOrWhiteSpace(evidence.TargetQualifiedItemId), "Functional route metadata is incomplete.");
         var artifacts = new[] { evidence.Snapshot, evidence.CompileRequest, evidence.CompileResponse }
-            .Concat(evidence.NativeActions.SelectMany(action => new[] { action.Queue, action.Receipt, action.AfterSnapshot })).ToArray();
+            .Concat(evidence.NativeActions.SelectMany(action => new[] { action.Queue, action.Receipt, action.AfterSnapshot,
+                action.BeforeSnapshot, action.RequestJournal, action.RequestGzip })).ToArray();
         foreach (var artifact in artifacts) VerifyArtifact(artifact!);
         Require(evidence.NativeActions.Select(action => Path.GetFullPath(action.Receipt.Path))
             .Distinct(StringComparer.OrdinalIgnoreCase).Count() == evidence.NativeActions.Length,
@@ -84,6 +86,21 @@ internal static class FunctionalRouteReplayer
 
         var frames = evidence.NativeActions.Select(action => NativeExecutionFrameReader.ReadVerifiedProduct(
             action.Queue.Path, action.Receipt.Path, action.AfterSnapshot.Path)).ToArray();
+        for (var index = 0; index < frames.Length; index++)
+        {
+            var frame = frames[index];
+            var action = evidence.NativeActions[index];
+            var expected = new Dictionary<string, FrozenRouteArtifact>
+            {
+                ["queue"] = action.Queue, ["result"] = action.Receipt, ["after"] = action.AfterSnapshot,
+                ["before"] = action.BeforeSnapshot, ["journal"] = action.RequestJournal, ["request_gzip"] = action.RequestGzip
+            };
+            Require(frame.SourcePaths.Count == expected.Count && expected.All(pair =>
+                frame.SourcePaths.TryGetValue(pair.Key, out var actual) &&
+                string.Equals(Path.GetFullPath(actual), Path.GetFullPath(pair.Value.Path), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(frame.SourceSha256[pair.Key], pair.Value.Sha256, StringComparison.OrdinalIgnoreCase)),
+                "Native frame dependencies differ from the frozen functional proof.");
+        }
         var save = Identity(snapshot.SaveId);
         var player = Identity(snapshot.PlayerId);
         var run = Value(snapshot, "environment", "training_run_id").GetString();

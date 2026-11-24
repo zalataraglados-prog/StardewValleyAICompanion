@@ -25,7 +25,8 @@ foreach($case in $packet.cases){
     $frame=[StardewAI.Core.Infrastructure.NativeExecutionFrameReader]::ReadVerifiedProduct(
         $case.original_compiled_queue.path,$case.native_receipt.path,$case.original_after.path)
     $actions.Add([StardewAI.Contracts.Training.FunctionalNativeActionReference]::new(
-        (Pin $case.original_compiled_queue.path),(Pin $case.native_receipt.path),(Pin $case.original_after.path)))
+        (Pin $case.original_compiled_queue.path),(Pin $case.native_receipt.path),(Pin $case.original_after.path),
+        (Pin $frame.SourcePaths['before']),(Pin $frame.SourcePaths['journal']),(Pin $frame.SourcePaths['request_gzip'])))
     if($frame.Result.ChangedFacts|Where-Object {$_.Path -ceq 'fishing.caught_qualified_item_id' -and $_.After -ceq $TargetQualifiedItemId}){
         if($selected){throw 'Target source is ambiguous.'};$selected=$frame
     }
@@ -67,4 +68,4 @@ $proof=[StardewAI.Contracts.Training.FormalNativeRouteProofReference]::new(
 $assessment=[StardewAI.Core.Training.FormalNativeRouteAdmissionConsumer]::Evaluate($proof)
 [IO.File]::WriteAllText((Join-Path $out.FullName 'native-route-assessment.json'),[Text.Json.JsonSerializer]::Serialize($assessment,$assessment.GetType(),$options))
 [pscustomobject]@{native_actions=$actions.Count;candidate_pool=$ranked.Count;accepted=@($plan.CandidateAudit|Where-Object Decision -ceq 'accepted'|Select-Object CandidateId,Kind,RemainingMinutesBefore,RemainingMinutesAfter,RemainingEnergyBefore,RemainingEnergyAfter);gates=$assessment.Gates;scope=$assessment.ProofScope}|ConvertTo-Json -Depth 6
-if(@($assessment.Gates|Where-Object {!$_.Satisfied}).Count){exit 2}
+if(!$assessment.SourceReplayVerified){exit 2}

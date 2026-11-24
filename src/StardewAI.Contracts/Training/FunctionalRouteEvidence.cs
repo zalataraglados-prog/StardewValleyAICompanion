@@ -9,7 +9,10 @@ public sealed record FrozenRouteArtifact(
 public sealed record FunctionalNativeActionReference(
     [property: JsonPropertyName("queue")] FrozenRouteArtifact Queue,
     [property: JsonPropertyName("receipt")] FrozenRouteArtifact Receipt,
-    [property: JsonPropertyName("after_snapshot")] FrozenRouteArtifact AfterSnapshot);
+    [property: JsonPropertyName("after_snapshot")] FrozenRouteArtifact AfterSnapshot,
+    [property: JsonPropertyName("before_snapshot")] FrozenRouteArtifact BeforeSnapshot,
+    [property: JsonPropertyName("request_journal")] FrozenRouteArtifact RequestJournal,
+    [property: JsonPropertyName("request_gzip")] FrozenRouteArtifact RequestGzip);
 
 // Functional sample time is retained as evidence. It is not the calendar of
 // a future three-year rollout, nor a certificate of acquiring prerequisites.
