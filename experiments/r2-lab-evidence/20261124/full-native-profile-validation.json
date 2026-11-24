@@ -1,0 +1,17 @@
+{
+  "validation": "Observed local VSTest output",
+  "test_filter": "FullyQualifiedName~LiveTrainingExecutionSnapshotProfileTests",
+  "passed": 35,
+  "failed": 0,
+  "skipped": 0,
+  "game_free_attempt": "No tests matched; excluded from passing-test count. The normal project with explicit GamePath ran all 35 focused tests.",
+  "test_project": "tests/StardewAI.Core.Tests/StardewAI.Core.Tests.csproj",
+  "build": "Release, no restore; no mod deployment",
+  "new_flag": "--retain-full-execution-snapshots",
+  "default_fishing_optimization_preserved": true,
+  "day_zero_capture_not_enabled_by_flag": true,
+  "nonfull_configured_profile_rejected": true,
+  "published_controller_sha256": "7D51CF15861C68A11888B429565960C1A365DF380C18D421C841ABB22452D468",
+  "source_guard_scope": "Explicit profile selection only; no execution/admission/source-reader guard changes.",
+  "formal_training_authorized": false
+}

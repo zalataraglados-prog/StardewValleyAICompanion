@@ -1,0 +1,35 @@
+{
+  "stopped_at": "2026-11-24T01:18:29.7568614+08:00",
+  "reason": "User requested shutdown after synchronization; experiment work stops.",
+  "run_id": "r2-global-daily-20261117-171253",
+  "runtime_attempt": "summer06-native-cold-readback-20261124",
+  "services": [
+    {
+      "role": "product",
+      "id": 43164,
+      "stopped": true
+    },
+    {
+      "role": "backend",
+      "id": 40456,
+      "stopped": true
+    },
+    {
+      "role": "game",
+      "id": 23436,
+      "stopped": true
+    }
+  ],
+  "all_recorded_services_stopped": true,
+  "checkpoint_report": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-shutdown-save-20261124\\verified.json",
+  "actual_main_sha256": "5B1DE469631DC6BF88F3FA2C40A579F44A61195D75634786E785FB00E94BA941",
+  "total_day": 34,
+  "season": "summer",
+  "day_of_month": 7,
+  "time": 600,
+  "cash": 3101,
+  "health": 100,
+  "deepest_mine": 6,
+  "cold_readback_after_this_final_save_verified": false,
+  "formal_training_authorized": false
+}

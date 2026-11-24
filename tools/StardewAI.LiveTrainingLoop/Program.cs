@@ -1506,7 +1506,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     executionSnapshotProfile = ExecutionSnapshotProfileSelector.ResolveForQueue(
         queue,
         executionSnapshotProfile,
-        options.CaptureGoldenWalnutFreshSaveEvidence);
+        options.CaptureGoldenWalnutFreshSaveEvidence,
+        options.RetainFullExecutionSnapshots);
     var queuePath = sharedSourceOperationForExecution?.SharedSourceStart?.QueuePath ??
         Path.Combine(options.SnapshotDir, "compiled-queue-" + iteration.ToString("D4") + ".json");
     if (sharedSourceOperationForExecution is null)

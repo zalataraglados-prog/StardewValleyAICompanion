@@ -14,6 +14,7 @@ public sealed partial class LiveTrainingOptions
     public string BackendUrl { get; set; } = "http://localhost:5108";
     public string BridgeSnapshotUrl { get; set; } = "http://127.0.0.1:8765/api/v1/snapshot";
     public string ExecutionSnapshotProfile { get; set; } = "full";
+    public bool RetainFullExecutionSnapshots { get; set; }
     public string SnapshotFile { get; set; } = string.Empty;
     public string SnapshotFileProfile { get; set; } = string.Empty;
     public string SnapshotArtifactMode { get; set; } =
@@ -237,6 +238,10 @@ public sealed partial class LiveTrainingOptions
                     throw new ArgumentException(
                         "--execution-snapshot-profile cannot be empty.");
                 }
+            }
+            else if (current == "--retain-full-execution-snapshots")
+            {
+                options.RetainFullExecutionSnapshots = true;
             }
             else if (current == "--snapshot-file" && i + 1 < args.Length)
             {
@@ -747,6 +752,8 @@ public sealed partial class LiveTrainingOptions
 
         if (options.UseJointDailyCalendar && !options.UseDailyPlan)
             throw new ArgumentException("--joint-daily-calendar requires --use-daily-plan.");
+        if (options.RetainFullExecutionSnapshots && !string.Equals(options.ExecutionSnapshotProfile, "full", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("--retain-full-execution-snapshots requires --execution-snapshot-profile full.");
         StandaloneCollectionTeacherMode.Validate(options);
         NativeOutputObservationMode.Validate(options);
         options.ValidateTeacherPreferenceMode();

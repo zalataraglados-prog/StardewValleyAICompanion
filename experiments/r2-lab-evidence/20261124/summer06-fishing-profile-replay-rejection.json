@@ -1,0 +1,16 @@
+{
+  "schema_version": "r2_lab_capture_profile_gap.v1",
+  "status": "original_reader_rejected",
+  "native_receipt": "execution-0450-item-0003.json",
+  "native_after_state_hash": "9188bfb7035a324081977ca3bac07b679566e01fd186b0599ffc47e68f879a1d",
+  "product_after_state_hash": "123cc43b003f94bea3ea8d629ab5661752dd5b5aa1ec22e2d308d3f67cbd08ea",
+  "native_after_game_tick": 5994,
+  "product_after_game_tick": 5994,
+  "after_snapshot_note": "state_hash_changed",
+  "reader_message": "Selected Product receipt does not bind its original request and native frame.",
+  "selection_behavior": "Original standalone Master Angler queues use the fishing profile even when configured full, unless the Day-0 capture mode is enabled.",
+  "actual_saved_collection_preserved": true,
+  "strict_product_source_replay_verified": false,
+  "remedy": "Explicit opt-in retain-full-execution-snapshots for subsequent warm evidence capture. Original historical receipts and failed replay remain unchanged.",
+  "formal_training_authorized": false
+}

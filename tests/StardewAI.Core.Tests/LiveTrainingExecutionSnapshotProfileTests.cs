@@ -58,6 +58,23 @@ public sealed class LiveTrainingExecutionSnapshotProfileTests
             "full",
             ExecutionSnapshotProfileSelector.ResolveForQueue(
                 queue, "full", captureGoldenWalnutFreshSaveEvidence: true));
+        Assert.Equal(
+            "full",
+            ExecutionSnapshotProfileSelector.ResolveForQueue(
+                queue, "full", retainFullExecutionSnapshots: true));
+    }
+
+    [Fact]
+    public void FullReplayCaptureIsExplicitAndDoesNotEnableDayZeroCapture()
+    {
+        var options = LiveTrainingOptions.Parse(new[] { "--retain-full-execution-snapshots" });
+        Assert.True(options.RetainFullExecutionSnapshots);
+        Assert.False(options.CaptureGoldenWalnutFreshSaveEvidence);
+        Assert.Equal("full", options.ExecutionSnapshotProfile);
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(new[]
+        {
+            "--retain-full-execution-snapshots", "--execution-snapshot-profile", "fishing"
+        }));
     }
 
     [Theory]

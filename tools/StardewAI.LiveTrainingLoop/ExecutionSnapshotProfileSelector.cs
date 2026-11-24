@@ -19,10 +19,11 @@ public static class ExecutionSnapshotProfileSelector
     public static string ResolveForQueue(
         JsonObject? queue,
         string configuredProfile,
-        bool captureGoldenWalnutFreshSaveEvidence = false)
+        bool captureGoldenWalnutFreshSaveEvidence = false,
+        bool retainFullExecutionSnapshots = false)
     {
         // Day-zero replay compares island access and source quantities across execution frames.
-        if (captureGoldenWalnutFreshSaveEvidence)
+        if (captureGoldenWalnutFreshSaveEvidence || retainFullExecutionSnapshots)
             return FullProfile;
 
         if (!string.Equals(

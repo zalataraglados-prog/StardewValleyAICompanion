@@ -223,8 +223,8 @@
     },
     {
       "path": "tests/StardewAI.Core.Tests/LiveTrainingExecutionSnapshotProfileTests.cs",
-      "sha256": "931EE0AAECE32CCC803D1BAEC2635E5D1A09414845DB0064A1B55F15700A2E70",
-      "git_blob_oid": "cfb2597baada704314dad23a99619eec8204bad4"
+      "sha256": "B829439962EE1C9FF27B67E115C72D2600326D86A1F00E99FBE6EE38738D03A5",
+      "git_blob_oid": "3645845e51de3ad473198b0506759cde74c7aa23"
     },
     {
       "path": "tests/StardewAI.Core.Tests/LiveTrainingLoopQueueReplanFilterTests.cs",
@@ -313,13 +313,13 @@
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/ExecutionSnapshotProfileSelector.cs",
-      "sha256": "FEF5E193FD8CB701F2C48BEB3DC563BF648F613B0D573FD5A81CF9C8505FFF20",
-      "git_blob_oid": "3ddcb88750cf24e21f62765780ba57fa7ef4581c"
+      "sha256": "5C966FE4BF27145DC901CAF9660F12F198D304DC80F37A0F06A74843631ED5FE",
+      "git_blob_oid": "547804830ae16f307e3770150edb730a900bb380"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/LiveTrainingOptions.cs",
-      "sha256": "9DC398BA16C5FF6382F4EEB0824FC5CF7AFD0847163E4E4750B69E7DF08F2A2E",
-      "git_blob_oid": "24b7bb4a4821649f71181577ce2af5e5b0890fda"
+      "sha256": "E808445D2F300DB0E42B5DD7915E71FA909D908C2C1994679B07AB8D950576CB",
+      "git_blob_oid": "12ee408603710ea264fa79a14f109554ef7fd152"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/LiveTrainingOptions.ManagedCropTeacher.cs",
@@ -338,8 +338,8 @@
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/Program.cs",
-      "sha256": "9308607814AE089748851ABDF9EB09BF76867BB2C9C903F545BA9F69CB99EEB4",
-      "git_blob_oid": "f8a1ac4110f1e1f61f898abed4fe746ddee5a348"
+      "sha256": "7F302BC5414A8E288EF1495ABA684F8B6C696F170AE04BA5AFC79ECE49DDB9D2",
+      "git_blob_oid": "aa7fda9ccaa6e6042e8409071fe1d897f682cc61"
     },
     {
       "path": "tools/StardewAI.LiveTrainingLoop/Program.DispatchReadiness.cs",
@@ -450,8 +450,8 @@
     },
     {
       "path": "experiments/r2-lab-controller/Restart-IsolatedVerifiedDay.ps1",
-      "sha256": "87EA17606A61BD8D4B8C23399B46005E13EC45C25EEB9347EF457D251F630698",
-      "git_blob_oid": "d9620e670679fd0eebd72fc6f2f1cdca8c703a8f"
+      "sha256": "4BCCCF23165D6D3523DAC1EDABC029E4205369039D162A6CBEC060FB6686E054",
+      "git_blob_oid": "44c22dddd48e679ebfc11c15908af0895167cb44"
     },
     {
       "path": "experiments/r2-lab-controller/planner-prerequisite/Resolve-PrerequisiteRouteWithFarm.ps1",
@@ -470,8 +470,8 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T01:14:49.3463759+08:00",
-  "controller_revision_note": "Native save retains one recovery.stabilize_day candidate because the original parser binds explicit save-boundary parameters to exactly one option. The attempted two-option invocation was rejected before dispatch and is retained in the lab. The corrected single-candidate command saved Summer6 through the original native-save control loop and verifier; a new process read back the identical actual main save. Retention remains bounded at 600.",
+  "updated_at": "2026-11-24T13:32:56.9599893+08:00",
+  "controller_revision_note": "Added a distinct saved-shutdown resume entry: validates actual four-file hashes, accepted checkpoint path/date/money, original stopped-service inventory and free endpoints. Wrong-hash fixture rejects before runtime mutation; real Summer7 save cold-read back. Standalone full snapshot retention is opt-in for subsequent replay; no Day-0 claim and no guard relaxation.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
     "sha256": "D3F19E0B533D914DCD9570444AB55992082666A5757C1FA2C44BDACB772E6BFF",
@@ -576,6 +576,42 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-original-collection-controller-20261124\\initial-teacher-selection-replay-summary.json",
       "sha256": "62B6E801F66A39D00A208D6854EECA74D4A9122904104061A0D97D62F5C57F6D",
       "git_blob_oid": "5ecce9b086365cf1a0439774bde668617866a83e"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-shutdown-save-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-shutdown-save-20261124\\verified.json",
+      "sha256": "D28A13105D85A26CB7D32861534A268FF12E11EDB866832F32D51FCC590FD449",
+      "git_blob_oid": "dc31bc07c3c139d09076dd78f27d68af5d9bbd5e"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-shutdown-stop.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-shutdown-save-20261124\\shutdown-stop.json",
+      "sha256": "A8B24210E8235A0F226EB41753DB418EBB3948636D11EBB57AB2007B65854352",
+      "git_blob_oid": "9292508d8cda23d2208ef975a2353550b40e3668"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-resumed-cold-readback.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-shutdown-cold-readback-20261124\\verified-readback.json",
+      "sha256": "FC51D859350E1569D622DDFD40BA5CABD54225ADD5B4F89709AFE3F6C883B1B2",
+      "git_blob_oid": "b27eae427dd303e60714bd32511c6adf44d05b56"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/saved-shutdown-resume-guard.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-saved-shutdown-guard-20261124\\verified.json",
+      "sha256": "0DAC0D1DA4CAC89B8A3DADF545EF01A9C35A545067126730014182E9C05AB241",
+      "git_blob_oid": "f28cc1ea2c9476228d830c9d8d248c37361ef894"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer06-fishing-profile-replay-rejection.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer06-ocean-catches-independent-replay-20261124\\capture-gap.json",
+      "sha256": "A48C0CCCA8E299C0DB32AAC5DBF8B755D72ADB75FA277CFED50FF95333EBA59A",
+      "git_blob_oid": "15f4bc0371b5160d9cc5a6f1709850bced4bf6fc"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/full-native-profile-validation.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-native-collection-controller-20261124\\profile-validation.json",
+      "sha256": "F8CCED44CE094BDBAA19ACE935EC9CB0389D42362031726494537AA4D98B17D3",
+      "git_blob_oid": "d14f980289e2bdc777494da31d977b35e544a234"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -589,19 +625,19 @@
     "scope": "Combined isolated lab Bridge; actual Summer5 ordinary-mine floor6, tile21,36. The original reader separately accepted native hoe and walk sources."
   },
   "latest_saved_checkpoint": {
-    "total_day": 33,
+    "total_day": 34,
     "season": "summer",
-    "day_of_month": 6,
+    "day_of_month": 7,
     "time": 600,
-    "cash": 2961,
+    "cash": 3101,
     "health": 100,
     "deepest_mine": 6,
     "lake_fish_completed_ingredients": 4,
     "native_save_control_loop_verified": true,
     "independent_saved_xml_verified": true,
     "same_actual_main_cold_readback_verified": true,
-    "main_sha256": "A9AB4D6D8C30A1BC42949D3CCDB85DC2B42F0CA699D1D1B6322838A6C18BCF2A",
-    "runtime_attempt": "summer06-native-cold-readback-20261124"
+    "main_sha256": "5B1DE469631DC6BF88F3FA2C40A579F44A61195D75634786E785FB00E94BA941",
+    "runtime_attempt": "summer07-shutdown-cold-readback-20261124"
   },
   "latest_offline_island_selection": {
     "source_total_day": 26,
@@ -626,5 +662,13 @@
     "current_unsaved_progress": true,
     "latest_actual_sealed_day": 33,
     "selected_island_l3_route_verified": false
+  },
+  "latest_full_capture_controller": {
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\full-native-replay-20261124\\live-training-loop\\StardewAI.LiveTrainingLoop.dll",
+    "sha256": "7D51CF15861C68A11888B429565960C1A365DF380C18D421C841ABB22452D468",
+    "profile_tests_passed": 35,
+    "native_capture_positive_pending": true,
+    "flag": "--retain-full-execution-snapshots",
+    "formal_training_authorized": false
   }
 }
