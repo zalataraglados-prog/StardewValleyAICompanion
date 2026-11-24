@@ -1026,12 +1026,16 @@ static void BuildGoalMethodCoverageReconciliation(Arguments options)
 static void BuildGoalMethodFormalTrainingAdmissionReconciliation(
     Arguments options)
 {
+    var proof = options.Optional("native-route-proof") is { } path
+        ? CurrentTeacherFrontierSupport.Read<FormalNativeRouteProofReference>(path, "Formal native route proof")
+        : null;
     var report = GoalMethodFormalTrainingAdmissionBuilder.Build(
         GoalMethodFrontierInputs(options),
         options.Required("coverage-request"),
         options.Required("corpus-manifest"),
         options.Required("checkpoint"),
-        options.Required("support-terminal-coverage-request"));
+        options.Required("support-terminal-coverage-request"),
+        proof);
     Write(options.Required("output"), report);
 }
 

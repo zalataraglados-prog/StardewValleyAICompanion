@@ -2,11 +2,88 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
+using StardewAI.Core.Training;
 
 namespace StardewAI.Core.Tests;
 
 public sealed partial class GoldenWalnutFreshSaveSourceScheduleVerifierTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ReportPrepareAndLaunchReplayTheSameFrozenSourceWithoutClearingEitherLock(bool includeContinuation)
+    {
+        using var fixture = new Fixture(scheduleId: "golden-walnut-fresh-save:run",
+            phaseOrderedSources: true, gourmandContinuation: true);
+        var binding = NativeBinding(fixture);
+        if (!includeContinuation)
+            binding = binding with { GourmandContinuationReceiptPath = "", GourmandContinuationReceiptSha256 = "" };
+        var root = Path.GetDirectoryName(fixture.ManifestPath)!;
+        var route = Path.Combine(root, "selected-route.json");
+        File.WriteAllText(route, "{\"fixture_only\":true}");
+        var proof = new FormalNativeRouteProofReference(FormalNativeRouteAdmissionConsumer.ProofReferenceSchemaVersion,
+            route, NativeBindingHash(route), binding);
+        var request = new TrainingLaunchRequest
+        {
+            RunId = "independent-formal-session", RootPath = root, WindowStyle = "normal",
+            Mode = TrainingSessionMode.FormalProductTraining, NativeRouteProof = proof, AllowGameLaunch = true
+        };
+        var launcher = new StardewTrainingSessionLauncher();
+        var report = FormalTrainingNativeAdmissionTests.VerifyPolicyFixture(0, proof);
+        var prepare = launcher.Prepare(request);
+
+        Assert.False(report.FormalProductTrainingAuthorized);
+        Assert.True(prepare.Blocked);
+        Assert.True(report.NativeRouteAssessment!.SourceReplayVerified);
+        Assert.Equal(report.NativeRouteAssessment.Gates, prepare.Manifest.NativeRouteAssessment!.Gates);
+        Assert.Equal(proof, prepare.Manifest.NativeRouteProof);
+        Assert.Contains("formal_training_window_style_must_be_hidden", prepare.BlockReasons);
+        Assert.All(report.NativeRouteAssessment.Gates, gate =>
+        {
+            Assert.False(gate.Satisfied);
+            Assert.Equal("selected_route_reconciliation_pending", gate.Reason);
+        });
+
+        // Exercise the prepared-manifest branch without granting actual readiness.
+        request.ManifestPath = prepare.Manifest.ManifestPath;
+        prepare.Manifest.Status = "prepared";
+        var preparedJson = JsonSerializer.Serialize(prepare.Manifest);
+        File.WriteAllText(request.ManifestPath, preparedJson);
+        var launch = launcher.Launch(request);
+        Assert.True(launch.Blocked);
+        Assert.False(launch.LaunchAttempted);
+        Assert.Equal(report.NativeRouteAssessment.Gates, launch.Manifest.NativeRouteAssessment!.Gates);
+
+        File.WriteAllText(request.ManifestPath, preparedJson);
+        File.AppendAllText(binding.VerificationReceiptPath, "\n");
+        var changed = launcher.Launch(request);
+        Assert.False(changed.LaunchAttempted);
+        Assert.False(changed.Manifest.NativeRouteAssessment!.SourceReplayVerified);
+        Assert.All(changed.Manifest.NativeRouteAssessment.Gates, gate => Assert.Equal("native_source_replay_rejected", gate.Reason));
+
+        prepare.Manifest.NativeRouteProof = proof with { SelectedRouteSha256 = new string('0', 64) };
+        File.WriteAllText(request.ManifestPath, JsonSerializer.Serialize(prepare.Manifest));
+        var replaced = launcher.Launch(request);
+        Assert.False(replaced.LaunchAttempted);
+        Assert.Contains("formal_prepared_manifest_native_route_proof_mismatch", replaced.BlockReasons);
+        Assert.All(FormalNativeRouteAdmissionConsumer.BlockerIds, blocker => Assert.Contains(blocker, replaced.BlockReasons));
+    }
+
+    [Fact]
+    public void OfflinePrepareDoesNotConsumeFormalRouteProof()
+    {
+        using var fixture = new Fixture();
+        var manifest = new StardewTrainingSessionLauncher().Prepare(new TrainingLaunchRequest
+        {
+            RootPath = fixture.Root,
+            NativeRouteProof = new("unsupported", "missing-route.json", "", null!)
+        }).Manifest;
+
+        var json = JsonSerializer.SerializeToElement(manifest);
+        Assert.False(json.TryGetProperty("native_route_proof", out _));
+        Assert.False(json.TryGetProperty("native_route_assessment", out _));
+    }
+
     [Fact]
     public void PinnedNativeEvidenceReplaysOriginalSourcesWithoutGrantingAdmission()
     {

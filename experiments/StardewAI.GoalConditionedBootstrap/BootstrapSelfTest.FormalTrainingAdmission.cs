@@ -1,8 +1,11 @@
+using StardewAI.Contracts.Training;
+
 namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    internal static GoalMethodFormalTrainingAdmissionReport VerifyFormalTrainingAdmissionPolicy(int incompleteCriterionIndex = 0)
+    internal static GoalMethodFormalTrainingAdmissionReport VerifyFormalTrainingAdmissionPolicy(int incompleteCriterionIndex = 0,
+        FormalNativeRouteProofReference? nativeRouteProof = null)
     {
         var criteria = Enumerable.Range(0, 19)
             .Select(index => new GoalMethodCoverageCriterionReconciliation(
@@ -170,7 +173,7 @@ internal static partial class BootstrapSelfTest
 
         var ready = GoalMethodFormalTrainingAdmissionBuilder.BuildReport(
             reconciliation,
-            evidence);
+            evidence, nativeRouteProof);
         Require(ready.Status ==
                     "blocked_open_formal_training_evidence" &&
                 ready.TeacherTrainingEvidenceReady &&
@@ -204,7 +207,7 @@ internal static partial class BootstrapSelfTest
         };
         var blocked = GoalMethodFormalTrainingAdmissionBuilder.BuildReport(
             reconciliation,
-            evidence);
+            evidence, nativeRouteProof);
         Require(blocked.Status ==
                     "blocked_open_formal_training_evidence" &&
                 !blocked.TeacherTrainingEvidenceReady &&

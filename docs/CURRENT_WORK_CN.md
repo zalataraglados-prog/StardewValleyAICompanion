@@ -1,5 +1,19 @@
 # StardewAI 当前工作
 
+## 2026-11-24 首收最小实机与本机工程收口（296）
+
+- 独立夏14隔离副本只执行必要进场、原背包腾位、一次收割批次和一次原生拾取。
+  8格收割回执均 verified，蓝莓背包 `0→22→24`、掉落 `2→0`；新结算只读重放产生24颗待售预留请求，未提交原账本。
+  本次未触发刷新中的自然入袋，此分支由294定向回归覆盖。没有睡眠、出货回款或延长验收。
+  原件和副本四文件指纹均未变，两个隔离进程已退出。仓库外 `block296-summer14-harvest-settlement-v2/session.json`
+  SHA-256 `6ac8099c01163d8da0be366b013b9abfea46a1327040006d6c99f289aace1174`。
+- 第5步本机收口以[选线对账](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md)为准。复用原春季共享预算/出货证据；不把它与独立夏14数据拼成同一条生产轨迹，不把规划毛收入当成实收。
+- [#570](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/570) 的报告、prepare、launch 复用同一个 Core 来源重放消费者。
+  `--native-route-proof` 供现有报告命令消费；prepare/launch 使用同一可选 `native_route_proof`，launch 重新读证并对照 prepared 绑定。
+  Core 317项及Backend 14项定向回归通过，覆盖原件变更、prepared绑定替换、原门、非正式模式和首收拾取的两种路径。
+  单独重放成功仍保留两锁；等待实验室实际选线、核桃钱包与支出顺序、实际鱼区/日期和所选 Gourmand 分支的同源证据。
+  两锁未解除，`formal=false`；#570及[#569](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/569) 尚未最终验收或交接。
+
 ## 2026-11-24 有界过夜保留可恢复存档（295）
 
 - 指定本地项目归档未找到原夏11同一存档的四文件原件。托管原过夜保存了指纹，

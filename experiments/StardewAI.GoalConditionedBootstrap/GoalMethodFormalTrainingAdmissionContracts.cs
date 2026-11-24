@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using StardewAI.Contracts.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
@@ -111,6 +112,9 @@ public sealed class GoalMethodFormalTrainingAdmissionReport
 
     [JsonPropertyName("formal_product_training_authorized")]
     public bool FormalProductTrainingAuthorized { get; set; }
+
+    [JsonPropertyName("native_route_assessment")]
+    public FormalNativeRouteAssessment? NativeRouteAssessment { get; set; }
 
     [JsonPropertyName("artifact_bindings")]
     public GoalMethodFormalTrainingArtifactBinding[] ArtifactBindings
