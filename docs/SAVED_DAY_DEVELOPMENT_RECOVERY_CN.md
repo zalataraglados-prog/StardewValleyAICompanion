@@ -29,10 +29,18 @@ HoeDirt。日增长校验正常拒绝真实损失。E盘夏12物理存档指纹
    不自动覆盖本轮E盘夏12或重跑此前的7个日界。
 3. [#592](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/592)
    与 [#594](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/594)
-   各用一个独立原生短场景核对可走耕地/保留障碍，以及镐击破壳/松键/切回攻击；
+   复用已核对源码的实验室组合构建证据，不为同一通过场景再开游戏。其覆盖空耕地
+   可走、闭壳蟹镐击实际减壳并恢复近战，不是独立 PR 构建的全链验收。
    [#593](https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/593)
-   仍为草稿，不自动合入。每次只开一份隔离游戏。[#570](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/570)
-   的真实选线输入到位才做对应回放，不用这些夹具解锁正式准入。
+   仍为草稿；[#570](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/570)
+   仍缺真实跨目标选线，不能靠上述结果解锁正式准入。
+
+白天批次于 09:00 后完成：`d43fe709` 的 Backend 定向回归 **140/140**，
+无失败、无跳过，5 个新增用例均实际执行，覆盖托管导航、选中可达清障目标、
+漂移/作物缺失拒绝；同批校验旧清障、读回和过夜。报告文件为本地未追踪的
+`block280-debris-daylight.trx`。E 盘四套相关运行目录未找到完整夏11四文件树，
+仅原运行留有两份夏11 `_old`；未使用两文件冒充原恢复点。此次没有启动游戏、
+覆盖原档或改变待处理尾部，未验证原生清障、首次蓝莓收获或夏15保存。
 
 ## 夏4冷重载的原版杂草变体（278）
 
