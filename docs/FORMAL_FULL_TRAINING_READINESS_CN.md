@@ -1,5 +1,7 @@
 # StardewAI 正式全量训练准入与实施路线
 
+> **2026-11-24T22:07:15+08:00 复核（299）。** `6f3ea6e7` 保留年5功能通过，但不由此自动放开正式门；所有原生帧依赖均固定到prepare基线。缺目标方案资源/顺序/期限对账时明确返回 `functional_verified_target_plan_not_bound`，不转成同档长跑要求。当前整条三年计划是否属于本次开训前置，等待用户范围裁定。298的功能事实继续有效，旧正式门通过映射失效。[准确结果及现行接手入口](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#复核功能结论与正式门分开299)
+
 > **2026-11-24T21:54:37+08:00 接续（298）。** 本次功能范围增加显式 `functional_native_route_proof_reference.v1`，复用原严格原生读取、全候选联合编译与共享预算，在报告/prepare/launch中使用同一Core消费者。样本年份不限制功能复用；第三年目标仍约束目标计划，不通过改样本日期或重玩已验前置证明。真实8帧与11/11正反例已过；代码 `00c5a75d` 待最终CI/独立集成。完整Day-0、Gourmand取得与替代来源验证器保留给各自实际声明的路线，不把其整条采证作为本功能分支的必要条件。下方第6步两种“新增核桃取得”正例义务不自动适用于已存在访问、无新增付款的功能样本；这也不令功能样本变成取得证明或自动完成第5步所有三年计划约束。`formal=false`。[完整说明及旧接续失效范围](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#功能证据与联合计划回放298)
 
 <!-- audit_invalidation: scope=第5及6步将完整同档新档取得或未选择Gourmand分支作为现有访问功能验证的共同前置; invalidated_at=2026-11-24T21:54:37+08:00; superseded_by=GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#功能证据与联合计划回放298; reason=按用户明确功能验收范围分开样本年份目标计划和完整新档取得证明; historical_only=true -->

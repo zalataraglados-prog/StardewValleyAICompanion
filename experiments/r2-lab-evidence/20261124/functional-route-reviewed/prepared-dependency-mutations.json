@@ -1,0 +1,26 @@
+[
+  {
+    "scope": "relocated_protocol_fixture_only",
+    "changed_role": "before_snapshot",
+    "launch_attempted": false,
+    "source_document_unchanged": true,
+    "rejected": true,
+    "changed_other_frame": true
+  },
+  {
+    "scope": "relocated_protocol_fixture_only",
+    "changed_role": "request_journal",
+    "launch_attempted": false,
+    "source_document_unchanged": true,
+    "rejected": true,
+    "changed_other_frame": true
+  },
+  {
+    "scope": "relocated_protocol_fixture_only",
+    "changed_role": "request_gzip",
+    "launch_attempted": false,
+    "source_document_unchanged": true,
+    "rejected": true,
+    "changed_other_frame": true
+  }
+]

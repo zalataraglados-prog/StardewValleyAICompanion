@@ -19,6 +19,7 @@
 
 ## 关键时间关系
 
+- **2026-11-24 复核补充。** 299修正298将功能通过直接映射正式门的结论，固定所有原生帧依赖，保留真实功能与原日期。无目标计划时不冒领计划结论，也不以此要求重玩同档长链。[当前接手入口及局部失效范围](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#复核功能结论与正式门分开299)
 - **2026-11-24。** 按用户裁定区分功能样本年份、目标计划的第三年期限及完整新档原生取得。298接通显式功能引用、原联合计划回放与报告/prepare/launch；不再等待同档完整实跑才复用功能，也不把单日正例当完整三年证明。[输入与失效说明](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#功能证据与联合计划回放298) · [R2范围](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md)
 - **2026-07。** 透明读取、任务／社交／矿井基础与权威字典逐步成形。早期审计和交接记录可用于回溯字段来源及各动作当时的验证范围。 [7 月架构审计](FULL_SYSTEM_AUDIT_20260719_CN.md) · [7 月权威字典交接](stardewai-full-handoff/SHORT_HANDOFF_20260723_AUTHORITATIVE_DICTIONARY_CN.md)
 - **2026-08 至 09。** Product Executor、策略轨迹和原生跨日事务接续到 r35。旧文档治理页和 EVD326 交接记录的是当时的训练和数据状态。 [Product Executor 交接](SHORT_HANDOFF_20260901_PRODUCT_EXECUTOR_EVD325_CN.md) · [训练交接](SHORT_HANDOFF_20260901_FORMAL_TRAINING_EVD326_CN.md) · [r35 历史治理页](DOCUMENTATION_STATUS_20260901_CN.md)

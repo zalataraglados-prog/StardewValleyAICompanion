@@ -1,0 +1,114 @@
+[
+  {
+    "case": "valid_year5",
+    "expected_function_verified": true,
+    "actual_function_verified": true,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "8 strict native functional frames and the original joint day plan verified. Sample years are retained. Formal admission still requires the target route's resource, acquisition-order and deadline reconciliation; no same-save long run is required by this functional result."
+  },
+  {
+    "case": "wrong_source_hash",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional source artifact hash/identity changed: D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json"
+  },
+  {
+    "case": "wrong_other_before_hash",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional source artifact hash/identity changed: D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json"
+  },
+  {
+    "case": "wrong_journal_hash",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional source artifact hash/identity changed: D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json"
+  },
+  {
+    "case": "wrong_gzip_hash",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional source artifact hash/identity changed: D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz"
+  },
+  {
+    "case": "forged_budget_refreshed_hash",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Frozen selected plan does not match the original joint compiler replay."
+  },
+  {
+    "case": "forged_cost_refreshed_hash",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Frozen candidates/costs differ from the original complete baseline evaluation."
+  },
+  {
+    "case": "joint_disabled",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional selection requires its original explicit joint-calendar request and exact source."
+  },
+  {
+    "case": "primary_truncated",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional primary group must retain the original available fishing alternatives."
+  },
+  {
+    "case": "duplicate_receipt",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "A functional receipt was duplicated."
+  },
+  {
+    "case": "after_substitution",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Supplied after snapshot is not the recorded action capture."
+  },
+  {
+    "case": "wrong_target",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Selected native catch does not bind the exact planned command and source."
+  },
+  {
+    "case": "self_attested_no_trace",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional route metadata is incomplete."
+  },
+  {
+    "case": "mixed_acquisition_binding",
+    "expected_function_verified": false,
+    "actual_function_verified": false,
+    "formal_gate_open": false,
+    "test_passed": true,
+    "reason": "Functional evidence must not masquerade as a fresh-save acquisition binding."
+  }
+]
