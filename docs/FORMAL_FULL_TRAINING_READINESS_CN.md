@@ -1662,7 +1662,9 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 **退出条件。** 同一托管流程的状态和账本跨日一致，可重载恢复，并能独立重放产出留存和真实结算。校准与验收工件按原范围归档。
 
-### 5. 做 L3 跨目标组合与新档原生重放
+### 5. 做 L3 跨目标组合与原生能力复用
+
+**2026-11-24 验收范围修正：** 按功能复用原生正例，不把样本发生年份当成动作验收门。第三年达标是所选组合计划的约束，由原选择、编译与共享资源/日历核对；不要求在同一存档实跑一条完整长链才能复用已证功能。本条覆盖下文历史接续中将完整同档 Day-0 实跑列为本次交接前置的描述。完整 Day-0 验证器与其证明标准不变，有界样本不得冒充该证明。[本次来源和范围](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#实验室交付接收姜岛后半段297)
 
 - **244实际原生接续：** #577及合并CI成功、同树同步。原Main完整优先链而非243日计划子入口，真实完成8主+3保存迭代至春15；131钓获/出货，145的RiverJelly特殊结果未冒领目标完成。当前after1b543660、余额及累计1442，新4文件保存f419d41c及独立副本哈希一致，Main已退出、不重载/重开235。新消费者仅补原计划/排名/queue和fresh重绑来源的不可变引用、沿用原CAS核，区分原snapshot与重绑source、不改旧tracker/执行器；7新例（含独立CAS blob篡改）、55相邻及17原件离线读回通过，自身CI另核。7个裁剪/full差异如实未绑定，完整所选资源/日历/Day-0路线和#570仍未通过；未选hay/配方不新增为共同门。沿当前春15继续真实选线，不把本次有界运行当本节总退出或重跑冻结证据。[实际范围](CURRENT_WORK_CN.md#2026-11-17-全局原生接续与选择工件封存244)。
 
@@ -1686,7 +1688,7 @@ v71 继续携带 `--skip-training`，没有 Student 更新、checkpoint 或 GPU 
 
 - 现行托管来源的Teacher调度清单可由`verify-money-revenue-crop-teacher-dispatch --manifest <原清单> --output <独立报告>`只读核对；该入口复用原构建核及来源绑定，不重新派发／写账本或复制整套计划。后续汇总显式适配现行证书，不把它包装成旧smoke运行目录；清单读回或单次收入证书不能独自授予完整生产、Teacher比较或正式训练资格。
 - 用既有 `DailyPlanCompiler` 和资源预留账本组合跨目标的资金、材料、时间、体力与日历，核验所选路线的来源和消费顺序。按实际依赖消费 L2 能力证书，复用已验 L1 和六类支持步骤的原生终态证据。当前组合报告仍要重新核验这些证据身份。 [L3 组合责任](current-production-snapshot-handoff.md#L217) · [六类支持步骤](../experiments/StardewAI.GoalConditionedBootstrap/AcquisitionRouteSupportingTransitionKinds.cs#L15)
-- 在所属全局层完成所选路线的 Day-0／长期原生证明及独立重放。若计划依赖姜岛，绑定同一新档取得相关解锁、核桃来源、日程及钓鱼前置。Gourmand 属于可选来源。选中它时核验对应订单连续回执，使用替代路线时核验该路线实际取得并消耗的核桃及解锁证据。 [R2 来源规则](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [核桃日程验证](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
+- 在实际所选方案中核对姜岛解锁、核桃来源及花费、鱼区访问和到期日，分别绑定原生能力证据并独立重放组合计划；不把另一存档的已有升级回填为这次计划的新付款。Gourmand 是可选来源：选用才核其连续订单，替代来源须满足同等的计划数量、支付顺序和期限。只有声称完整新档原生取得时，才用原 Day-0 验证器核实同一存档的实际全过程。 [R2 来源规则](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md#全局证明的保留与迁移) · [核桃日程验证](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
 
 **退出条件。** 当前全局对账能解释选中路线及共享资源、日程、存档连续性。需晋升的选项通过透明读取、原生执行、五门证据及内部执行管线检查。对剩余 #29 问题按正式路径是否使用及其风险记账，涉及当前准入的副作用和无法验证的输入继续阻断对应路径。 [现有选项缺口计算](../experiments/StardewAI.GoalConditionedBootstrap/GoalMethodFormalTrainingAdmissionBuilder.cs#L307)
 

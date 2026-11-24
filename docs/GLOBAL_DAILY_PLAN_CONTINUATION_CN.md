@@ -7,7 +7,9 @@
 
 可直接复用的是**已解锁档姜岛后半段的局部证据**：同一 `island-suffix-20261124-native` 运行/存档/玩家有已重放的 L2 访问证书，六段正反连接和两次单项捕鱼。年5春25（总日472）06:10→06:20 捕获 `(O)836`，原生收藏和库存 `0→1`；本段核桃 `12→12`，没有新来源或付款。既有解锁、已有 Gourmand 3/3、钓鱼 10 级测试设置及未保存的鱼获不产生原生取得、全局日期、正式训练或 Teacher 比较信用；独立用例不拼成一条旅程。无需重跑这段捕鱼、社区中心或已冻结 L1。
 
-**尚未交付的正式输入：** 本包没有经过全局编译器/选择租约固定的 L3 选线、同谱系的共享资源和日历及所选路径的实际期限。它既不是新档姜岛来源链，也不证明 Gourmand 替代来源已足量按时付款。后续拿全局工件沿本文件既有第5步对账；本机已完成的作物局部结算与春季共享证据仍按原范围复用，不拼接不同存档。原生准入消费者收到对应全局选线前继续 fail-closed，`formal=false`。
+**现行验收口径：** 功能验证不按样本年份拒绝。年5已验证的连接和鱼获可以作为所选方案的原生能力来源，不需要从新档在同一存档物理重跑整条路线。此前把单一完整原生长链当成交接输入的说法不再适用：它混淆了动作可用性与第三年前的路线可行性。第三年目标仍须由原选择、组合计划重放和共享资源/日历对账验证，不能用样本历史替代计划上的取得、付款、访问和期限；使用 Gourmand 或其替代来源仍按实际选线核对。每份原生证据维持各自 run/save/player 和 SHA，不拼接出虚假的 Day-0 履历。完整 Day-0 验证器保留给实际声称完整新档证明的路径。
+
+**当前待验：** 复用本包、已验作物结算与春季共享行为，绑定实际所选方案并验证原组合计划和正式消费者；不是等待一份新增的全局实跑封存。此对账未证明 #570 通过；`formal=false`。
 
 **复核与交付入口：** 原件仍由实验室留在 D 盘；[原重放入口](https://github.com/zalataraglados-prog/StardewValleyAICompanion/blob/74741ed0235a2a967431a020cc5416fa17681c49/experiments/r2-lab-controller/island-suffix/Replay-IslandSuffixWithDevelopmentSource.ps1)只读复用原 Product-aware 读取器。主线构建用现有 Bootstrap、Backend 和 LiveTrainingLoop 项目；总报告命令 `build-goal-method-formal-training-admission-reconciliation` 与 `/api/v1/training/session/prepare`、`/api/v1/training/session/launch` 不换入口。[Provider 和数据责任](STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md#6-开训前-provider-与模型验收)留给 [#569](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/569) 按原合同接收，不生成正式 manifest。
 
