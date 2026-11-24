@@ -470,7 +470,7 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T13:32:56.9599893+08:00",
+  "updated_at": "2026-11-24T13:58:14.6807136+08:00",
   "controller_revision_note": "Added a distinct saved-shutdown resume entry: validates actual four-file hashes, accepted checkpoint path/date/money, original stopped-service inventory and free endpoints. Wrong-hash fixture rejects before runtime mutation; real Summer7 save cold-read back. Standalone full snapshot retention is opt-in for subsequent replay; no Day-0 claim and no guard relaxation.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
@@ -612,6 +612,36 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-native-collection-controller-20261124\\profile-validation.json",
       "sha256": "F8CCED44CE094BDBAA19ACE935EC9CB0389D42362031726494537AA4D98B17D3",
       "git_blob_oid": "d14f980289e2bdc777494da31d977b35e544a234"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-full-capture-batch-summary.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-native-collection-controller-20261124\\verified-batch-summary.json",
+      "sha256": "0726A8AA12F4D79F1C9997826A98902CA8D8F334FC7AA186C7DB582DD85A1EB9",
+      "git_blob_oid": "d58d526558a3aca8ae3f182555d73790999e7057"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-full-capture-arguments.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-native-collection-controller-20261124\\arguments.json",
+      "sha256": "9FEDFE008E0D4153BBA9F39DFAA8E8CB8677612DDF02D1663B0C5BFD98DAAC3B",
+      "git_blob_oid": "f591cf0b85323c8d8997a9145ac2bf4d2bab9d11"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-red-snapper-native-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-ocean-native-replay-20261124\\independent-replay.json",
+      "sha256": "FF7AE619A5B53EF66C42D99FAD83887313012B82DA2588D965BFF3F531494A35",
+      "git_blob_oid": "49189607e61fd10521f3f539f401f7aba66634c5"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-shad-native-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-ocean-native-replay-20261124\\execution-0471-item-0003\\independent-replay.json",
+      "sha256": "9B1FBFFEDF8482035CADDCE1EAE70376AD52C395F38DEACD1A905AC3504D1F98",
+      "git_blob_oid": "34d8f70ba71b9ab79828760fc14896acbed7164f"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-dorado-native-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-ocean-native-replay-20261124\\execution-0474-item-0003\\independent-replay.json",
+      "sha256": "7E73F88371CD95A2B056FEFB71874E1D55D8C94650F296325B97689E31140A17",
+      "git_blob_oid": "99186e6d88a6ff4bf8d05513b75a905f4c04f2ff"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -667,8 +697,22 @@
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\full-native-replay-20261124\\live-training-loop\\StardewAI.LiveTrainingLoop.dll",
     "sha256": "7D51CF15861C68A11888B429565960C1A365DF380C18D421C841ABB22452D468",
     "profile_tests_passed": 35,
-    "native_capture_positive_pending": true,
+    "native_capture_positive_pending": false,
     "flag": "--retain-full-execution-snapshots",
-    "formal_training_authorized": false
+    "formal_training_authorized": false,
+    "independently_replayed_new_species": [
+      "(O)150",
+      "(O)706",
+      "(O)704"
+    ]
+  },
+  "latest_full_capture_batch": {
+    "attempts_started": 19,
+    "verified_actions": 10,
+    "reported_objective_completed": true,
+    "completion_scope": "Local Dorado catch only; not community-center or island completion.",
+    "independent_native_collection_replays": 3,
+    "current_unsaved_progress": true,
+    "selected_island_l3_route_verified": false
   }
 }
