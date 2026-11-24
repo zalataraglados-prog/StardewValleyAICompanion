@@ -1,5 +1,38 @@
 # 原全局日计划续行与集合控制模式
 
+## 功能证据与联合计划回放（298）
+
+记录于 **2026-11-24T21:54:37+08:00**；代码基线 `00c5a75d6929a41a8f4a28cd16b6d24157555eab`，基于主线协作者的 `41e14b1f`。代码需合入后成为公共运行基线；以下是实验室在该源码上的实际重放结果。
+
+**功能样本与目标期限分开。** 用户明确本次验证功能，不因已解锁样本位于第5年要求重玩社区中心或同档长链。原样保留年5春25/总日472，不能改成第1年，也不能把既有解锁算成计划新取得。第三年前达标仍是组合计划的期限要求。本次只证明下面这个联合日计划与其原生能力绑定，不宣称所有跨年资金、核桃取得及爷爷21分均已证明。
+
+<!-- audit_invalidation: scope=296及更早接续中等待完整同档全局实跑封存后才验功能或接消费者; invalidated_at=2026-11-24T21:54:37+08:00; superseded_by=GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#功能证据与联合计划回放298; reason=用户明确功能复用不受样本年份限制完整新档实际取得与计划期限分属不同证明; historical_only=true -->
+> **范围失效说明。** 下方“等待实验室交付完整全局选线及原件”等描述，不再是功能复用接线的前置；297以前实验室将局部交付称为整个交接已完成的口径也不成立。局部事实继续保留，按本节明确消费。完整 Day-0 验证器保留给实际声称完整原生取得的路线，不降低其自身条件。
+
+新显式引用 `functional_native_route_proof_reference.v1` 仍由原 `FormalNativeRouteAdmissionConsumer` 消费，报告、prepare、launch 不换入口。旧引用、缺证和未知 schema 继续阻塞；功能引用不能夹带 `native_evidence` 伪装成完整新档取得证明。
+
+| 核对对象 | 实际结果与边界 |
+| --- | --- |
+| 原选择及预算 | 从实际黄貂鱼动作前源快照重新用原 evaluator/ranker 建立完整215项候选池，保留全部可用捕鱼备选，原 `CompileWithPrimaryGoal`、联合日历和 `ActionQueueCompiler` 编译。选择捕鱼及出货接近，时间 `770→727→648` 分钟、体力 `426→419→419`。完整重编译比较计划、审计和机械队列，不接受调用方自报预算或手改候选成本。 |
+| 原生功能 | 原严格 Product-aware 读取器提取到 Core，由 Bootstrap 原接口复用；八个原回执/请求/前后快照均接受。计划中的捕鱼命令绑定真实源状态、执行参数及 `(O)836` 收藏 `false→true`。只排除重新生成的步骤ID和已经独立核验的计划预算注释，不放宽原回执本身。 |
+| 既有访问与资源 | 原鱼区访问投影已解锁；各原生帧核桃 `12→12`。本计划不选择 Gourmand 或新增核桃取得/付款，故当前功能范围为 `functional_existing_access`，Gourmand 为该范围的 `not_applicable`。这不是三单完成证明，也不是证明从零取得了替代核桃。 |
+| 实际执行范围 | 捕鱼与六段正反连接是独立用例，未把它们拼成同一条连续旅程。新联合计划的出货接近只重放编译，未声称本次已执行出货或收到收入；既有春季结算与回接继续按275自身范围复用。新鱼获未保存；继承升级、测试设置和未保存尾部均不升级为完整新档履历。 |
+| 三个消费者 | 报告、prepare、launch 得到相同两项功能门结论；prepare后改变嵌套编译工件，launch会重新读证并拒绝。其余报告门使用既有隔离协议夹具，只证明接线，不产生新的Teacher覆盖、正式manifest或启动授权。 |
+
+**可重放输入。** 本机原件位于 `D:\StardewValleyAICompanion前瞻实验室\准备\R2隔离运行\GingerIsland后半段验证\functional-admission-20261124-final\native-route-proof.json`；同目录保留原候选请求、完整编译响应和证据引用。原始八例仍留在原 `island-suffix-20261124-native` 目录，无覆盖和重新采集。[公开路径、SHA、编译摘要、构建身份及反例记录](../experiments/r2-lab-evidence/20261124/functional-route/)用于跨机复核；完整快照、存档和运行数据不入Git。外部原件不可访问时报告明确缺件，不把公开摘要当作原生输入。
+
+```powershell
+# BinaryRoot 指向此源码 Release 构建目录；两个脚本的输出目录必须为新目录。
+./scripts/Build-FunctionalRouteEvidence.ps1 -SourcePacketPath <297原索引绝对路径> -ExpectedPacketSha256 26ac167ab082ed79eef74a82e9da5bbd247a8010afed0ff561bf0dffd10c5f5e -BinaryRoot <Bootstrap构建目录> -OutputDirectory <新证据目录>
+./scripts/Test-FunctionalRouteEvidence.ps1 -ProofPath <新证据目录/native-route-proof.json> -BinaryRoot <Bootstrap构建目录> -OutputDirectory <新回归目录>
+# 原报告命令保持 build-goal-method-formal-training-admission-reconciliation，附加：
+# --native-route-proof <native-route-proof.json绝对路径>
+```
+
+**验证。** 489项相关定向、71项Backend相邻及40项可移植测试通过（有重叠，不相加作覆盖分母）；真实工件11/11正反例通过，三消费者一致且准备后嵌套变更被拒绝。Bootstrap构建0警告0错误。初次因系统仅有.NET6导致的CLI子进程失败、以及game-free项目漏列既有测试依赖的编译失败保留；仅设置本进程.NET8路径并修正项目清单后通过。无游戏启动，无新原生数据，`formal=false`。
+
+**接续与责任。** 实验室交付上述功能绑定和消费者实现，主线协作者复核并集成同一分支；不再互相等待同档完整实跑。#570的现行功能接线按本输入复核；完整第三年组合计划、未选取得分支、正式Teacher/数据/Provider与#569授权，分别按其合同判断，不能由本单日正例自动宣布完成，也不能倒挂为重做已通过功能的理由。
+
 ## 实验室交付接收：姜岛后半段（297）
 
 接收 [74741ed0 的选线、账本和证据索引](https://github.com/zalataraglados-prog/StardewValleyAICompanion/blob/74741ed0235a2a967431a020cc5416fa17681c49/experiments/r2-lab-evidence/20261124/island-suffix/route-handoff/selected-local-route-and-ledger.json)。

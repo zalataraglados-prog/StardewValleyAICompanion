@@ -1,5 +1,9 @@
 # Master Angler Local Native Evidence
 
+## 2026-11-24 Functional sample scope
+
+Recorded at `2026-11-24T21:54:37+08:00`. An unlocked Year-5 sample is valid method evidence; its original date is retained. The explicit functional route consumer replays the original joint plan and strict native action binding without applying a new rollout's year-three deadline to the sample. The existing Stage-One acquisition/corpus receipt builders retain their own deadline and provenance checks. Accepted local coverage is not resampled or replaced by this eight-frame smoke. See [298: inputs and limitations](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#功能证据与联合计划回放298).
+
 ## Current Work
 
 The latest [criterion-local acceptance](master-angler-local-acceptance.md)
