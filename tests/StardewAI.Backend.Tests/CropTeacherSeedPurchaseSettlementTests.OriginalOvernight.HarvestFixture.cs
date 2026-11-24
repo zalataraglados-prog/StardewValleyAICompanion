@@ -40,7 +40,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 5, step, Shared.Inputs.Plan, Shared.Inputs.Request, owner, HarvestRuntime);
         }
 
-        internal Task<JsonObject> EmitHarvest(CropTeacherManagedSeedOwner owner)
+        internal Task<JsonObject> EmitHarvest(CropTeacherManagedSeedOwner owner, bool leaveDrop = false)
         {
             NativeHarvestCalls++;
             var before = Read(owner.CurrentSnapshotPath); var current = before;
@@ -52,7 +52,10 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 var parameters = item.NormalizedCommand.Parameters;
                 var tile = new MoneyRevenueCropPlantingTile(int.Parse(parameters.Single(row => row.Name == "target_tile_x").Value),
                     int.Parse(parameters.Single(row => row.Name == "target_tile_y").Value));
-                HarvestFixture.ApplyHarvestDelta(next, tile, Shared.Source.Ledger.CropPlantingCommitments.Single().HarvestItemQualifiedId);
+                var output = Shared.Source.Ledger.CropPlantingCommitments.Single().HarvestItemQualifiedId;
+                var ground = leaveDrop && snapshots.Count == 0;
+                HarvestFixture.ApplyHarvestDelta(next, tile, output, held: ground ? 0 : 1);
+                if (ground) HarvestFixture.Put(next, "current_location", "debris", HarvestFixture.HarvestDebris(output, tile, 1));
                 next.StateHash = SnapshotHash.ComputeStateHash(next.State);
                 var path = snapshots.Count == queue.Items.Length - 1 ? HarvestAfter :
                     Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, "owned-harvest-step-" + snapshots.Count + ".json");

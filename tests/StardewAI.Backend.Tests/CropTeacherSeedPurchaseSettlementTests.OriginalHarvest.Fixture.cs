@@ -162,11 +162,13 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Transition = new("crop_actions", Day, QueuePath, SourcePath, receiptPath, paths[^1], Shared.Files.Options.RunId, Shared.Files.Options.ExecutorVersion, Candidate);
         }
 
-        private JsonArray HarvestDebris(int count) => count == 0 ? new() : new(new JsonObject
+        private JsonArray HarvestDebris(int count) => HarvestDebris(Output, Batch.Tiles[0], count);
+
+        internal static JsonArray HarvestDebris(string output, MoneyRevenueCropPlantingTile tile, int count) => count == 0 ? new() : new(new JsonObject
         {
-            ["qualified_item_id"] = Output, ["debris_index"] = 0, ["item_quality"] = 0, ["chunk_count"] = 1,
-            ["item"] = new JsonObject { ["qualified_item_id"] = Output, ["stack"] = count },
-            ["chunks"] = new JsonArray(new JsonObject { ["tile_x"] = Batch.Tiles[0].TileX, ["tile_y"] = Batch.Tiles[0].TileY })
+            ["qualified_item_id"] = output, ["debris_index"] = 0, ["item_quality"] = 0, ["chunk_count"] = 1,
+            ["item"] = new JsonObject { ["qualified_item_id"] = output, ["stack"] = count },
+            ["chunks"] = new JsonArray(new JsonObject { ["tile_x"] = tile.TileX, ["tile_y"] = tile.TileY })
         });
 
         internal static void ApplyHarvestDelta(SnapshotEnvelope next, MoneyRevenueCropPlantingTile tile, string output, int held = 1)
@@ -184,7 +186,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             foreach (var field in new[] { "skills_detail", "level" }) Put(next, "player", field, Field(skill, "player", field));
         }
 
-        private static void AddHeldOutput(SnapshotEnvelope next, string output, int held)
+        internal static void AddHeldOutput(SnapshotEnvelope next, string output, int held)
         {
             var inventory = Field(next, "player", "inventory");
             var item = inventory.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]?.GetValue<string>() == output);
@@ -199,7 +201,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
 
         private static SnapshotEnvelope Copy(SnapshotEnvelope snapshot) => JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(snapshot, JsonOptions), JsonOptions)!;
         private static JsonNode Field(SnapshotEnvelope snapshot, string domain, string field) => JsonNode.Parse(snapshot.State[domain].GetProperty(field).GetProperty("value").GetRawText())!;
-        private static void Put(SnapshotEnvelope snapshot, string domain, string field, JsonNode value)
+        internal static void Put(SnapshotEnvelope snapshot, string domain, string field, JsonNode value)
         {
             var fields = JsonNode.Parse(snapshot.State[domain].GetRawText())!.AsObject();
             fields[field] = new JsonObject { ["status"] = "available", ["value"] = value, ["confidence"] = 1d,
