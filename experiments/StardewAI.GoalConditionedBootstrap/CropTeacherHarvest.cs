@@ -35,6 +35,7 @@ public sealed partial class CropTeacherHarvest
         originalInputs.Validate();
         var current = before;
         var quantity = 0L;
+        var acquired = new List<(SnapshotEnvelope After, long HeldIncrease)>(AppliedTileCount);
         for (var index = 0; index < receipt.StepResults.Length; index++)
         {
             var next = comparer.Equals(stepPaths[index], Path.GetFullPath(transition.AfterSnapshotPath)) ? after :
@@ -48,13 +49,21 @@ public sealed partial class CropTeacherHarvest
                 {
                     OptionId = "executor.harvest_crop", BeforeStateHash = current.StateHash,
                     LocationId = preparation.LocationId, TargetTileX = tile.TileX, TargetTileY = tile.TileY
-                }, preparation.HarvestItemQualifiedId, preparation.MinimumUnitsPerTile);
-                quantity = checked(quantity + effects.Stock.Inventory.QuantityIncrease!.Value);
+                }, preparation.HarvestItemQualifiedId, minimumUnits: 0);
+                var heldIncrease = effects.Stock.Inventory.QuantityIncrease!.Value;
+                acquired.Add((next, heldIncrease));
+                quantity = checked(quantity + heldIncrease);
             }
             else CropSeedResourceBoundary.VerifyUnconsumedCropAction(current, next, "Owned harvest", requireSeedInventory: false);
             current = next;
         }
         Require(EqualJson(current, after), "Owned harvest terminal snapshot differs from its last native step.");
+        if (acquired.Any(row => row.HeldIncrease < preparation.MinimumUnitsPerTile))
+        {
+            VerifyHarvestDropAccounting(before, acquired, preparation.HarvestItemQualifiedId, preparation.MinimumUnitsPerTile);
+            Require(quantity >= checked((long)AppliedTileCount * preparation.MinimumUnitsPerTile),
+                "Owned harvest needs verified pickup before its minimum output is in inventory.");
+        }
         RetainedQuantityIncrease = quantity;
         AppliedTiles = Array.AsReadOnly(preparation.Tiles.Take(AppliedTileCount).ToArray());
         AfterSnapshotPath = Path.GetFullPath(transition.AfterSnapshotPath);
