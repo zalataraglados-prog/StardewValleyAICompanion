@@ -1,0 +1,36 @@
+{
+  "created_at": "2026-11-24T15:22:00.1918378+08:00",
+  "source_base": "c42508c118445b9598d33dbf2a6820853f5228cd",
+  "published_lab_source_commit": "2ec12480a2e8f1b2c8c28dcf7ef6b2e677cea25f",
+  "source_files_verified": 78,
+  "focused_tests": {
+    "passed": 11,
+    "failed": 0,
+    "executed": 11,
+    "total": 11
+  },
+  "files": [
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\native-services-c42508c1-20261124\\backend\\StardewAI.Backend.dll",
+      "sha256": "706B24A269BA505FA44B932305F0F469DFBB37D2A44D2F5536E04984125AD368"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\native-services-c42508c1-20261124\\backend\\StardewAI.Core.dll",
+      "sha256": "D34BC3371E6050053E7C8E8059E481FCEFCECAEBDA1B72F8D06DF073984A0F6C"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\native-services-c42508c1-20261124\\backend\\StardewAI.Contracts.dll",
+      "sha256": "E9D0F18B12A3DF0EBE0B77B556C02F6426D3BB01325D0C66E991D92DFE3F38F4"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\native-services-c42508c1-20261124\\product-executor\\StardewAI.ProductExecutor.dll",
+      "sha256": "AB8ACBD3362513B27CEF0C0C51652F0490EACDE7EAC9962132A4B15C73A61E9F"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\native-services-c42508c1-20261124\\product-executor\\StardewAI.Contracts.dll",
+      "sha256": "E9D0F18B12A3DF0EBE0B77B556C02F6426D3BB01325D0C66E991D92DFE3F38F4"
+    }
+  ],
+  "deployed": false,
+  "formal_training_authorized": false
+}

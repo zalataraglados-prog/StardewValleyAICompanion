@@ -1,0 +1,34 @@
+{
+  "verified_at": "2026-11-24T15:24:17.3086597+08:00",
+  "same_game_process_verified": true,
+  "same_native_state_hash_verified": true,
+  "same_native_inventory_verified": true,
+  "state_hash": "4fe37b577b83784b815e90ebd4b66a4d9c4ab4fff9ae7623054e68980203f0dc",
+  "total_day": 35,
+  "time": 1340,
+  "cash": 4106,
+  "location": "FishShop",
+  "contract_sha256": "E9D0F18B12A3DF0EBE0B77B556C02F6426D3BB01325D0C66E991D92DFE3F38F4",
+  "game_not_reloaded": true,
+  "processes": [
+    {
+      "role": "game",
+      "id": 32056,
+      "exe": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runtime\\Stardew Valley\\StardewModdingAPI.exe",
+      "started": "2026-11-24T06:33:21.8386634Z"
+    },
+    {
+      "role": "backend",
+      "id": 3536,
+      "exe": "D:\\StardewAI-TestLab\\dotnet\\dotnet.exe",
+      "started": "2026-11-24T07:24:15.0944029Z"
+    },
+    {
+      "role": "product",
+      "id": 12868,
+      "exe": "D:\\StardewAI-TestLab\\dotnet\\dotnet.exe",
+      "started": "2026-11-24T07:24:15.1024211Z"
+    }
+  ],
+  "formal_training_authorized": false
+}

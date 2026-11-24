@@ -472,6 +472,11 @@
       "path": "experiments/r2-lab-controller/Invoke-IsolatedFishingWindow.ps1",
       "sha256": "4FAE84883E6F21C95F96F984A9F20EA04040455438FEAB63FE2F52A5501D7919",
       "git_blob_oid": "a986d6e2bce3e917255429b8e64c81f933b78a94"
+    },
+    {
+      "path": "experiments/r2-lab-controller/Align-IsolatedRuntimeServices.ps1",
+      "sha256": "5A0A3EB4EB8582EA9386FC5D55460381A094A873D4506005913FA070F3E90122",
+      "git_blob_oid": "6e2bbf76d9c364d8b204f999f2e0f92e2279d81f"
     }
   ],
   "execution_layout": "Controllers depend on the retained D-drive lab layout, pinned published binaries, authority dictionaries, and original receipts; these are not bundled.",
@@ -480,7 +485,7 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T15:09:04.4186000+08:00",
+  "updated_at": "2026-11-24T15:32:24.5761147+08:00",
   "controller_revision_note": "Added a distinct saved-shutdown resume entry: validates actual four-file hashes, accepted checkpoint path/date/money, original stopped-service inventory and free endpoints. Wrong-hash fixture rejects before runtime mutation; real Summer7 save cold-read back. Standalone full snapshot retention is opt-in for subsequent replay; no Day-0 claim and no guard relaxation.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
@@ -778,6 +783,42 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-current-window-collection-20261124\\arguments.json",
       "sha256": "3967F388BF8FEF665C4D67EF2F57B021702E71880989A12DC5423197A4447317",
       "git_blob_oid": "cbfa53741b1deb715e87e55546d7d5dc482ecc48"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-shop-and-puffer-test-outcome.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-pre-audit-save-20261124\\test-outcome.json",
+      "sha256": "4C0B1926942F4DC5275A12AAA7CF062F13ABD72E1CFCD427740E664C407F5A41",
+      "git_blob_oid": "e3ca0b0494a8c8e60828c820770dd6f8da1714a9"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-aligned-service-build.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\native-services-c42508c1-20261124\\build-identity.json",
+      "sha256": "444BC088E0E49270D11759558655E83A2D4C47DA8D64ACE11A0CF5229CE870CE",
+      "git_blob_oid": "a19d51942377897e10842e2f105eeec100c87056"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer09-test-wrap-service-stop.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-pre-audit-save-20261124\\shutdown-stop.json",
+      "sha256": "4DB52FB0E90C668969C6D47AC409639087AF1845DA193DF0AE31D457439C4AE8",
+      "git_blob_oid": "96cd5024e4f03d8e1e29a2dce714c042ef55c791"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-service-transition-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-native-services-aligned-20261124\\service-transition-verification.json",
+      "sha256": "542B9AD8B2FCC5C31505143FBB8E9EFAF97BF58EA4BC5626A1125EDDA3CB2AFC",
+      "git_blob_oid": "54366407391b54b1c868f145abc8c90b341d053e"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer09-semantic-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-pre-audit-save-20261124\\semantic-verification.json",
+      "sha256": "6092C9EC7F48B6208961B8EE71854916D4486010EE85BBD0D39499DE88385A1D",
+      "git_blob_oid": "b18947d5b3dda4150f033a7b11bcea7100933850"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer09-sealed-save-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-pre-audit-save-20261124\\verified.json",
+      "sha256": "89AC417A01A35363186946CF59331700FC3C5B56E9B87EDCE99B988D5A13025A",
+      "git_blob_oid": "20d7560a81ea8d7c96493ae3990faaa7123df238"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -791,21 +832,20 @@
     "scope": "Combined isolated lab Bridge; actual Summer5 ordinary-mine floor6, tile21,36. The original reader separately accepted native hoe and walk sources."
   },
   "latest_saved_checkpoint": {
-    "total_day": 35,
+    "total_day": 36,
     "season": "summer",
-    "day_of_month": 8,
+    "day_of_month": 9,
     "time": 600,
-    "cash": 4106,
+    "cash": 4467,
     "health": 100,
     "deepest_mine": 6,
-    "lake_fish_completed_ingredients": 4,
     "native_save_control_loop_verified": true,
     "independent_saved_xml_verified": true,
-    "same_actual_main_cold_readback_verified": true,
-    "main_sha256": "458CA35780081BCA65383A9B81503C9750F0079FB9D1A0750373E45B81088292",
-    "runtime_attempt": "summer08-native-resume-20261124",
-    "checkpoint_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-save-verification.json",
-    "shutdown_stop_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-stop.json"
+    "same_actual_main_cold_readback_verified": false,
+    "main_sha256": "5BD793B48B51263414A2F272CF0DD2E0066014C8FD4FD1690495BBD575EA06E5",
+    "runtime_attempt": "summer08-native-services-aligned-20261124",
+    "checkpoint_report": "experiments/r2-lab-evidence/20261124/summer09-sealed-save-verification.json",
+    "service_stop_report": "experiments/r2-lab-evidence/20261124/summer09-test-wrap-service-stop.json"
   },
   "latest_offline_island_selection": {
     "source_total_day": 26,
@@ -862,7 +902,7 @@
     ],
     "strict_native_catch_replays_for_these_four": "verified_by_original_native_catch_builder_and_verifier",
     "previous_batch_independent_native_collection_replays": 3,
-    "current_unsaved_progress": true,
+    "current_unsaved_progress": false,
     "latest_actual_sealed_day": 35,
     "selected_island_l3_route_verified": false
   },
@@ -882,11 +922,12 @@
     "runtime_attempt": "summer07-shutdown-cold-readback-20261124"
   },
   "pause_status": {
-    "state": "active_after_user_resume",
+    "state": "test_batch_sealed_and_runtime_stopped_for_requested_review",
     "updated_at": "2026-11-24T14:51:14.0297745+08:00",
     "runtime_attempt": "summer08-native-resume-20261124",
     "weekly_usage_used_percent": 34,
-    "weekly_usage_remaining_percent": 66
+    "weekly_usage_remaining_percent": 66,
+    "goal_status": "active"
   },
   "latest_native_community_progress": {
     "total_day": 35,
@@ -898,7 +939,7 @@
     "sardine_quantity": 0,
     "next_ordinary_sardine_rod_window_total_day": 56,
     "prior_four_fish_ready_claim": "invalidated_by_native_stock",
-    "donations_saved_to_disk": false
+    "donations_saved_to_disk": true
   },
   "latest_day_zero_archive_audit": {
     "source_run": "golden-walnut-step5-capture-20261117-132446",
@@ -908,5 +949,28 @@
     "source_schedule_ready": false,
     "first_original_failure": "Fresh-save episodes do not contain the native first-island-arrival transition.",
     "spliced_with_warm_run": false
+  },
+  "previous_saved_checkpoint_before_test_wrap": {
+    "total_day": 35,
+    "season": "summer",
+    "day_of_month": 8,
+    "time": 600,
+    "cash": 4106,
+    "health": 100,
+    "deepest_mine": 6,
+    "lake_fish_completed_ingredients": 4,
+    "native_save_control_loop_verified": true,
+    "independent_saved_xml_verified": true,
+    "same_actual_main_cold_readback_verified": true,
+    "main_sha256": "458CA35780081BCA65383A9B81503C9750F0079FB9D1A0750373E45B81088292",
+    "runtime_attempt": "summer08-native-resume-20261124",
+    "checkpoint_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-save-verification.json",
+    "shutdown_stop_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-stop.json"
+  },
+  "latest_isolated_services": {
+    "backend_sha256": "706B24A269BA505FA44B932305F0F469DFBB37D2A44D2F5536E04984125AD368",
+    "product_sha256": "AB8ACBD3362513B27CEF0C0C51652F0490EACDE7EAC9962132A4B15C73A61E9F",
+    "shared_contract_sha256": "E9D0F18B12A3DF0EBE0B77B556C02F6426D3BB01325D0C66E991D92DFE3F38F4",
+    "focused_tests_passed": 11
   }
 }

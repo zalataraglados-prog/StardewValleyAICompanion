@@ -1,0 +1,26 @@
+{
+  "schema_version": "r2_lab_shop_alignment_test_outcome.v1",
+  "created_at": "2026-11-24T15:32:24.2035694+08:00",
+  "same_input_state_hash": "4fe37b577b83784b815e90ebd4b66a4d9c4ab4fff9ae7623054e68980203f0dc",
+  "old_backend_core_sha256": "A1158D4D8081BBC4E6C5375BC7C9774D154993CEBDE21B93D17BD2B418876C19",
+  "aligned_backend_core_sha256": "D34BC3371E6050053E7C8E8059E481FCEFCECAEBDA1B72F8D06DF073984A0F6C",
+  "old_available_shop_wait_candidates": 0,
+  "aligned_available_shop_wait_candidates": 9,
+  "source_versions_aligned_without_reloading_game": true,
+  "focused_shop_tests_passed": 11,
+  "transaction_completed": false,
+  "cash_before_shop_attempt": 4106,
+  "cash_after_shop_attempt": 4106,
+  "last_original_control_action": "recovery:close_blocking_menu",
+  "last_original_execution": "execution-0561-item-0001.json",
+  "remaining_runner_issue": "Generic daily-plan mandatory-menu recovery preempted the selected sale wait. This is a lab runner entry-mode issue; no production code bug is claimed.",
+  "puffer_trial": {
+    "verified_actions": 3,
+    "first_block_reason": "fishing_inventory_full_requires_storage_transfer",
+    "target_caught": false,
+    "attempts": 8,
+    "first_block_empty_slots": 0,
+    "first_block_time": 1330
+  },
+  "formal_training_authorized": false
+}

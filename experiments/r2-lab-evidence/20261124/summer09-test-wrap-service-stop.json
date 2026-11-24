@@ -1,0 +1,35 @@
+{
+  "stopped_at": "2026-11-24T15:30:58.3467608+08:00",
+  "reason": "Bounded test finished; preserving a verified checkpoint before the user-requested independent agent/recovery audit.",
+  "run_id": "r2-global-daily-20261117-171253",
+  "runtime_attempt": "summer08-native-services-aligned-20261124",
+  "services": [
+    {
+      "role": "product",
+      "id": 12868,
+      "stopped": true
+    },
+    {
+      "role": "backend",
+      "id": 3536,
+      "stopped": true
+    },
+    {
+      "role": "game",
+      "id": 32056,
+      "stopped": true
+    }
+  ],
+  "all_recorded_services_stopped": true,
+  "checkpoint_report": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-pre-audit-save-20261124\\verified.json",
+  "actual_main_sha256": "5BD793B48B51263414A2F272CF0DD2E0066014C8FD4FD1690495BBD575EA06E5",
+  "total_day": 36,
+  "season": "summer",
+  "day_of_month": 9,
+  "time": 600,
+  "cash": 4467,
+  "health": 100,
+  "deepest_mine": 6,
+  "cold_readback_after_this_final_save_verified": false,
+  "formal_training_authorized": false
+}
