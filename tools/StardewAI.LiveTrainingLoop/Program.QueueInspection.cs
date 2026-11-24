@@ -150,18 +150,15 @@ static partial class Program
         if (requiresObservationAnchor)
             throw new InvalidDataException("Explicit native output snapshot anchor cache identity changed; no later-frame fallback is permitted.");
 
-        if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
-        {
-            return (latestJson, latest, true, "state_hash_changed");
-        }
-
         if (latestTick > beforeTick)
         {
-            return (latestJson, latest, true, "game_tick_advanced_without_hash_change");
+            return (latestJson, latest, true, string.Equals(latestHash, beforeHash, StringComparison.Ordinal)
+                ? "game_tick_advanced_without_hash_change"
+                : "state_hash_changed");
         }
 
-        // Menus can pause the game tick while changing observable UI state. Force one
-        // main-thread capture before waiting on a tick that may not advance.
+        // A different snapshot profile can change the hash without advancing the world.
+        // Force a main-thread capture here, also allowing genuine same-tick menu changes.
         var sameTickRefresh = await ReadExecutionSnapshotAsync(
             http,
             options,
@@ -172,7 +169,7 @@ static partial class Program
         latestJson = sameTickRefresh.Json;
         latestHash = ReadString(latest, "state_hash");
         latestTick = ReadLong(latest, "game_tick");
-        if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
+        if (latestTick >= beforeTick && !string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
         {
             return (latestJson, latest, true, "same_tick_state_hash_changed");
         }
@@ -196,7 +193,7 @@ static partial class Program
                 latestJson = refreshed.Json;
                 latestHash = ReadString(latest, "state_hash");
                 latestTick = ReadLong(latest, "game_tick");
-                if (!string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
+                if (latestTick >= beforeTick && !string.Equals(latestHash, beforeHash, StringComparison.Ordinal))
                 {
                     return (latestJson, latest, true, "state_hash_changed");
                 }

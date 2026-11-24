@@ -159,6 +159,18 @@ passed in 14 seconds, twice (472 before the added independent-clock clone case,
 precise root cause or a widened timeout. Builds and small focused checks can
 remain two-CPU; daytime full Backend checks use the measured four-CPU profile.
 
+2026-11-24T23:42:55+08:00 test-watchdog correction: final-head CI on `f8ac9bd6`
+passed 4181/4183 Backend cases; `http-server-error` and `unavailable` stopped at
+the outer 15-second test wait, at `lookup_returned` / `mutation_returned`, before
+result assertions. The production lookup itself permits 15 seconds; the test
+also awaits the original RPC and write-through request, failure and observation
+files. Its bounded end-to-end watchdog is now 60 seconds. The production lookup
+deadline, request/lookup counts, drift refusal and all settlement assertions are
+unchanged. The earlier load-sensitive observation remains historical evidence,
+not a claim about the precise scheduling cause of either CI failure.
+
+<!-- audit_invalidation: scope=15-second outer wait as sufficient budget for the complete museum recovery integration test; invalidated_at=2026-11-24T23:42:55+08:00; superseded_by=60-second test-only watchdog; reason=the inner lookup alone permits 15 seconds and the outer path includes durable writes and the initial RPC; historical_only=true -->
+
 ### Linked Position History
 
 The original prepared-transfer service now conditionally admits both selected

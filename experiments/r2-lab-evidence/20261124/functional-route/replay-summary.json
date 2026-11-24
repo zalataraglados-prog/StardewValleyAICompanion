@@ -1,0 +1,115 @@
+{
+  "schema_version": "functional_route_replay_summary.v1",
+  "recorded_at": "2026-11-24T21:56:29+08:00",
+  "source_commit": "00c5a75d6929a41a8f4a28cd16b6d24157555eab",
+  "source_branch": "fix/r2-selected-route-admission-20261124",
+  "schema_scope": "functional_existing_access",
+  "native_sample": {
+    "complete_three_year_rollout_claim": false,
+    "year": 5,
+    "new_prerequisite_acquisition_claim": false,
+    "day": 25,
+    "original_dates_retained": true,
+    "season": "spring",
+    "total_day": 472
+  },
+  "candidate_pool": 215,
+  "primary_group_size": 1,
+  "goal_id": "goal.fishing.complete_master_angler",
+  "request_state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+  "accepted_candidate_audit": [
+    {
+      "candidate_id": "fishing:attempt:IslandSouthEastCave|3|20|25|27|25|1|7",
+      "kind": "catch_fish",
+      "decision": "accepted",
+      "reasons": [
+        "fits_aggregate_budget"
+      ],
+      "candidate_minutes": 43,
+      "candidate_energy_cost": 7,
+      "remaining_minutes_before": 770,
+      "remaining_minutes_after": 727,
+      "remaining_energy_before": 426,
+      "remaining_energy_after": 419
+    },
+    {
+      "candidate_id": "ship:Farm:71,14:10:267:route:IslandSouthEastCave:0,7",
+      "kind": "route_connector_tile",
+      "decision": "accepted",
+      "reasons": [
+        "fits_aggregate_budget"
+      ],
+      "candidate_minutes": 79,
+      "candidate_energy_cost": 0,
+      "remaining_minutes_before": 727,
+      "remaining_minutes_after": 648,
+      "remaining_energy_before": 419,
+      "remaining_energy_after": 419
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\functional-admission-20261124-final\\compile-request.json",
+      "bytes": 1226022,
+      "sha256": "e27f2ec95f0431db07df141ba20a6189227b3da780dea3d0e96325ed12b19684"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\functional-admission-20261124-final\\compile-response.json",
+      "bytes": 247850,
+      "sha256": "42762ef8f4234d11488826c8631a93beb4fa854616046341ce72ba0b1f47edab"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\functional-admission-20261124-final\\functional-route-evidence.json",
+      "bytes": 11776,
+      "sha256": "88e0b571103b7a15fa49e759ef1f07b65c0393c9b3d3fd6a80d500af39fc7d6f"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\functional-admission-20261124-final\\native-route-proof.json",
+      "bytes": 437,
+      "sha256": "1a6e7dbb59d4493b44a11dfa0f7b28250b790b5318059b62b2df11631f7a97ca"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\functional-admission-20261124-final\\native-route-assessment.json",
+      "bytes": 1125,
+      "sha256": "5aecaf2c4456b715f99f002f197caf80ed0d55496b7feae882e35be531418783"
+    }
+  ],
+  "binary_identity": [
+    {
+      "path": "D:\\StardewValleyAICompanion-r2-route-admission-20261124\\experiments\\StardewAI.GoalConditionedBootstrap\\bin\\Release\\net8.0\\StardewAI.Contracts.dll",
+      "bytes": 1528320,
+      "sha256": "57701872a873b4c5ad2326ce876d155e020795100453f845cf4bc9fff72fd1df"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion-r2-route-admission-20261124\\experiments\\StardewAI.GoalConditionedBootstrap\\bin\\Release\\net8.0\\StardewAI.Core.dll",
+      "bytes": 4769280,
+      "sha256": "37b856d6e3ee1ef8dfa44e06f626f2aec33bf1261815f81c83e11c8373e5001c"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion-r2-route-admission-20261124\\experiments\\StardewAI.GoalConditionedBootstrap\\bin\\Release\\net8.0\\StardewAI.GoalConditionedBootstrap.dll",
+      "bytes": 8422912,
+      "sha256": "ca4d08b9d52cd48f9ff48d2fc1247f31206dea6daf072ac037495302b2f52e06"
+    }
+  ],
+  "tests": {
+    "real_artifact_matrix": 11,
+    "bootstrap_errors": 0,
+    "related_focused": 489,
+    "counts_overlap": true,
+    "portable_functional_and_admission": 40,
+    "bootstrap_warnings": 0,
+    "three_consumer_parity": true,
+    "prepared_nested_change_rejected": true,
+    "real_artifact_matrix_passed": 11,
+    "backend_adjacent": 71
+  },
+  "retained_failures": [
+    "Initial CLI child-process failures: system dotnet exposed only .NET 6; fixed process-local DOTNET_ROOT/PATH, original failures retained.",
+    "Initial game-free build omitted existing FormalTrainingNativeAdmissionTests referenced by source-schedule native-binding tests; restored both test entries, final portable run passed.",
+    "Intermediate A/B evidence outputs rejected generated step IDs/standalone-versus-joint budget annotations; retained outside this final case, strict native receipt checks unchanged."
+  ],
+  "raw_storage": "Original native records, source snapshot chunks, full compile request/response and test logs remain outside Git at the pinned D paths.",
+  "game_started": false,
+  "native_actions_dispatched": 0,
+  "formal_training_authorized": false
+}

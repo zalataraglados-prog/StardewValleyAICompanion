@@ -56,6 +56,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         async Task<object> Compose(CropTeacherManagedSeedOwner currentOwner, int iteration, object? selection)
         {
             var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(currentOwner.CurrentSnapshotPath), JsonOptions)!;
+            selection = await RestoreSelectionForComposition(currentOwner, snapshot, selection);
             var task = InvokeLive<Task>("ComposeCropTeacherDailyDispatchAsync", http, options, iteration, f.Shared.Inputs.Plan,
                 f.Shared.Inputs.Request, currentOwner, new HashSet<string>(StringComparer.Ordinal), snapshot, selection!);
             await task;

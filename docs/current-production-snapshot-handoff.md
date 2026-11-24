@@ -1,5 +1,150 @@
 # Current Production Snapshot Handoff
 
+## Latest272: Actual Accepted History Reopens and Exposes Both Source Segments
+
+The same production trace reader now reads the accepted parent prefix with the
+parent's original Backend/journal and sequence numbers, and the child with its
+own. DeveloperSavedBoundary explicitly anchors parent accepted save41, the
+loaded frame, manual review and original copied ledger marker; it is NOT a
+native saved-content readback. Do not flatten these sequences, include old42-47,
+or use this trace to issue strict production/terminal or training certificates.
+
+The first actual nonempty child reopen exposed premature legacy ID validation.
+The existing `saved-source:<sha>` IDs now derive before the original per-record
+index check; no original or child evidence rewrite, ordinary ID modes unchanged.
+Final142 focused/adjacent tests passed. The actual closed271 owner reopened
+read-only with41 parent transitions,9 child transitions and743 pinned sources,
+ending at accepted summer4 0c828950. Proof61b9710a97c75161c128d775aaa35c70e97adbff488e884f0a1c5727b6e4421a.
+No Backend/native dispatch, new save, old tail change, or training. Next resume
+Stage5 actual selected route/source/quantity/deadline/shared calendar/Day-0
+evidence per GLOBAL_DAILY_PLAN_CONTINUATION_CN.md; no replay of accepted summer3.
+
+## Latest271: Native Copied Summer3 Day Closed, Saved Summer4
+
+Process-local hash-pinned MSYS2 Mesa llvmpipe on the existing game SDL passed a
+hidden GL4.6 framebuffer probe. The actual isolated game loaded those exact
+WGL DLLs and the copied original summer3 save; no system GPU/driver/registry
+or original game-directory changes. Silent, hidden, CPU2, BelowNormal.
+
+The original source rebind and same-live managed owner entry succeeded with
+the stabilized actual frame. Main ran10iterations/7verified primary actions;
+the child owner accepted9operations including native water4+2+2, one native
+refill, and original overnight at sequence9. All8 same planted blueberry
+tiles advanced a day (days-to-harvest-with-water11->10). Independently captured
+summer4 disk save matches the owner-accepted witness fingerprint
+54fb4a23522effaf85db0baa34829ec6a5955bed3dcd9619caeed9c9379b7218.
+Business proof b75decfb1b2a850f9460b594077a21c30bad04afd0d6f0347c9d59f4c9bd53d9,
+external block271-managed-global-loop. Exit2 is the bounded
+crop_teacher_managed_first_day_saved_owner_retained stop, not the outcome test.
+All owned game/services closed after verification; no summer4 work dispatched.
+Original saved41, old42-47 and ledger486 remain byte-identical. No formal data.
+
+NEXT: existing production evidence must explicitly compose the accepted
+parent prefix, developer-only loaded-source segment and child native evidence;
+do not issue old strict reload credit or whole-lifecycle credit from child-only
+history. Reuse this accepted day; no replay. Stage5->570->569/formal stay OPEN.
+
+## Latest270: Native Prerequisite Still Absent; Actual Entry and Frames Checked
+
+The exact same-session SDL probe used the game's installed SDL2.dll without
+starting the game: the only display selected Microsoft GDI Generic OpenGL1.1,
+with neither required framebuffer extension. No device/driver changes.
+Current 270 preflight confirms immutable inputs/ports/disk and graphics_ready=false;
+no replacement game, ledger mutation or service has been launched.
+
+The copied-save launcher now uses the existing real `continue-live-crop-managed-owner`
+entry. Its offline actual entry preflight reached the native-process check and
+rejected the intentional no-process session; no dataset rows or actions.
+Retained 267/268 real frames show a second launch boundary: at the same tick124,
+the first full observation had not populated the daily quest presentation, while
+the later raw hash matched the first real item receipt. The old same-live kernel
+rejects the first-to-later difference; only `quests.daily_quest_offer` differed.
+After the graphics prerequisite, preserve the initial observation and bind the
+next actual full frame, checking the same tick/hash before submitting the marker.
+Do not normalize the offer out of the source or change the existing comparator.
+
+Only launch the new270 isolated package when graphics is actually available.
+Owner/runtime handoff remains summer3 water, native growth, and summer4 save;
+evaluate original accepted owner evidence, not the first-day stop's exit code.
+No change to full production, Stage5->570->569, or formal training status.
+
+## Latest269: Existing Owner Source Verified Offline; Native Load Blocked
+
+Default-null DeveloperSavedSourcePath on the EXISTING owner preserves immutable
+original plan/initial inputs, imports accepted parent planning certificates
+through saved41, binds the copied snapshot/rebound ledger and exact native
+process origin, and namespaces child operations by source hash. Original42-47,
+ledger486 and original save remain unchanged; strict reload and old executors
+are not weakened. Resume uses the same owner. The existing first-day stop switch
+uses the saved source's day only in this explicit developer fork; original plan
+dates and ordinary/default behavior remain unchanged.
+
+Focused/adjacent Backend86/86 passed. A separate OFFLINE check with real retained
+267 snapshot/268 marker reply/readback and original41 prefix imported2nights,
+selected route_to_farm and reopened the same child source without replay. TRX
+21ac40df2ab4dc833f72036014909d1f508ae4b6d3fec808aff19ea1634f18c9;
+retained-source report2885698d871cad0364cb5c16da6a391efe352d3b85795d5271856ee4a5cf0194.
+Neither result proves a current live process, water/growth or whole lifecycle.
+
+The new269 copied summer3 game16764 failed graphics initialization BEFORE save
+load or actions: NoSuitableGraphicsDeviceException/missing framebuffer extension.
+Readonly device discovery also reports GTX1050 disabled/code22; causality not
+fully established. No driver/device changes; owner question pending. Only the
+exact owned failed process was closed; logs/copy retained, original hashes
+unchanged. No269 Backend/Product/Main/ledger mutation or new save occurred.
+
+NEXT remains real copied summer3 water->growth->save, after graphics recovery,
+in a new isolated evidence package using the tested existing-owner attachment.
+Never relaunch/overwrite the failed package or replay13accepted days. Full
+production aggregation must explicitly handle parent-prefix/developer-load
+provenance; child-only trace cannot certify the complete original lifecycle.
+Stage5->570->569 and formal training remain OPEN.
+
+Owner separately authorized AGY claude-opus-4-6-thinking. First no-tools review
+returned nonempty/exit0 in560.70s, but included unrelated retained context and
+omitted requested negative cases: provisional review6/10, coding UNRATED.
+No actionable fix, paid correction or widened permissions. Original exchange
+and assessment: external agy-20261118/saved269-opus; skill updated. OpenAI pause
+and other provider restrictions unchanged. All local task handles terminal.
+
+## Latest267/268: Saved-Day Fork Saved, But Crop Ownership Was Not Restored
+
+PR591 ownCI44224280514 succeeded; normally merged main3a878870 and exact merged
+temporary branch removed. Original old game/services are GONE after host reboot;
+never reuse old PIDs (3356 was observed as svchost). Unsaved42-47 is not current
+world. Original four-file summer3/accepted41 save, ledger486 and old owner tail
+remain unchanged. Owner authorized one-off47 developer supplement/exclusion and,
+separately, copied summer3 recovery. Do not repeat the authorization question.
+
+Actual new native load retained raw snapshots/events/logs and exact copied save
+fingerprint f1174f975b870d352739c0b6a4e71e9f6182f5f142f3a1d95f7693a5d45ea4e4.
+This is a bounded DEVELOPER fork, not old strict saved-resource readback success:
+declared environment/endpoint and observed weed/CC derived-note differences are
+recorded, all other business resources checked, raw data unchanged. No generic
+native-reload certificate or ordinary old47 acceptance is fabricated.
+
+Copied saved ledger481 ->482 via original Backend API; independent original
+mutation replay and RequireReconciledReadback passed. Reuse existing same new
+game/Backend/Product and frozen263/264 binaries. Main exited0,17iterations,
+6verified primary actions and actual summer3->4 save. However, no crop water was
+dispatched and all8 crops' growth counters stayed unchanged. Controller restored
+only ledger, not existing crop owner; mechanical maintenance is intentionally
+absent from autonomous pool. Business recovery FAILED, despite CLI/save success;
+entire diagnostic branch excluded from formal training. Original result retained,
+new business-outcome.json says business_exit_verified=false. New game/services
+closed only after saved boundary. Original tail/save/ledger remain unchanged.
+
+NEXT explicit saved-source initialization of EXISTING managed owner, inheriting
+original plan and accepted planning-prefix progress, distinct operation IDs and
+actual process binding. Reuse original composition/compiler/executors; do not add
+mechanical work to autonomous candidates or repeat13days. Host reserve4096MiB,
+stop256/gzip and same future water opt-in remain scoped settings, not product gates.
+AGY original model selection was rejected by current CLI catalog before a review;
+no substantive result/retry/fallback, controller continues. Process identities,
+authorization and raw evidence stay on external COLLAB_BOARD/267/268, not Git.
+Full managed production/Teacher21/Stage5->570->569/formal remain OPEN; see
+[current recovery details](SAVED_DAY_DEVELOPMENT_RECOVERY_CN.md).
+
 ## Latest265: Both Layers Merged / Real Water And Pickup Samples Passed
 
 - PR589/590 MERGED under normal protection; origin/main94e3abfe has tested df7996a5 tree a6fb280405c1b418a4d3611755c6ff9577827dd4. Final590 own CI44217637509 SUCCESS, Core2866/Backend4130, zero failures/skips. Both merged temporary remote branches removed under exact head leases. Merge-push CI is a separate result.

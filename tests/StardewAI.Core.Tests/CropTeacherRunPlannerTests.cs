@@ -1,5 +1,6 @@
 using System.Text.Json;
 using StardewAI.Contracts.State;
+using StardewAI.Contracts.Strategy;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
@@ -9,6 +10,55 @@ public sealed class CropTeacherRunPlannerTests
 {
     private const string CommitmentId = "crop:parsnip:first";
     private const string SeedId = "(O)472";
+
+    [Theory]
+    [InlineData("Farm", CropTeacherRunStageKinds.PrepareSite)]
+    [InlineData("FarmHouse", CropTeacherRunStageKinds.RouteToFarm)]
+    public void ManagedCropProtectionClearsAdjacentDebrisBeforeDailyCropWork(string location, string expectedStage)
+    {
+        var (plan, request) = BuildPlan();
+        var tiles = request.LayoutIntents[0].Tiles;
+        var crops = tiles.Select(tile => new
+        {
+            location_id = "Farm", tile_x = tile.TileX, tile_y = tile.TileY, harvest_source_seed_id = "472",
+            dead = false, needs_watering = true, ready_for_harvest = false
+        }).ToArray();
+        var snapshot = Snapshot(location, 0, crops, totalDay: 2);
+        snapshot.GameVersion = "1.6.15";
+        var objects = new[]
+        {
+            new { tile_x = 9, tile_y = 11, qualified_item_id = "(O)676" },
+            new { tile_x = 8, tile_y = 11, qualified_item_id = "(O)676" },
+            new { tile_x = 10, tile_y = 11, qualified_item_id = "(BC)130" },
+            new { tile_x = 10, tile_y = 12, qualified_item_id = "(O)450" }
+        };
+        snapshot.State["farm"] = Domain(new { crops = Field(crops), objects = Field(objects) });
+        var target = Assert.Single(CropTeacherDebrisProtection.ReadFrontier(snapshot, tiles));
+        Assert.Equal(new MoneyRevenueCropPlantingTile(9, 11), target.Key);
+        Assert.Equal("(O)676", target.Value);
+        var ledger = new StrategyCommitmentLedger
+        {
+            CropPlantingCommitments =
+            [
+                new()
+                {
+                    CommitmentId = CommitmentId, SeedQualifiedItemId = SeedId,
+                    PlantingTotalDay = 1, LastInSeasonHarvestTotalDay = 4
+                }
+            ]
+        };
+        var step = CropTeacherRunPlanner.Evaluate(plan, request, snapshot, completedDayBoundaryKeys: DayBoundariesThrough(2),
+            resourceLedger: ledger, protectEstablishedCrops: true);
+        Assert.Equal(expectedStage, step.Stage);
+        Assert.Equal(CropTeacherDebrisProtection.Reason, step.Reason);
+        Assert.Equal(CommitmentId, step.CommitmentId);
+
+        snapshot.State["farm"] = Domain(new { crops = Field(crops), objects = Field(objects.Skip(1).ToArray()) });
+        var normal = CropTeacherRunPlanner.Evaluate(plan, request, snapshot, completedDayBoundaryKeys: DayBoundariesThrough(2),
+            resourceLedger: ledger, protectEstablishedCrops: true);
+        Assert.NotEqual(CropTeacherDebrisProtection.Reason, normal.Reason);
+        Assert.Equal(location == "Farm" ? CropTeacherRunStageKinds.ExecuteCropBatch : CropTeacherRunStageKinds.RouteToFarm, normal.Stage);
+    }
 
     [Theory]
     [InlineData("crop_teacher_water_target_crop_missing", true)]

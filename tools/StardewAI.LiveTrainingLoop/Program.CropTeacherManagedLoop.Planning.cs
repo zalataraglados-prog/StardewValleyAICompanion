@@ -17,6 +17,7 @@ static partial class Program
             ContentAddressedJsonArtifactReader.ReadAllText(managedOwner.CurrentLedgerPath), JsonOptions);
         return CropTeacherRunPlanner.Evaluate(plan, request, snapshot, preparedCommitmentIds,
             accepted?.CompletedHarvestTileKeys ?? legacyTransitions?.CompletedHarvestTileKeys,
-            accepted?.CompletedDayBoundaryKeys ?? legacyTransitions?.CompletedDayBoundaryKeys, ledger);
+            accepted?.CompletedDayBoundaryKeys ?? legacyTransitions?.CompletedDayBoundaryKeys, ledger,
+            protectEstablishedCrops: managedOwner is not null);
     }
 }

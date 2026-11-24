@@ -42,6 +42,8 @@ public sealed partial class CropTeacherControlIntegrationSourceGuardTests
         var compose = program.IndexOf("await ComposeCropTeacherDailyDispatchAsync(", StringComparison.Ordinal);
         var terminal = program.IndexOf("await BuildCropTeacherOwnedJointTerminalApproachAsync(", StringComparison.Ordinal);
         Assert.True(restore >= 0 && restore < compose && compose < terminal);
+        var composition = Read("tools", "StardewAI.LiveTrainingLoop", "Program.CropTeacherDailyComposition.cs");
+        Assert.DoesNotContain("await RestoreCropTeacherDailySelectionAsync(", composition, StringComparison.Ordinal);
         Assert.Contains("managedOwner is not null && selectedOtherForExecution is null", program, StringComparison.Ordinal);
         Assert.Contains("managedTerminalControl ??= await BuildCropTeacherOwnedTerminalContinuationAsync", program, StringComparison.Ordinal);
     }

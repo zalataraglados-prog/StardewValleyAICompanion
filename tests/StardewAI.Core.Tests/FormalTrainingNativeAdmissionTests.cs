@@ -51,13 +51,14 @@ public sealed class FormalTrainingNativeAdmissionTests
         Assert.False(VerifyPolicyFixture(incompleteCriterionIndex).FormalProductTrainingAuthorized);
     }
 
-    private static GoalMethodFormalTrainingAdmissionReport VerifyPolicyFixture(int index)
+    internal static GoalMethodFormalTrainingAdmissionReport VerifyPolicyFixture(int index,
+        FormalNativeRouteProofReference? proof = null)
     {
         var selfTest = typeof(GoalMethodFormalTrainingAdmissionBuilder).Assembly
             .GetType("StardewAI.GoalConditionedBootstrap.BootstrapSelfTest")!;
         return Assert.IsType<GoalMethodFormalTrainingAdmissionReport>(selfTest.GetMethod(
             "VerifyFormalTrainingAdmissionPolicy", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, new object[] { index }));
+            .Invoke(null, new object?[] { index, proof }));
     }
 
     [Theory]

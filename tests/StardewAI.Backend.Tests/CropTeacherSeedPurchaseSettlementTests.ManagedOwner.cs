@@ -185,6 +185,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         foreach (var attempt in Directory.EnumerateDirectories(continuations)) Clean(attempt);
                         Clean(continuations);
                     }
+                    var pickup = Path.Combine(native, "harvest-pickup");
+                    Clean(Path.Combine(pickup, "live-snapshots")); Clean(pickup);
                     Clean(Path.Combine(native, "teacher-ledgers")); Clean(native);
                 }
             Clean(OwnerRoot);

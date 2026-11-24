@@ -1,8 +1,11 @@
+using StardewAI.Contracts.Training;
+
 namespace StardewAI.GoalConditionedBootstrap;
 
 internal static partial class BootstrapSelfTest
 {
-    internal static GoalMethodFormalTrainingAdmissionReport VerifyFormalTrainingAdmissionPolicy(int incompleteCriterionIndex = 0)
+    internal static GoalMethodFormalTrainingAdmissionReport VerifyFormalTrainingAdmissionPolicy(int incompleteCriterionIndex = 0,
+        FormalNativeRouteProofReference? nativeRouteProof = null)
     {
         var criteria = Enumerable.Range(0, 19)
             .Select(index => new GoalMethodCoverageCriterionReconciliation(
@@ -170,16 +173,18 @@ internal static partial class BootstrapSelfTest
 
         var ready = GoalMethodFormalTrainingAdmissionBuilder.BuildReport(
             reconciliation,
-            evidence);
-        Require(ready.Status ==
-                    "blocked_open_formal_training_evidence" &&
+            evidence, nativeRouteProof);
+        var pendingNative = ready.NativeRouteAssessment!.Gates.Where(gate => !gate.Satisfied)
+            .Select(gate => gate.GateId).ToArray();
+        var nativeReady = pendingNative.Length == 0;
+        Require(ready.Status == (nativeReady ? "ready_for_separate_formal_training_promotion_review" :
+                    "blocked_open_formal_training_evidence") &&
                 ready.TeacherTrainingEvidenceReady &&
-                !ready.RuntimeProductPromotionReady &&
-                !ready.ReadyForSeparatePromotionReview &&
+                ready.RuntimeProductPromotionReady == nativeReady &&
+                ready.ReadyForSeparatePromotionReview == nativeReady &&
                 !ready.FormalProductTrainingAuthorized &&
                 ready.CurrentTeacherBlockingReasons.Length == 0 &&
-                ready.DownstreamPromotionBlockingReasons.SequenceEqual(
-                    StardewAI.Core.Training.StardewTrainingSessionLauncher.PendingNativeAdmissionBlockers),
+                ready.DownstreamPromotionBlockingReasons.SequenceEqual(pendingNative),
             "Formal admission reconciliation bypassed the independent pending native requirements.");
 
         reconciliation.Criteria[incompleteCriterionIndex] = reconciliation.Criteria[incompleteCriterionIndex] with
@@ -204,7 +209,7 @@ internal static partial class BootstrapSelfTest
         };
         var blocked = GoalMethodFormalTrainingAdmissionBuilder.BuildReport(
             reconciliation,
-            evidence);
+            evidence, nativeRouteProof);
         Require(blocked.Status ==
                     "blocked_open_formal_training_evidence" &&
                 !blocked.TeacherTrainingEvidenceReady &&

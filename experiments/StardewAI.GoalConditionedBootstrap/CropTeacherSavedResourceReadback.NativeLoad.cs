@@ -14,6 +14,11 @@ public sealed partial class CropTeacherSavedResourceReadback
             ReplaceEnvelope(state, "farm", "hay_storage", ProjectNativeCellarEnvelope(beforeHay, afterHay));
         if (TryEnvelope(before, "player", "multiplayer_wallet", out var beforeWallet) && TryEnvelope(after, "player", "multiplayer_wallet", out var afterWallet))
             ReplaceEnvelope(state, "player", "multiplayer_wallet", CropTeacherNativeWalletLoadComparison.ProjectEnvelope(beforeWallet, afterWallet));
+        if (before.GameVersion == "1.6.15" &&
+            TryEnvelope(before, "time", "season", out var beforeSeason) && TryEnvelope(after, "time", "season", out var afterSeason) &&
+            ReadString(beforeSeason, "value") == "summer" && ReadString(afterSeason, "value") == "summer" &&
+            TryEnvelope(before, "farm", "objects", out var beforeObjects) && TryEnvelope(after, "farm", "objects", out var afterObjects))
+            ReplaceEnvelope(state, "farm", "objects", ProjectNativeSummerWeedEnvelope(beforeObjects, afterObjects));
         // Only the already-validated original snapshots are evidence. This view is never ingested, hashed as a snapshot, or persisted.
         return new SnapshotEnvelope { SaveId = after.SaveId, PlayerId = after.PlayerId, GameVersion = after.GameVersion, State = state };
     }
@@ -30,6 +35,56 @@ public sealed partial class CropTeacherSavedResourceReadback
         values[field] = envelope;
         state[domain] = JsonSerializer.SerializeToElement(values);
     }
+
+    private static JsonElement ProjectNativeSummerWeedEnvelope(JsonElement before, JsonElement after)
+    {
+        if (!TryObjectRows(before, out var source) || !TryObjectRows(after, out var loaded) ||
+            source.GetArrayLength() != loaded.GetArrayLength()) return after;
+
+        JsonObject? comparison = null;
+        // In 1.6.15 SaveGame calls Game1.setGraphicsForSeason(onLoad: true).
+        // Its Summer branch can call SetIdAndSprite(676/677) on these vanilla weeds.
+        // The bridge sorts by tile. Restore just those IDs in the comparison view.
+        for (var i = 0; i < source.GetArrayLength(); i++)
+        {
+            var original = source[i];
+            var current = loaded[i];
+            var id = ReadString(original, "item_id");
+            var loadedId = ReadString(current, "item_id");
+            if (id == loadedId || id is not ("674" or "675" or "676" or "677" or "784" or "785") ||
+                loadedId is not ("676" or "677") || ReadString(original, "qualified_item_id") != "(O)" + id ||
+                ReadString(current, "qualified_item_id") != "(O)" + loadedId ||
+                !SameObjectTile(original, current) || !PlainObject(original) || !PlainObject(current)) continue;
+            comparison ??= JsonNode.Parse(after.GetRawText())!.AsObject();
+            var row = comparison["value"]![i]!.AsObject();
+            row["item_id"] = id;
+            row["qualified_item_id"] = "(O)" + id;
+        }
+        return comparison is null ? after : JsonSerializer.SerializeToElement(comparison);
+    }
+
+    private static bool TryObjectRows(JsonElement envelope, out JsonElement rows)
+    {
+        rows = default;
+        return FieldEnvelopeValidator.IsReadableStatus(ReadString(envelope, "status")) &&
+            envelope.TryGetProperty("value", out rows) && rows.ValueKind == JsonValueKind.Array;
+    }
+
+    private static bool SameObjectTile(JsonElement first, JsonElement second) =>
+        EqualCoordinate(first, second, "tile_x") && EqualCoordinate(first, second, "tile_y");
+
+    private static bool EqualCoordinate(JsonElement first, JsonElement second, string field) =>
+        first.TryGetProperty(field, out var a) && second.TryGetProperty(field, out var b) &&
+        a.ValueKind == JsonValueKind.Number && b.ValueKind == JsonValueKind.Number &&
+        a.TryGetInt32(out var x) && b.TryGetInt32(out var y) && x == y;
+
+    private static bool PlainObject(JsonElement row) =>
+        row.TryGetProperty("big_craftable", out var big) && big.ValueKind == JsonValueKind.False &&
+        row.TryGetProperty("held_item", out var held) && held.ValueKind == JsonValueKind.Null;
+
+    private static string? ReadString(JsonElement value, string name) =>
+        value.ValueKind == JsonValueKind.Object && value.TryGetProperty(name, out var field) &&
+        field.ValueKind == JsonValueKind.String ? field.GetString() : null;
 
     private static JsonElement ProjectNativeCellarEnvelope(JsonElement before, JsonElement after)
     {

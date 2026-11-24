@@ -22,6 +22,8 @@ public sealed partial class CropTeacherManagedSeedOwner
 
     private CropTeacherManagedProductionEvidence ReadObservedProductionEvidence(CropTeacherTerminalProductionReference reference)
     {
+        if (developerSavedSource is not null)
+            throw new InvalidDataException("Developer saved-source owner cannot adopt a continuous native production certificate.");
         if (HashFile(reference.ManifestPath) != reference.ManifestSha256)
             throw new InvalidDataException("Observed terminal production reference changed.");
         var manifest = Read<JsonObject>(reference.ManifestPath);
@@ -35,6 +37,8 @@ public sealed partial class CropTeacherManagedSeedOwner
     {
         var prefix = selection.ObservedPrefix;
         if (prefix is null) return;
+        if (developerSavedSource is not null)
+            throw new InvalidDataException("Developer saved-source owner cannot adopt a continuous native production certificate.");
         if (terminalTarget is not null)
         {
             if (!hasObservedTerminalSelection || selection.CreateTarget(AcceptedTerminalDepositCount) != terminalTarget ||

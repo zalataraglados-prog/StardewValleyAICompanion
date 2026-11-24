@@ -13,7 +13,7 @@ internal static partial class CropTeacherProductionEvidence
         {
             var references = ReadbacksBetween(trace, transitions[index - 1], transitions[index]);
             if (references.Length == 0) continue;
-            var before = Read<SnapshotEnvelope>(transitions[index - 1].NativeTransition.AfterSnapshotPath);
+            var before = Read<SnapshotEnvelope>(transitions[index - 1].NativeTransition.EffectiveAfterSnapshotPath);
             var after = Read<SnapshotEnvelope>(transitions[index].NativeTransition.BeforeSnapshotPath);
             if (before.StateHash == after.StateHash && before.GameTick == after.GameTick) continue;
             // Declare the accepted owner relation; the lifecycle consumer verifies it once when closing the chain.

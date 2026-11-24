@@ -157,7 +157,25 @@ public sealed record MoneyRevenueCropNativeLifecycleTransitionRequest(
     [JsonPropertyName("native_shared_source")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public MoneyRevenueCropNativeSharedSourceReference? NativeSharedSource { get; init; }
+
+    [JsonPropertyName("native_harvest_settlement")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MoneyRevenueCropNativeHarvestSettlementReference? NativeHarvestSettlement { get; init; }
+
+    [JsonIgnore]
+    public string EffectiveAfterSnapshotPath => NativeHarvestSettlement?.SettledAfterSnapshotPath ?? AfterSnapshotPath;
 }
+
+public sealed record MoneyRevenueCropNativeHarvestSettlementReference(
+    [property: JsonPropertyName("run_plan_path")] string RunPlanPath,
+    [property: JsonPropertyName("ledger_path")] string LedgerPath,
+    [property: JsonPropertyName("covered_commitment_ids")] string[] CoveredCommitmentIds,
+    [property: JsonPropertyName("commitment_id")] string CommitmentId,
+    [property: JsonPropertyName("step_id")] string StepId,
+    [property: JsonPropertyName("batch_index")] int BatchIndex,
+    [property: JsonPropertyName("model_action_path")] string ModelActionPath,
+    [property: JsonPropertyName("settlement_path")] string SettlementPath,
+    [property: JsonPropertyName("settled_after_snapshot_path")] string SettledAfterSnapshotPath);
 
 public sealed record MoneyRevenueCropNativeWateringPreparationReference(
     [property: JsonPropertyName("run_request_path")] string RunRequestPath,

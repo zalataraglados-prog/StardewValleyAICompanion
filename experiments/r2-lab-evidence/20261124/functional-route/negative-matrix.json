@@ -1,0 +1,79 @@
+[
+  {
+    "case": "valid_year5",
+    "expected_accepted": true,
+    "actual_accepted": true,
+    "test_passed": true,
+    "reason": "8 strict native functional frames and the original joint plan replayed. Sample years are retained; this is not a three-year rollout or prerequisite-acquisition claim."
+  },
+  {
+    "case": "wrong_source_hash",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Functional source artifact hash/identity changed: D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json"
+  },
+  {
+    "case": "forged_budget_refreshed_hash",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Frozen selected plan does not match the original joint compiler replay."
+  },
+  {
+    "case": "forged_cost_refreshed_hash",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Frozen candidates/costs differ from the original complete baseline evaluation."
+  },
+  {
+    "case": "joint_disabled",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Functional selection requires its original explicit joint-calendar request and exact source."
+  },
+  {
+    "case": "primary_truncated",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Functional primary group must retain the original available fishing alternatives."
+  },
+  {
+    "case": "duplicate_receipt",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "A functional receipt was duplicated."
+  },
+  {
+    "case": "after_substitution",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Supplied after snapshot is not the recorded action capture."
+  },
+  {
+    "case": "wrong_target",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Selected native catch does not bind the exact planned command and source."
+  },
+  {
+    "case": "self_attested_no_trace",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Functional route metadata is incomplete."
+  },
+  {
+    "case": "mixed_acquisition_binding",
+    "expected_accepted": false,
+    "actual_accepted": false,
+    "test_passed": true,
+    "reason": "Functional evidence must not masquerade as a fresh-save acquisition binding."
+  }
+]

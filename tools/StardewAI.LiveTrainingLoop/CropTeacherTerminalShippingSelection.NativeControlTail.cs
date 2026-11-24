@@ -14,9 +14,9 @@ internal sealed partial class CropTeacherTerminalShippingSelection
         var rows = manifest["owner_transitions"]?.Deserialize<CropTeacherManagedProductionTransition[]>(CropTeacherManagedSeedOwner.JsonOptions)
             ?? throw new InvalidDataException("Native terminal lacks its original owner control tail.");
         var anchors = rows.Select((row, index) => (row, index)).Where(value =>
-            SamePath(value.row.NativeTransition.AfterSnapshotPath, retention.AfterSnapshotPath)).ToArray();
+            SamePath(value.row.NativeTransition.EffectiveAfterSnapshotPath, retention.AfterSnapshotPath)).ToArray();
         if (anchors is not [var anchor] || anchor.index == rows.Length - 1 ||
-            !SamePath(rows[^1].NativeTransition.AfterSnapshotPath, headPath)) return null;
+            !SamePath(rows[^1].NativeTransition.EffectiveAfterSnapshotPath, headPath)) return null;
         var tail = rows.Skip(anchor.index + 1).ToArray();
         var prior = anchor.row;
         foreach (var row in tail)
@@ -26,7 +26,7 @@ internal sealed partial class CropTeacherTerminalShippingSelection
                 row.OwnerSequence <= prior.OwnerSequence ||
                 transition.RunId != prior.NativeTransition.RunId || transition.ExecutorVersion != prior.NativeTransition.ExecutorVersion ||
                 transition.TotalDay != retention.HarvestTotalDay ||
-                !SamePath(transition.BeforeSnapshotPath, prior.NativeTransition.AfterSnapshotPath))
+                !SamePath(transition.BeforeSnapshotPath, prior.NativeTransition.EffectiveAfterSnapshotPath))
                 return null;
             foreach (var path in new[] { transition.QueuePath, transition.BeforeSnapshotPath, transition.ExecutionReceiptPath, transition.AfterSnapshotPath })
                 if (!inputs.Hashes.ContainsKey(Path.GetFullPath(path)))

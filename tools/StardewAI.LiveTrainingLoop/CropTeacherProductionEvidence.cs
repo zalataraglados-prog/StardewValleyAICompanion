@@ -53,6 +53,7 @@ internal static partial class CropTeacherProductionEvidence
         IReadOnlyList<CropTeacherManagedSharedSourceReturn> shared, string output, Func<string, string, Task> write,
         bool retainSaleStock = false, bool transferredStock = false, bool inventoryEffects = false, bool appliedNativeWork = false)
     {
+        trace.RequireOriginalNativeProductionLineage();
         trace.ValidateInputsUnchanged();
         var (request, plan) = CropTeacherResumeLoader.ReadVerifiedPlan(trace.NativeRunPlanPath);
         var production = Read<MoneyRevenueCropProductionObligationPlan>(plan.CropProductionPlanPath);
@@ -64,7 +65,7 @@ internal static partial class CropTeacherProductionEvidence
         // Nothing inside that lifecycle is filtered out or relabelled as resource-neutral.
         var transitions = ordered.Skip(firstPlanting).Select(row => BindNativePreparation(trace, plan, row)).ToArray();
         var checkpointResumes = SavedReadbackResumes(trace, ordered.Skip(firstPlanting).ToArray());
-        if (!SamePath(transitions[^1].AfterSnapshotPath, trace.AcceptedSnapshotPath))
+        if (!SamePath(transitions[^1].EffectiveAfterSnapshotPath, trace.AcceptedSnapshotPath))
             throw new InvalidDataException("Managed crop production does not reach its accepted terminal source.");
         var dayStarts = transitions.GroupBy(row => row.TotalDay).ToDictionary(group => group.Key, group =>
             (group.FirstOrDefault(row => row.TransitionKind == "crop_actions") ??

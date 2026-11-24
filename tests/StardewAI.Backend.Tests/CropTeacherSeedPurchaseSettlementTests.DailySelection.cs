@@ -314,10 +314,20 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     private static async Task<object> ComposeSelection(OwnedWateringFixture f, CropTeacherManagedSeedOwner owner,
         HttpClient http, int iteration, StardewAI.Contracts.State.SnapshotEnvelope source, object? selection = null)
     {
+        selection = await RestoreSelectionForComposition(owner, source, selection);
         var task = InvokeLive<Task>("ComposeCropTeacherDailyDispatchAsync", http, f.Shared.Runtime.LiveOptions,
             iteration, f.Shared.Inputs.Plan, f.Shared.Inputs.Request, owner, new HashSet<string>(StringComparer.Ordinal), source, selection!);
         await task;
         return task.GetType().GetProperty("Result")!.GetValue(task)!;
+    }
+
+    private static async Task<object?> RestoreSelectionForComposition(CropTeacherManagedSeedOwner owner,
+        StardewAI.Contracts.State.SnapshotEnvelope source, object? selection)
+    {
+        var day = source.State["time"].GetProperty("total_days").GetProperty("value").GetInt32();
+        var task = InvokeLive<Task>("RestoreCropTeacherDailySelectionAsync", owner, day, selection!);
+        await task;
+        return task.GetType().GetProperty("Result")!.GetValue(task);
     }
 
     private static T? SelectionProperty<T>(object result, string name) =>

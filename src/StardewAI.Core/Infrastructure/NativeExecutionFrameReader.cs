@@ -1,0 +1,166 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.Training;
+using StardewAI.Contracts.State;
+using StardewAI.Core.OptionRegistry;
+using static StardewAI.Core.Infrastructure.NativeExecutionSourceSupport;
+
+namespace StardewAI.Core.Infrastructure;
+
+public static partial class NativeExecutionFrameReader
+{
+    // Single-action functional evidence keeps its recorded source frame. It
+    // does not apply a goal's rollout deadline to the sample's game year.
+    public static VerifiedNativeActionFrame ReadVerifiedProduct(string queuePath, string receiptPath, string afterPath) =>
+        ReadFrame(queuePath, receiptPath, afterPath, null, NativeProductBoundary.NativeAction, false);
+
+    internal enum NativeProductBoundary { None, Tilling, NativeAction, WateringResources }
+    private static readonly StardewAI.Core.OptionRegistry.OptionRegistry Registry = new();
+    private static readonly IReadOnlyDictionary<string, Type> RequestFieldTypes = typeof(TrainingExecutionRequest)
+        .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+        .Select(property => (Name: property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name, Type: property.PropertyType))
+        .Where(field => field.Name is not null).ToDictionary(field => field.Name!, field => field.Type, StringComparer.Ordinal);
+
+    internal static VerifiedNativeActionFrame ReadFrame(string actionQueuePath, string executionReceiptPath,
+        string afterSnapshotPath, string? compiledStateHash, NativeProductBoundary productBoundary, bool appliedNativeWork,
+        Func<ActionQueueItem, CompiledActionStep[], string, bool>? primitiveIdentityMatches = null)
+    {
+        Require(!appliedNativeWork || primitiveIdentityMatches is not null,
+            "Applied native work requires its original queue primitive matcher.");
+        var resultPath = RequiredFile(executionReceiptPath);
+        var raw = NativeFrameArtifacts.Read<JsonElement>(resultPath, "Native action");
+        var result = ReadTyped<TrainingExecutionResult>(resultPath, "training_execution_result.v1");
+        Require(result.OptionId.StartsWith("executor.", StringComparison.Ordinal), "Native option is not an executor primitive.");
+        var spec = Registry.GetRequired(result.OptionId);
+        var journalPath = RequiredFile(Text(raw, "execution_request_journal_path"));
+        var journal = ExecutionRequestJournalReader.Read(journalPath);
+        var native = journal.Request;
+        var wateringResources = productBoundary == NativeProductBoundary.WateringResources;
+        Require(!wateringResources || NativeWateringObservationContract.IsCompleteRequest(native),
+            "Selected watering requires its complete original observation request.");
+        var requestRaw = JsonSerializer.Deserialize<JsonElement>(journal.RequestJson);
+        var beforePath = RequiredFile(Text(journal.Metadata, "before_snapshot_path"));
+        var before = ReadTyped<SnapshotEnvelope>(beforePath, "snapshot.v1");
+        var afterPath = RequiredFile(afterSnapshotPath);
+        Require(SamePath(afterPath, RequiredFile(Text(raw, "after_snapshot_path"))),
+            "Supplied after snapshot is not the recorded action capture.");
+        var after = ReadTyped<SnapshotEnvelope>(afterPath, "snapshot.v1");
+        ValidateSnapshot(before);
+        ValidateSnapshot(after);
+        ValidateRecordedBoundary(raw, before, after);
+        Require(before.GameVersion == after.GameVersion && before.BridgeVersion == after.BridgeVersion &&
+            Identity(before.SaveId) == Identity(after.SaveId) && Identity(before.PlayerId) == Identity(after.PlayerId) &&
+            before.GameTick >= 0 && (wateringResources && result.Status == "blocked"
+                ? after.GameTick >= before.GameTick : after.GameTick > before.GameTick), "Native frame identity/version drifted.");
+        var queuePath = RequiredFile(actionQueuePath);
+        var recordedQueuePath = raw.TryGetProperty("mechanical_compiled_queue_path", out var mechanical) &&
+            mechanical.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(mechanical.GetString())
+                ? mechanical.GetString()! : Text(raw, "effective_compiled_queue_path");
+        Require(SamePath(queuePath, RequiredFile(recordedQueuePath)),
+            "Supplied queue is not the recorded mechanical action queue.");
+        var queue = ReadTyped<ActionQueueEnvelope>(queuePath, "action_queue.v1");
+        var actor = queue.Actor ?? throw new InvalidDataException("Native actor is missing.");
+        Require(queue.Items is not null && queue.Items.All(item => item is not null), "Native queue has malformed items.");
+        var items = queue.Items!.Where(item => item.QueueItemId == result.QueueItemId).ToArray();
+        Require(items.Length == 1 && queue.Status == "pending" && queue.StateHash == (compiledStateHash ?? before.StateHash) &&
+            queue.ExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer && !string.IsNullOrWhiteSpace(queue.QueueId) &&
+            EqualJson(actor, ExecutionTargetProfiles.CreateActor(queue.ExecutionMode)),
+            "Native queue does not bind this action frame.");
+        var item = items[0];
+        var command = item.NormalizedCommand;
+        Require(command is not null && item.Status == "pending" && item.OptionId == result.OptionId &&
+            item.BlockingReasons is { Length: 0 } && item.MissingStateFactors is { Length: 0 } &&
+            item.PreconditionResults is not null && item.PreconditionResults.All(row => row is not null && row.Status == "passed") &&
+            item.PermissionRequired == "executor" && item.BehaviorCategory == spec.BehaviorCategory &&
+            item.CompilerResponsibility == spec.CompilerResponsibility && item.TrainingRole == spec.TrainingRole &&
+            queue.CompilerDiagnostics is { Length: 0 } && command.StateHash == (compiledStateHash ?? before.StateHash) &&
+            command.OptionId == result.OptionId && command.ExecutionMode == queue.ExecutionMode &&
+            command.BehaviorCategory == item.BehaviorCategory && command.CompilerResponsibility == item.CompilerResponsibility &&
+            command.TrainingRole == item.TrainingRole &&
+            command.Parameters is not null && command.Parameters.All(row => row is not null && !string.IsNullOrWhiteSpace(row.Name)) &&
+            command.Steps is { Length: > 0 } && command.Steps.All(step => step is not null && !string.IsNullOrWhiteSpace(step.StepId)) &&
+            command.StrategyPlan is { Length: 0 } && command.SocialPlan is null && command.QuestPlan is null &&
+            EqualJson(command.Actor, actor), "Native command admission drifted.");
+        Require(!string.IsNullOrWhiteSpace(result.RunId) && result.RunId == native.RunId &&
+            result.QueueId == queue.QueueId && native.QueueId == queue.QueueId && native.QueueItemId == item.QueueItemId &&
+            native.OptionId == result.OptionId &&
+            native.BeforeStateHash == before.StateHash && result.BeforeStateHash == before.StateHash &&
+            Text(requestRaw, "schema_version") == "training_execution_request.v1" &&
+            Text(requestRaw, "execution_mode") == queue.ExecutionMode && Text(requestRaw, "actor") == actor.ActorId &&
+            Text(requestRaw, "save_isolation_path") == native.SaveIsolationPath && !string.IsNullOrWhiteSpace(native.SaveIsolationPath) &&
+            result.FeedbackAvailable &&
+            (wateringResources && result.Status == "blocked"
+                ? result.PrimitiveVerificationStatus != "verified" && result.BlockReasons is { Length: > 0 }
+                : result.Status == "applied" && (appliedNativeWork
+                ? TrainingExecutionVerification.IsAcceptedProgress(result.Status, result.PrimitiveVerificationStatus, result.OptionId)
+                : result.PrimitiveVerificationStatus == "verified") && result.BlockReasons is { Length: 0 }) &&
+            (appliedNativeWork
+                ? primitiveIdentityMatches!(item, command!.Steps, result.PrimitiveKind)
+                : result.PrimitiveKind == result.OptionId["executor.".Length..]) &&
+            Text(raw, "execution_request_sha256") == Text(journal.Metadata, "raw_request_sha256") &&
+            Text(raw, "execution_request_nonce") == native.RequestNonce,
+            "Native request/result identity or verification drifted.");
+        ValidateWireParameters(requestRaw, command!);
+        var endpoint = Text(journal.Metadata, "executor_url");
+        if (productBoundary != NativeProductBoundary.None && Uri.TryCreate(endpoint, UriKind.Absolute, out var productUri) &&
+            productUri.AbsolutePath == "/api/v1/product/execute")
+            VerifySelectedProduct(productUri, journal, raw, result, before, after,
+                requireTillingObservation: productBoundary == NativeProductBoundary.Tilling,
+                requireWateringObservation: wateringResources);
+        else
+            Require(Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" &&
+                uri.AbsolutePath == "/api/v1/training/execute", "Source is not a native training executor request.");
+        var paths = new Dictionary<string, string>(StringComparer.Ordinal) { ["queue"] = queuePath, ["result"] = resultPath,
+            ["before"] = beforePath, ["after"] = afterPath, ["journal"] = journalPath, ["request_gzip"] = journalPath + ".gz" };
+        var hashes = paths.ToDictionary(pair => pair.Key, pair => NativeFrameArtifacts.HashFile(pair.Value), StringComparer.Ordinal);
+        return new(queue, item, result, native, before, after, endpoint, hashes, beforePath, afterPath) { SourcePaths = paths };
+    }
+
+    private static string Text(JsonElement row, string name) => NativeFrameArtifacts.RequiredString(row, name);
+    private static bool SamePath(string left, string right) => string.Equals(left, right,
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
+    private static void ValidateWireParameters(JsonElement request, NormalizedCommand command)
+    {
+        // Compare the declared wire fields, not a second queue-to-request compiler.
+        var bindings = command.Parameters.Select(row => new
+            { Name = TrainingExecutionParameterBindings.WireFieldForQueueParameter(row.Name), row.Value });
+        foreach (var group in bindings.Where(row => RequestFieldTypes.ContainsKey(row.Name)).GroupBy(row => row.Name))
+        {
+            var values = group.Select(row => row.Value).Distinct(StringComparer.Ordinal).ToArray();
+            Require(values.Length == 1 && request.TryGetProperty(group.Key, out var field) && Equivalent(field, values[0], RequestFieldTypes[group.Key]),
+                "Native request differs from its compiled wire parameter: " + group.Key);
+        }
+    }
+
+    private static bool Equivalent(JsonElement actual, string expected, Type fieldType) => actual.ValueKind switch
+    {
+        JsonValueKind.String => actual.GetString() == expected,
+        JsonValueKind.Number => actual.GetRawText() == expected,
+        JsonValueKind.True or JsonValueKind.False => bool.TryParse(expected, out var boolean) && actual.GetBoolean() == boolean,
+        // Original nullable numeric/bool request mapping uses null for an empty compiled placeholder.
+        JsonValueKind.Null => expected.Length == 0 && Nullable.GetUnderlyingType(fieldType) is not null,
+        _ => false
+    };
+
+    private static void Require(bool condition, string reason)
+    { if (!condition) throw new InvalidDataException(reason); }
+
+    private static bool EqualJson(object? left, object? right) =>
+        string.Equals(JsonSerializer.Serialize(left, left?.GetType() ?? typeof(object), NativeFrameArtifacts.Compact),
+            JsonSerializer.Serialize(right, right?.GetType() ?? typeof(object), NativeFrameArtifacts.Compact), StringComparison.Ordinal);
+}
+
+public sealed record VerifiedNativeActionFrame(ActionQueueEnvelope Queue, ActionQueueItem Item,
+    TrainingExecutionResult Result, TrainingExecutionRequest Request, SnapshotEnvelope Before, SnapshotEnvelope After,
+    string Endpoint, IReadOnlyDictionary<string, string> SourceSha256, string BeforeSnapshotPath, string AfterSnapshotPath)
+{
+    public IReadOnlyDictionary<string, string> SourcePaths { get; init; } = new Dictionary<string, string>();
+}

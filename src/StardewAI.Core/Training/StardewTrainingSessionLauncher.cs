@@ -13,16 +13,8 @@ namespace StardewAI.Core.Training
 {
     public sealed class StardewTrainingSessionLauncher
     {
-        // These native admission consumers are not yet bound. A schedule-ready
-        // flag, diagnostic receipt, or a leaf formal=false artifact cannot clear
-        // either lock. Keep one shared list for actual launch and readiness review
-        // until authoritative replay of BOTH requirements is wired here.
         public static IReadOnlyList<string> PendingNativeAdmissionBlockers { get; } =
-            Array.AsReadOnly(new[]
-            {
-                "golden_walnut_master_angler_native_admission_not_bound",
-                "gourmand_orders_2_3_native_admission_not_bound"
-            });
+            FormalNativeRouteAdmissionConsumer.BlockerIds;
 
         public TrainingLaunchResult Prepare(TrainingLaunchRequest request)
         {
@@ -162,6 +154,11 @@ namespace StardewAI.Core.Training
                     reasons.Add("formal_prepared_manifest_identity_mismatch");
                     return BuildManifest(request, rootPath);
                 }
+                if (manifest.NativeRouteProof != request.NativeRouteProof)
+                {
+                    reasons.Add("formal_prepared_manifest_native_route_proof_mismatch");
+                    return BuildManifest(request, rootPath);
+                }
                 return manifest;
             }
             catch (Exception ex) when (ex is IOException or JsonException or ArgumentException)
@@ -194,6 +191,7 @@ namespace StardewAI.Core.Training
             {
                 RunId = runId,
                 Mode = mode,
+                NativeRouteProof = formalTraining ? request.NativeRouteProof : null,
                 RootPath = rootPath,
                 DatasetPath = FullPathOrDefault(request.DatasetPath, Path.Combine(rootPath, "datasets", "training-feature-rows.jsonl")),
                 ReportPath = FullPathOrDefault(request.ReportPath, Path.Combine(rootPath, "reports", "training-report.json")),
@@ -382,7 +380,11 @@ namespace StardewAI.Core.Training
 
         private static void ValidateFormalBoundary(TrainingRunManifest manifest, List<string> reasons)
         {
-            reasons.AddRange(PendingNativeAdmissionBlockers);
+            var native = FormalNativeRouteAdmissionConsumer.Evaluate(manifest.NativeRouteProof);
+            manifest.NativeRouteAssessment = native;
+            foreach (var gate in native.Gates)
+                if (!gate.Satisfied)
+                    reasons.Add(gate.GateId);
             if (!string.Equals(manifest.WindowStyle, "hidden", StringComparison.OrdinalIgnoreCase))
                 reasons.Add("formal_training_window_style_must_be_hidden");
             if (!IsLoopbackHttpUrl(manifest.ProductExecutorUrl))

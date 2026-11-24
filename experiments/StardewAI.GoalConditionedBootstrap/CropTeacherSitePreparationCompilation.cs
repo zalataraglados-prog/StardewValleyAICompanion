@@ -26,17 +26,22 @@ internal sealed class CropTeacherSitePreparationCompilation
         var explicitInputs = new CropTeacherRetainedInputs(explicitPaths);
         var run = Read<MoneyRevenueCropNativeProductionRunPlanRequest>(runRequestPath);
         var request = Read<MoneyRevenueCropSitePreparationPlanRequest>(siteRequestPath);
+        var protection = request.SchemaVersion == CropTeacherDebrisProtection.RequestSchema;
         Check(SamePath(run.CropProductionPlanPath, request.CropProductionPlanPath),
             "Site request changed its original production plan path.");
         inputs = RetainDependencies(explicitPaths, request.CropProductionPlanPath);
-        Observation = CropTeacherSiteApproachObservation.Open(runRequestPath, sourcePath, ledgerPath,
-            commitmentIds, commitmentId, stepId, observationPath);
+        Observation = protection
+            ? CropTeacherSiteApproachObservation.OpenForProtectedLayout(runRequestPath, sourcePath, ledgerPath,
+                commitmentIds, commitmentId, stepId, observationPath)
+            : CropTeacherSiteApproachObservation.Open(runRequestPath, sourcePath, ledgerPath,
+                commitmentIds, commitmentId, stepId, observationPath);
         var layout = run.LayoutIntents.Single(row => row.CommitmentId == commitmentId);
         Check(request.CommitmentId == commitmentId && request.LocationId == layout.LocationId &&
             SamePath(request.PreparationSnapshotPath, observationPath) &&
             BootstrapArtifactGuard.EqualJson(request.Tiles, layout.Tiles) &&
-            BootstrapArtifactGuard.EqualJson(request.WateringRefillPreparationTiles,
-                layout.WateringRefillPreparationTiles ?? Array.Empty<MoneyRevenueCropPlantingTile>()),
+            BootstrapArtifactGuard.EqualJson(request.WateringRefillPreparationTiles, protection
+                ? Array.Empty<MoneyRevenueCropPlantingTile>()
+                : layout.WateringRefillPreparationTiles ?? Array.Empty<MoneyRevenueCropPlantingTile>()),
             "Site request changed its original production plan, commitment, layout or observation.");
         var retainedPlan = Read<MoneyRevenueCropSitePreparationPlan>(sitePlanPath);
         var plan = MoneyRevenueCropSitePreparationPlanBuilder.Build(siteRequestPath);
@@ -55,6 +60,16 @@ internal sealed class CropTeacherSitePreparationCompilation
             JsonNode.DeepEquals(Model(Observation.SourceStateHash), Read<JsonNode>(modelPath)),
             "Site whole original/full model differs from its shared recipe.");
         var source = CropTeacherSupportingSource.Read(runRequestPath, sourcePath, ledgerPath, commitmentIds, stepId);
+        if (protection)
+        {
+            var crop = source.Ledger.CropPlantingCommitments.Single(row => row.CommitmentId == commitmentId);
+            var target = new MoneyRevenueCropPlantingTile(Step.TileX, Step.TileY);
+            Check(Step.ActionOptionId == "executor.clear_obstacle" &&
+                CropTeacherDebrisProtection.HasLiveLayout(source.Snapshot, layout.Tiles, crop.SeedQualifiedItemId) &&
+                CropTeacherDebrisProtection.ReadFrontier(source.Snapshot, layout.Tiles).TryGetValue(target, out var sourceId) &&
+                Step.Parameters.Count(parameter => parameter.Name == "clear_source_id" && parameter.Value == sourceId) == 1,
+                "Crop protection clearance is not bound to the accepted live crop layout and debris source.");
+        }
         baseLedger = CropTeacherSeedSupportSource.Copy(source.Ledger);
         var queue = Read<ActionQueueEnvelope>(queuePath);
         var rebuilt = new ActionQueueCompiler().Compile(Read<SmallModelActionEnvelope>(modelPath), source.Snapshot, source.Ledger);

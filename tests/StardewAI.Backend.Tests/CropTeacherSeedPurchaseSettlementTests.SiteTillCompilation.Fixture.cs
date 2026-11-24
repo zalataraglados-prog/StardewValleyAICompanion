@@ -26,6 +26,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal SiteTillFiles(Action<JsonNode>? adjustContext = null, Action<Fixture>? prepareSource = null,
             string frontier = "till")
         {
+            var protection = frontier == "protection";
             F = new OwnedRouteFixture(prepareSource: source =>
             {
                 ChangeState(source.Before, "player", player =>
@@ -77,6 +78,12 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         { new { tile_x = frontier == "access" ? 1 : 0, tile_y = 0,
                             qualified_item_id = "(O)784", name = "Weeds", clear_kind = "weeds" } } });
                     }
+                    if (protection)
+                    {
+                        location["terrain_features"] = JsonSerializer.SerializeToNode(new
+                            { status = "available", value = Array.Empty<object>() });
+                        location["objects"] = ProtectionDebris();
+                    }
                     adjustContext?.Invoke(context);
                 });
                 if (frontier == "access")
@@ -84,23 +91,63 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                         locations["collision_grid"]!["value"]!["notable_tiles"] = JsonSerializer.SerializeToNode(new[]
                         { new { tile_x = 1, tile_y = 0, collision_blocked = true },
                             new { tile_x = 0, tile_y = 1, collision_blocked = true } }));
+                if (protection)
+                {
+                    ChangeState(source.Before, "time", time =>
+                    {
+                        time["total_days"]!["value"] = 112;
+                        time["year"]!["value"] = 2;
+                        time["season"]!["value"] = "spring";
+                        time["day"]!["value"] = 1;
+                    });
+                    ChangeState(source.Before, "locations", locations =>
+                        locations["collision_grid"]!["value"]!["notable_tiles"] = JsonSerializer.SerializeToNode(new[]
+                        {
+                            new { tile_x = 1, tile_y = 0, collision_blocked = true },
+                            new { tile_x = 2, tile_y = 0, collision_blocked = true },
+                            new { tile_x = 3, tile_y = 0, collision_blocked = true },
+                            new { tile_x = 2, tile_y = 1, collision_blocked = true },
+                            new { tile_x = 1, tile_y = 1, collision_blocked = true }
+                        }));
+                    ChangeState(source.Before, "farm", farm =>
+                    {
+                        farm["objects"] = ProtectionDebris();
+                        farm["crops"] = JsonSerializer.SerializeToNode(new
+                        {
+                            status = "available", value = Enumerable.Range(0, 2).Select(x => new
+                            {
+                                tile_x = x, tile_y = 0, location_id = "Farm", harvest_source_seed_id = "745",
+                                dead = false
+                            }).ToArray()
+                        });
+                    });
+                }
                 prepareSource?.Invoke(source);
             });
             var observed = ReadSiteSnapshot(WriteValidSiteMainObservation(F));
             observed.State["current_location"] = F.Source.Before.State["current_location"];
+            if (protection)
+                ChangeState(observed, "farm", farm =>
+                {
+                    farm.AsObject().Remove("crops");
+                    farm.AsObject().Remove("objects");
+                });
             observed.StateHash = SnapshotHash.ComputeStateHash(observed.State);
             Observation = Write("till-observation.json", observed);
             var layout = F.Inputs.Request.LayoutIntents.Single();
-            Request = Write("till-request.json", new MoneyRevenueCropSitePreparationPlanRequest
+            var request = new MoneyRevenueCropSitePreparationPlanRequest
             {
                 CropProductionPlanPath = F.Inputs.Request.CropProductionPlanPath, CommitmentId = Id,
                 PreparationSnapshotPath = Observation, LocationId = layout.LocationId, Tiles = layout.Tiles,
-                WateringRefillPreparationTiles = layout.WateringRefillPreparationTiles ?? Array.Empty<MoneyRevenueCropPlantingTile>()
-            });
+                WateringRefillPreparationTiles = protection ? Array.Empty<MoneyRevenueCropPlantingTile>() :
+                    layout.WateringRefillPreparationTiles ?? Array.Empty<MoneyRevenueCropPlantingTile>()
+            };
+            if (protection) request.SchemaVersion = CropTeacherDebrisProtection.RequestSchema;
+            Request = Write("till-request.json", request);
             SitePlan = MoneyRevenueCropSitePreparationPlanBuilder.Build(Request);
             Plan = Write("till-plan.json", SitePlan);
             var step = MoneyRevenueCropSitePreparationPlanBuilder.SelectNextExecutableStep(SitePlan) ?? SitePlan.Steps[0];
-            Assert.Equal(frontier switch { "clear" => "clear_then_fresh_snapshot_rebind",
+            Assert.Equal(frontier switch { "clear" or "protection" => "clear_then_fresh_snapshot_rebind",
                 "access" => "clear_access_then_fresh_snapshot_rebind", "noop" => "already_prepared",
                 _ => "direct_till_ready" }, step.PlanStatus);
             var parameters = step.Parameters.Concat(new[] { new SmallModelActionParameter
@@ -115,6 +162,15 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Queue = Write("till-queue.json", new ActionQueueCompiler().Compile(full.Deserialize<SmallModelActionEnvelope>(JsonOptions)!,
                 F.Source.Before, F.Source.Ledger));
         }
+
+        private static JsonNode ProtectionDebris() => JsonSerializer.SerializeToNode(new
+        {
+            status = "available", value = new[]
+            {
+                new { tile_x = 2, tile_y = 0, qualified_item_id = "(O)784", name = "Weeds", clear_kind = "weeds" },
+                new { tile_x = 1, tile_y = 1, qualified_item_id = "(O)784", name = "Weeds", clear_kind = "weeds" }
+            }
+        })!;
 
         private string Write<T>(string name, T value)
         {

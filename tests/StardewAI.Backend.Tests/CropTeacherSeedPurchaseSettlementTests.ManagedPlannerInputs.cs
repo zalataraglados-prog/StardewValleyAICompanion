@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StardewAI.Contracts.State;
 using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
@@ -10,7 +11,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [InlineData(true)]
     public async Task ManagedPlannerInputsConsumeAcceptedNightBeforeAndAfterOriginalNativeReadback(bool load)
     {
-        using var f = new SavedReadbackOwnerFixture();
+        using var f = new SavedReadbackOwnerFixture(prepareSource: DeclarePlannerFarmObjectView);
         await using var owner = await f.Night.Open();
         await f.CompleteNight(owner);
         if (load) await f.Run(owner, await f.Admit(owner));
@@ -28,7 +29,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     [Fact]
     public async Task ManagedPlannerInputsConsumeAcceptedHarvestInsteadOfReharvestingMissingCrops()
     {
-        using var f = new OvernightFixture();
+        using var f = new OvernightFixture(prepareSource: source => DeclarePlannerFarmObjectView(source.Before));
         await using var owner = await f.Open();
         await f.Home(owner);
         var night = await f.PrepareNight(owner);
@@ -75,4 +76,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     private static CropTeacherRunStep EvaluateManagedPlannerInputs(OvernightFixture f, CropTeacherManagedSeedOwner owner) =>
         InvokeLive<CropTeacherRunStep>("EvaluateCropTeacherCurrentRunStep", f.Shared.Inputs.Plan, f.Shared.Inputs.Request,
             ReadSiteSnapshot(owner.CurrentSnapshotPath), new HashSet<string>(StringComparer.Ordinal), null!, owner);
+
+    // These sequencing cases explicitly model a farm without spawned debris.
+    // An unavailable farm.objects field must not be treated as an empty view by
+    // the production crop-protection path.
+    private static void DeclarePlannerFarmObjectView(SnapshotEnvelope snapshot) =>
+        ChangeState(snapshot, "farm", farm => farm["objects"] =
+            JsonSerializer.SerializeToNode(new { status = "available", value = Array.Empty<object>() }));
 }

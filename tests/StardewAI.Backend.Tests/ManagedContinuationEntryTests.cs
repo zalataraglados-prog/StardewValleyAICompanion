@@ -18,6 +18,25 @@ public sealed partial class ManagedContinuationEntryTests
         Assert.Throws<ArgumentException>(() => options.ValidateManagedCropTeacherContinueMode());
     }
 
+    [Fact]
+    public void SavedDayLimitIsOptInAndOnlyParsedForExplicitContinuation()
+    {
+        const string flag = "--stop-after-managed-crop-saved-day";
+        var parse = typeof(LiveTrainingOptions).GetMethod("ParseManagedContinuation", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var day = typeof(LiveTrainingOptions).GetProperty("StopAfterManagedCropSavedDay", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var prefix = new[] { "--run-id", "saved-day-options" };
+        Assert.Null(day.GetValue((LiveTrainingOptions)parse.Invoke(null, new object[] { prefix })!));
+        Assert.Equal(41, day.GetValue((LiveTrainingOptions)parse.Invoke(null, new object[] { prefix.Concat(new[] { flag, "41" }).ToArray() })!));
+        Assert.Throws<ArgumentException>(() => LiveTrainingOptions.Parse(prefix.Concat(new[] { flag, "41" }).ToArray()));
+        foreach (var invalid in new[]
+        {
+            new[] { flag }, new[] { flag, "-1" }, new[] { flag, "2147483647" }, new[] { flag, "garbage" },
+            new[] { flag, "40", flag, "41" }, new[] { flag, "41", "--stop-after-crop-teacher-first-day" }
+        })
+            Assert.IsType<ArgumentException>(Assert.Throws<TargetInvocationException>(() =>
+                parse.Invoke(null, new object[] { prefix.Concat(invalid).ToArray() })).InnerException);
+    }
+
     [Theory]
     [InlineData("owner")]
     [InlineData("process")]

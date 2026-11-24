@@ -1,9 +1,17 @@
 using System.Text.Json.Nodes;
+using StardewAI.Core.Infrastructure;
 using StardewAI.GoalConditionedBootstrap;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
 {
+    private static void ValidateManagedCropSavedDayRange(int target, CropTeacherManagedContinuationSource source)
+    {
+        var snapshot = JsonNode.Parse(ContentAddressedJsonArtifactReader.ReadAllText(source.SnapshotPath))!.AsObject();
+        if (target < ReadCropTeacherTotalDay(snapshot) || target < source.RunPlan.FirstTotalDay || target > source.RunPlan.LastTotalDay)
+            throw new ArgumentException("The managed saved-day limit must be a remaining day of the original crop plan.");
+    }
+
     private sealed record CropTeacherDayBoundaryStart(
         int FromTotalDay,
         string FromDayKey,

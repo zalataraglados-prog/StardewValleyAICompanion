@@ -1819,63 +1819,14 @@ public static class CapabilityValidator
 
 public static class DailyPlanBudgetReader
 {
-    public static int? JointEnergyBudget(SnapshotEnvelope? snapshot)
-        => StardewAI.Core.Infrastructure.SnapshotEnergyBudgetReader.AvailableWholeActionEnergy(snapshot);
-
-    public static int? AvailablePlanMinutes(
-        SnapshotEnvelope? snapshot,
-        IEnumerable<PolicyEventCandidatePrediction> rankedCandidates)
-    {
-        var currentTime = ReadSnapshotInt(snapshot, "time", "time");
-        if (!currentTime.HasValue)
-        {
-            return null;
-        }
-
-        return AvailablePlanMinutes(currentTime.Value, rankedCandidates);
-    }
-
-    public static int AvailablePlanMinutes(int currentTime, IEnumerable<PolicyEventCandidatePrediction> rankedCandidates)
-    {
-
-        var recoveryPlan = rankedCandidates.Any(candidate =>
-            string.Equals(
-                candidate.OptionId,
-                "recovery.stabilize_day",
-                StringComparison.Ordinal) ||
-            candidate.Kind.StartsWith("recovery_", StringComparison.Ordinal));
-        var deadline = recoveryPlan
-            ? GameClockBudgetPolicy.DayEndTime
-            : GameClockBudgetPolicy.AutonomousRecoveryStartTime;
-        var buffer = recoveryPlan
-            ? GameClockBudgetPolicy.RecoverySafetyBufferMinutes
-            : 0;
-        return Math.Max(
-            0,
-            GameClockBudgetPolicy.ClockMinutesBetween(
-                currentTime,
-                deadline) - buffer);
-    }
-
-    public static int? ReadSnapshotInt(SnapshotEnvelope? snapshot, string sectionName, string fieldName)
-    {
-        if (snapshot is null ||
-            !snapshot.State.TryGetValue(sectionName, out var section) ||
-            section.ValueKind != JsonValueKind.Object ||
-            !section.TryGetProperty(fieldName, out var field) ||
-            field.ValueKind != JsonValueKind.Object ||
-            !field.TryGetProperty("value", out var value) ||
-            value.ValueKind != JsonValueKind.Number ||
-            !value.TryGetInt32(out var result))
-        {
-            return null;
-        }
-
-        return result;
-    }
-
+    public static int? JointEnergyBudget(SnapshotEnvelope? snapshot) => DailyPlanResourceBudget.JointEnergyBudget(snapshot);
+    public static int? AvailablePlanMinutes(SnapshotEnvelope? snapshot, IEnumerable<PolicyEventCandidatePrediction> candidates) =>
+        DailyPlanResourceBudget.AvailablePlanMinutes(snapshot, candidates);
+    public static int AvailablePlanMinutes(int time, IEnumerable<PolicyEventCandidatePrediction> candidates) =>
+        DailyPlanResourceBudget.AvailablePlanMinutes(time, candidates);
+    public static int? ReadSnapshotInt(SnapshotEnvelope? snapshot, string section, string field) =>
+        DailyPlanResourceBudget.ReadSnapshotInt(snapshot, section, field);
 }
-
 public partial class Program
 {
 }

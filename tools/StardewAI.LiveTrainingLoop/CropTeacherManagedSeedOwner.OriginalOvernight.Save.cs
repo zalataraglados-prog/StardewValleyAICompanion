@@ -6,6 +6,47 @@ namespace StardewAI.LiveTrainingLoop;
 
 public sealed partial class CropTeacherManagedSeedOwner
 {
+    internal bool HasAcceptedOriginalSavedDay(int totalDay)
+    {
+        if (lastAcceptedOperation?.Overnight?.FromTotalDay != totalDay) return false;
+        gate.Wait();
+        try
+        {
+            ValidateState();
+            return Pending is null && !HeadRecoveryRequired && lastAcceptedPath is not null &&
+                lastAcceptedOperation?.Overnight is { } overnight &&
+                overnight.FromTotalDay == totalDay && overnight.ToTotalDay == totalDay + 1 &&
+                SamePath(overnight.AfterSnapshotPath, headSnapshotPath) &&
+                Read<JsonObject>(lastAcceptedPath)["native_save_boundary_verified"]?.GetValue<bool>() == true;
+        }
+        finally { gate.Release(); }
+    }
+
+    internal string RetainAcceptedOriginalOvernightSave(CropTeacherManagedSeedOperation operation)
+    {
+        gate.Wait();
+        try
+        {
+            ValidateState();
+            if (Pending is not null || HeadRecoveryRequired || !ReferenceEquals(lastAcceptedOperation, operation) ||
+                operation.Overnight is null || lastAcceptedPath is null)
+                throw new InvalidOperationException("Native checkpoint requires the latest accepted original overnight.");
+            var accepted = Read<JsonObject>(lastAcceptedPath);
+            var reportPath = OriginalOvernightSavePath(operation);
+            if (accepted["native_save_boundary_verified"]?.GetValue<bool>() != true ||
+                HashFile(reportPath) != Text(accepted, "overnight_save_boundary_sha256"))
+                throw new InvalidDataException("Native checkpoint cannot bind its accepted overnight certificate.");
+            var save = Read<JsonObject>(reportPath)["after_save"]?.Deserialize<SaveDirectoryFingerprint>(JsonOptions)
+                ?? throw new InvalidDataException("Native checkpoint has no accepted file fingerprint.");
+            ValidateOriginalSaveFingerprint(save, options.NativeSaveBinding!);
+            var archive = Path.Combine(operation.RuntimeDirectory, "accepted-native-save.zip");
+            RequireOutsideNativeSaveSlot(new[] { archive }, options.NativeSaveBinding);
+            NativeSaveCheckpointArchive.Retain(save, archive);
+            return archive;
+        }
+        finally { gate.Release(); }
+    }
+
     internal void ValidateOriginalOvernightSaveBinding(LiveTrainingOptions live)
     {
         var binding = options.NativeSaveBinding;

@@ -51,13 +51,15 @@ static partial class Program
         else if (terminal) await owner.ExecuteOriginalTerminalAsync(operation, http, Execute).ConfigureAwait(false);
         else if (control) await owner.ExecuteOriginalControlAsync(operation, http, Execute).ConfigureAwait(false);
         else if (overnight) await owner.ExecuteOriginalOvernightAsync(operation, http, Execute).ConfigureAwait(false);
-        else if (harvest) await owner.ExecuteOriginalHarvestAsync(operation, http, Execute).ConfigureAwait(false);
+        else if (harvest) await owner.ExecuteOriginalHarvestSettlingPickupAsync(operation, http, Execute,
+            batch => SettleCropTeacherHarvestPickupAsync(http, executorHttp, executionOptions, operation, batch)).ConfigureAwait(false);
         else if (watering) await owner.ExecuteOriginalWateringAsync(operation, http, Execute).ConfigureAwait(false);
         else await owner.ExecuteOriginalRouteAsync(operation, http, Execute).ConfigureAwait(false);
         // Native polling may evict the accepted head from the bounded backend cache.
         var retained = new CropSeedRuntimeArtifacts(operation.SupportingTransition!.InputHashes);
         await IngestCropTeacherManagedSnapshotAsync(http, options, start.SourcePath, retained).ConfigureAwait(false);
-        await IngestCropTeacherManagedSnapshotAsync(http, options, transition.AfterSnapshotPath, retained).ConfigureAwait(false);
+        await IngestCropTeacherManagedSnapshotAsync(http, options,
+            harvest ? operation.SupportingTransition!.AfterSnapshotPath : transition.AfterSnapshotPath, retained).ConfigureAwait(false);
         if (clearance) await owner.RunClearanceAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
@@ -82,6 +84,12 @@ static partial class Program
         else await owner.RunSupportingRouteAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
+        if (overnight && options.StopAfterManagedCropSavedDay.HasValue)
+        {
+            var archive = owner.RetainAcceptedOriginalOvernightSave(operation);
+            AppendProgress(options, "crop_teacher_managed_native_checkpoint_retained", iteration,
+                ReadString(before, "state_hash"), ReadString(queue, "queue_id"), "archive=" + archive);
+        }
     }
 
     private static void RequireSelectedRefillToolObservation(LiveTrainingOptions options, JsonObject record, JsonObject queue)

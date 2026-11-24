@@ -12,7 +12,7 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
-    private sealed class HarvestFixture : IDisposable
+    private sealed partial class HarvestFixture : IDisposable
     {
         internal OwnedRouteFixture Shared { get; }
         internal SnapshotEnvelope Before { get; }
@@ -121,7 +121,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         internal CropTeacherHarvest.Preparation Open(int? day = null, int? batch = null) => CropTeacherHarvest.Preparation.Open(
             Shared.Inputs.PlanPath, SourcePath, LedgerPath, new[] { Id }, Id, "harvest.step.1", day ?? Day, batch ?? Batch.BatchIndex, ModelPath, QueuePath);
 
-        internal void Emit(int applied = 2, bool failedSuffix = false)
+        internal void SetStartingDebris(int count)
+        {
+            Put(Before, "current_location", "debris", HarvestDebris(count));
+            Before.StateHash = SnapshotHash.ComputeStateHash(Before.State);
+            Ledger.SourceStateHash = Before.StateHash;
+            Fixture.Save(SourcePath, Before); Fixture.Save(LedgerPath, Ledger);
+            Compile();
+        }
+
+        internal void Emit(int applied = 2, bool failedSuffix = false, (int Held, int Ground)[]? outputs = null)
         {
             var snapshots = new List<SnapshotEnvelope>(); var paths = new List<string>(); var current = Before;
             var count = applied + (failedSuffix ? 1 : 0);
@@ -130,7 +139,8 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 var next = Copy(current); next.GameTick++;
                 if (index < applied)
                 {
-                    ApplyHarvestDelta(next, Batch.Tiles[index], Output);
+                    ApplyHarvestDelta(next, Batch.Tiles[index], Output, outputs?[index].Held ?? 1);
+                    if (outputs is not null) Put(next, "current_location", "debris", HarvestDebris(outputs[index].Ground));
                 }
                 next.StateHash = SnapshotHash.ComputeStateHash(next.State);
                 var path = Path.Combine(Shared.Runtime.LiveOptions.SnapshotDir, $"harvest-step-{index}.json");
@@ -152,7 +162,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Transition = new("crop_actions", Day, QueuePath, SourcePath, receiptPath, paths[^1], Shared.Files.Options.RunId, Shared.Files.Options.ExecutorVersion, Candidate);
         }
 
-        internal static void ApplyHarvestDelta(SnapshotEnvelope next, MoneyRevenueCropPlantingTile tile, string output)
+        private JsonArray HarvestDebris(int count) => HarvestDebris(Output, Batch.Tiles[0], count);
+
+        internal static JsonArray HarvestDebris(string output, MoneyRevenueCropPlantingTile tile, int count) => count == 0 ? new() : new(new JsonObject
+        {
+            ["qualified_item_id"] = output, ["debris_index"] = 0, ["item_quality"] = 0, ["chunk_count"] = 1,
+            ["item"] = new JsonObject { ["qualified_item_id"] = output, ["stack"] = count },
+            ["chunks"] = new JsonArray(new JsonObject { ["tile_x"] = tile.TileX, ["tile_y"] = tile.TileY })
+        });
+
+        internal static void ApplyHarvestDelta(SnapshotEnvelope next, MoneyRevenueCropPlantingTile tile, string output, int held = 1)
         {
             var rows = Field(next, "farm", "crops").AsArray();
             var target = rows.Single(row => row!["tile_x"]!.GetValue<int>() == tile.TileX && row["tile_y"]!.GetValue<int>() == tile.TileY)!;
@@ -161,23 +180,28 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 target["days_until_next_harvest_if_watered"] = target["regrow_days"]!.DeepClone(); }
             ChangeState(next, "farm", node => node["crops"]!["value"] = rows);
             ChangeState(next, "current_location", node => node["crops"]!["value"] = Field(next, "farm", "crops"));
-            var inventory = Field(next, "player", "inventory");
-            var item = inventory.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]?.GetValue<string>() == output);
-            var index = item["slot_index"]!.GetValue<int>();
-            item["stack"] = item["stack"]!.GetValue<int>() + 1; Put(next, "player", "inventory", inventory);
-            var graph = Field(next, "farm", "material_inventory_graph");
-            var graphItem = graph["inventory_nodes"]![0]!["slots"]!.AsArray().OfType<JsonObject>().Single(row => row["slot_index"]!.GetValue<int>() == index);
-            graphItem["stack"] = item["stack"]!.DeepClone();
-            var quantity = graph["quantity_rows"]!.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]!.GetValue<string>() == output);
-            quantity["available_quantity"] = item["stack"]!.DeepClone(); Put(next, "farm", "material_inventory_graph", graph);
+            AddHeldOutput(next, output, held);
             var experience = Field(next, "player", "skills_detail")["skills"]!.AsArray().Single(row => row!["skill_index"]!.GetValue<int>() == 0)!["experience"]!.GetValue<int>();
             var skill = NativeCropHarvestSkillBoundaryTests.Fixture(experience, mirrors: false).After;
             foreach (var field in new[] { "skills_detail", "level" }) Put(next, "player", field, Field(skill, "player", field));
         }
 
+        internal static void AddHeldOutput(SnapshotEnvelope next, string output, int held)
+        {
+            var inventory = Field(next, "player", "inventory");
+            var item = inventory.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]?.GetValue<string>() == output);
+            var index = item["slot_index"]!.GetValue<int>();
+            item["stack"] = item["stack"]!.GetValue<int>() + held; Put(next, "player", "inventory", inventory);
+            var graph = Field(next, "farm", "material_inventory_graph");
+            var graphItem = graph["inventory_nodes"]![0]!["slots"]!.AsArray().OfType<JsonObject>().Single(row => row["slot_index"]!.GetValue<int>() == index);
+            graphItem["stack"] = item["stack"]!.DeepClone();
+            var quantity = graph["quantity_rows"]!.AsArray().OfType<JsonObject>().Single(row => row["qualified_item_id"]!.GetValue<string>() == output);
+            quantity["available_quantity"] = item["stack"]!.DeepClone(); Put(next, "farm", "material_inventory_graph", graph);
+        }
+
         private static SnapshotEnvelope Copy(SnapshotEnvelope snapshot) => JsonSerializer.Deserialize<SnapshotEnvelope>(JsonSerializer.Serialize(snapshot, JsonOptions), JsonOptions)!;
         private static JsonNode Field(SnapshotEnvelope snapshot, string domain, string field) => JsonNode.Parse(snapshot.State[domain].GetProperty(field).GetProperty("value").GetRawText())!;
-        private static void Put(SnapshotEnvelope snapshot, string domain, string field, JsonNode value)
+        internal static void Put(SnapshotEnvelope snapshot, string domain, string field, JsonNode value)
         {
             var fields = JsonNode.Parse(snapshot.State[domain].GetRawText())!.AsObject();
             fields[field] = new JsonObject { ["status"] = "available", ["value"] = value, ["confidence"] = 1d,

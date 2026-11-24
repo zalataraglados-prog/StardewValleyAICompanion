@@ -14,9 +14,9 @@ static partial class Program
         if (owner.Pending is { } pending)
         {
             string? after = pending.SavedReadback?.AfterSnapshotPath;
-            if (pending.OriginalStart is { } preparation)
+            if (pending.OriginalStart is not null)
             {
-                var scope = preparation.VerifyTransition(CropTeacherManagedSeedOwner.OriginalSupportingTransition(pending));
+                var scope = CropTeacherManagedSeedOwner.VerifyOriginalSupportingScope(pending);
                 scope.ValidateInputsUnchanged();
                 after = scope.AfterSnapshotPath;
             }

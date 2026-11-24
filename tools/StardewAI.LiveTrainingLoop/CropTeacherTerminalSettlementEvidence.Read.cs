@@ -10,6 +10,7 @@ internal static partial class CropTeacherTerminalSettlementEvidence
     internal static async Task<CropTeacherManagedTerminalEvidence> ReadAsync(CropTeacherManagedProductionTrace trace,
         CropTeacherManagedProductionEvidence production, CropTeacherTerminalShippingTarget target, string output)
     {
+        trace.RequireOriginalNativeProductionLineage();
         // A retained boundary must re-read bytes, not a caller's warm JSON/CAS materialization.
         using var fresh = InvocationReadSession.Start(Array.Empty<string>(), enabled: false);
         output = Path.GetFullPath(output);

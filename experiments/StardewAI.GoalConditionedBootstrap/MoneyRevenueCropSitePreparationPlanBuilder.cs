@@ -14,9 +14,11 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
             MoneyRevenueCropSitePreparationPlanRequest>(
                 fullRequestPath,
                 "Money Revenue crop site-preparation plan request");
+        var protection = request.SchemaVersion == CropTeacherDebrisProtection.RequestSchema;
         Require(request.SchemaVersion is
                     "money_revenue_crop_site_preparation_plan_request.v1" or
-                    "money_revenue_crop_site_preparation_plan_request.v2" &&
+                    "money_revenue_crop_site_preparation_plan_request.v2" or
+                    CropTeacherDebrisProtection.RequestSchema &&
                 !string.IsNullOrWhiteSpace(request.CommitmentId) &&
                 !string.IsNullOrWhiteSpace(request.LocationId) &&
                 request.Tiles is not null &&
@@ -62,7 +64,10 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
             preparationSnapshot,
             "time",
             "total_days");
-        Require(preparationTotalDay <= commitment!.PlantingTotalDay &&
+        Require((protection
+                ? preparationTotalDay >= commitment!.PlantingTotalDay &&
+                    preparationTotalDay < commitment.HarvestWaves.Max(wave => wave.HarvestTotalDay)
+                : preparationTotalDay <= commitment!.PlantingTotalDay) &&
                 ReadStateString(preparationSnapshot, "player", "location_id") ==
                     request.LocationId &&
                 string.Equals(request.LocationId, "Farm", StringComparison.Ordinal),
@@ -77,7 +82,8 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
         var refillPreparationTiles =
             request.WateringRefillPreparationTiles ??
             Array.Empty<MoneyRevenueCropPlantingTile>();
-        Require(request.SchemaVersion.EndsWith(".v2", StringComparison.Ordinal) ||
+        Require(protection ? refillPreparationTiles.Length == 0 :
+                request.SchemaVersion.EndsWith(".v2", StringComparison.Ordinal) ||
                 refillPreparationTiles.Length == 0,
             "Money Revenue crop site-preparation v1 request cannot add refill preparation tiles.");
         var allPreparationTiles = requestedTiles
@@ -113,7 +119,7 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
         var evaluator = new CandidateOptionAvailabilityEvaluator();
         var availability = evaluator.Evaluate(
             preparationSnapshot,
-            new[]
+            protection ? new[] { "executor.clear_obstacle" } : new[]
             {
                 "executor.clear_obstacle",
                 "executor.break_farm_resource_clump",
@@ -123,19 +129,17 @@ public static partial class MoneyRevenueCropSitePreparationPlanBuilder
         var clearCandidates = Candidates(
             availability.Options,
             "executor.clear_obstacle");
-        var clumpCandidates = Candidates(
-            availability.Options,
-            "executor.break_farm_resource_clump");
-        var tillCandidates = Candidates(
-            availability.Options,
-            "executor.till_soil");
-        var steps = allPreparationTiles.Select(tile => BuildStep(
-                tile,
-                contextTiles,
-                clearCandidates,
-                clumpCandidates,
-                tillCandidates))
-            .ToArray();
+        MoneyRevenueCropSitePreparationStep[] PreparationSteps()
+        {
+            var clumpCandidates = Candidates(availability.Options, "executor.break_farm_resource_clump");
+            var tillCandidates = Candidates(availability.Options, "executor.till_soil");
+            return allPreparationTiles.Select(tile => BuildStep(tile, contextTiles, clearCandidates, clumpCandidates, tillCandidates)).ToArray();
+        }
+        var steps = protection
+            ? CropTeacherDebrisProtection.ReadFrontier(preparationSnapshot, requestedTiles, boundedFarmView: true)
+                .OrderBy(entry => entry.Key.TileY).ThenBy(entry => entry.Key.TileX)
+                .Select(entry => BuildProtectionStep(entry.Key, entry.Value, clearCandidates)).ToArray()
+            : PreparationSteps();
         var blockedCount = steps.Count(step => step.PlanStatus == "blocked");
         return new MoneyRevenueCropSitePreparationPlan
         {

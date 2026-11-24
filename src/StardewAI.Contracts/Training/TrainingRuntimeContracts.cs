@@ -19,6 +19,10 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("mode")]
         public string Mode { get; set; } = TrainingSessionMode.OfflineSmoke;
 
+        [JsonPropertyName("native_route_proof")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public FormalNativeRouteProofReference? NativeRouteProof { get; set; }
+
         [JsonPropertyName("root_path")]
         public string RootPath { get; set; } = @"E:\StardewAITraining";
 
@@ -120,6 +124,14 @@ namespace StardewAI.Contracts.Training
 
         [JsonPropertyName("mode")]
         public string Mode { get; set; } = TrainingSessionMode.OfflineSmoke;
+
+        [JsonPropertyName("native_route_proof")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public FormalNativeRouteProofReference? NativeRouteProof { get; set; }
+
+        [JsonPropertyName("native_route_assessment")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public FormalNativeRouteAssessment? NativeRouteAssessment { get; set; }
 
         [JsonPropertyName("root_path")]
         public string RootPath { get; set; } = string.Empty;

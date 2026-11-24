@@ -1,5 +1,9 @@
 # 训练前验收层级纠偏与计划补充条款（R2）
 
+> **2026-11-24T22:40:29+08:00 并行交接裁定。** 用户要求正常交接，本机异步验证测评与正式开训准备和实验同步。完整三年方案与长周期达标检查保留为独立实验室责任，不再倒挂为已验证功能的交接前置。单日共享资源、原生来源/身份/哈希、独立Teacher监督及正式授权继续按各自合同。[300的现行范围与历史条款失效](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#正常交接与本机并行验证300)
+
+> **2026-11-24T21:54:37+08:00 功能样本年份澄清。** 已解锁第5年样本可以证明对应功能，不要求为了三年目标把功能再从第1年实跑。样本的真实年份和前置保留，三年目标由目标计划的资源、取得顺序和日历核对；需要声明完整新档原生取得时再消费原完整证明。显式功能引用不能冒充取得引用、三单Gourmand或整局21分。当前绑定实现及真实正反例见[298](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#功能证据与联合计划回放298)。本澄清不重开已验L1，不授正式训练权限。
+
 <!-- acceptance-scope-20261103-r2; authored_at=2026-11-03T16:30:45+08:00; baseline=0b23350d60a67993172db4a5d099b01fd9b54693; owner-authorized; docs-only -->
 
 <!-- audit_invalidation: scope=r2_as_of_status; invalidated_at=2026-11-03T16:30:45+08:00; annotated_at=2026-11-03T18:52:51+08:00; superseded_by=PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md; historical_only=true -->

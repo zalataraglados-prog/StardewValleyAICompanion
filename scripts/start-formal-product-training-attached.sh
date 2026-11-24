@@ -11,6 +11,7 @@ MAX_ATTEMPTS="${STARDEWAI_FORMAL_MAX_ATTEMPTS:-2000}"
 MAX_PERSISTED_ITERATIONS="${STARDEWAI_FORMAL_MAX_PERSISTED_ITERATIONS:-4}"
 REQUIRED_VERIFIED_ACTIONS="${STARDEWAI_FORMAL_REQUIRED_VERIFIED_ACTIONS:-1}"
 SAVE_BOUNDARY_MAX_ATTEMPTS="${STARDEWAI_FORMAL_SAVE_BOUNDARY_MAX_ATTEMPTS:-16}"
+NATIVE_ROUTE_PROOF_PATH="${STARDEWAI_FORMAL_NATIVE_ROUTE_PROOF:-}"
 BACKEND_URL="http://127.0.0.1:8795"
 PRODUCT_URL="http://127.0.0.1:8768"
 BRIDGE_URL="http://127.0.0.1:8765"
@@ -95,6 +96,11 @@ do
   fi
 done
 
+if [ -n "$NATIVE_ROUTE_PROOF_PATH" ] && [ ! -f "$NATIVE_ROUTE_PROOF_PATH" ]; then
+  echo "native route proof file is missing: $NATIVE_ROUTE_PROOF_PATH" >&2
+  exit 3
+fi
+
 for executable in \
   "$APP_ROOT/StardewAI.Backend" \
   "$APP_ROOT/StardewAI.ProductExecutor" \
@@ -160,8 +166,13 @@ cat >"$request_path" <<EOF
   "allow_game_launch": false,
   "sound_enabled": false,
   "window_style": "hidden"
-}
 EOF
+if [ -n "$NATIVE_ROUTE_PROOF_PATH" ]; then
+  printf ',\n  "native_route_proof": ' >>"$request_path"
+  cat "$NATIVE_ROUTE_PROOF_PATH" >>"$request_path"
+  printf '\n' >>"$request_path"
+fi
+printf '}\n' >>"$request_path"
 
 ASPNETCORE_URLS="$BACKEND_URL" nohup "$APP_ROOT/StardewAI.Backend" \
   >"$RUN_DIR/backend.stdout.log" 2>"$RUN_DIR/backend.stderr.log" &

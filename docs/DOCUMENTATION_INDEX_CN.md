@@ -19,6 +19,9 @@
 
 ## 关键时间关系
 
+- **2026-11-24 并行交接裁定。** 300按用户要求正常交接，完整三年方案及长周期测评转为本机异步责任，与选型/开训准备和实验并行；原执行、数据及实际正式授权门不变。299以缺该方案阻塞当前功能交接的关系失效。[300现行入口](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#正常交接与本机并行验证300) · [Provider并行范围](STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md)
+- **2026-11-24 复核补充。** 299修正298将功能通过直接映射正式门的结论，固定所有原生帧依赖，保留真实功能与原日期。无目标计划时不冒领计划结论，也不以此要求重玩同档长链。[当前接手入口及局部失效范围](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#复核功能结论与正式门分开299)
+- **2026-11-24。** 按用户裁定区分功能样本年份、目标计划的第三年期限及完整新档原生取得。298接通显式功能引用、原联合计划回放与报告/prepare/launch；不再等待同档完整实跑才复用功能，也不把单日正例当完整三年证明。[输入与失效说明](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md#功能证据与联合计划回放298) · [R2范围](PRETRAINING_ACCEPTANCE_SCOPE_CORRECTION_CN.md)
 - **2026-07。** 透明读取、任务／社交／矿井基础与权威字典逐步成形。早期审计和交接记录可用于回溯字段来源及各动作当时的验证范围。 [7 月架构审计](FULL_SYSTEM_AUDIT_20260719_CN.md) · [7 月权威字典交接](stardewai-full-handoff/SHORT_HANDOFF_20260723_AUTHORITATIVE_DICTIONARY_CN.md)
 - **2026-08 至 09。** Product Executor、策略轨迹和原生跨日事务接续到 r35。旧文档治理页和 EVD326 交接记录的是当时的训练和数据状态。 [Product Executor 交接](SHORT_HANDOFF_20260901_PRODUCT_EXECUTOR_EVD325_CN.md) · [训练交接](SHORT_HANDOFF_20260901_FORMAL_TRAINING_EVD326_CN.md) · [r35 历史治理页](DOCUMENTATION_STATUS_20260901_CN.md)
 - **2026-10。** Full Shipment 补采记录与运行边界按专题归档。姜岛核桃来源日程及独立重放也在这个阶段形成专门的证明合同。 [Full Shipment 交接](stardewai-full-handoff/SHORT_HANDOFF_20261005_FULL_SHIPMENT_SAMPLES_CN.md) · [核桃日程证明](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
@@ -30,12 +33,17 @@
 
 覆盖 Git 中 `docs/` 下的全部文件和仓库其余位置的 Markdown／纯文本文档。日期依次取首个一级标题中明确写出的日期、文件名日期、该路径在 Git 历史中的首次入库日期。Git 日期换算为北京时间。索引和编辑规范用本次编制日期。按月分组，由近到远，同日按路径排序。日期只用于定位，后续正文编辑不会改变该文档的目录时点。
 
-编制于 2026-11-11T01:06:05+08:00（Asia/Shanghai），本版共 318 项。
+编制于 2026-11-11T01:06:05+08:00（Asia/Shanghai），2026-11-24T21:54:37+08:00 补齐后续新增文档，本版共 323 项。保留各文档首次入库日期。
 
 ### 2026-11
 
 | 日期 | 文档 | 日期依据 |
 | --- | --- | --- |
+| 2026-11-23 | [docs/SAVED_DAY_DEVELOPMENT_RECOVERY_CN.md](SAVED_DAY_DEVELOPMENT_RECOVERY_CN.md) | Git 首录 |
+| 2026-11-18 | [docs/native-watering-tool-metadata-observation.md](native-watering-tool-metadata-observation.md) | Git 首录 |
+| 2026-11-17 | [docs/GLOBAL_DAILY_PLAN_CONTINUATION_CN.md](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md) | Git 首录 |
+| 2026-11-16 | [docs/JOINT_CONSUMER_COMPATIBILITY_MATRIX_CN.md](JOINT_CONSUMER_COMPATIBILITY_MATRIX_CN.md) | Git 首录 |
+| 2026-11-16 | [docs/JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md](JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md) | Git 首录 |
 | 2026-11-11 | [docs/DOCUMENTATION_INDEX_CN.md](DOCUMENTATION_INDEX_CN.md) | 编制 |
 | 2026-11-11 | [docs/DOCUMENTATION_MAINTENANCE_CN.md](DOCUMENTATION_MAINTENANCE_CN.md) | 编制 |
 | 2026-11-09 | [docs/native-debris-state-observation.md](native-debris-state-observation.md) | Git 首录 |

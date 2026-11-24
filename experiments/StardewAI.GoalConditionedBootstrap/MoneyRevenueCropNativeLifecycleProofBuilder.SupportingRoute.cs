@@ -32,6 +32,13 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
     private static void ValidateQueueReceipt(LoadedTransition transition)
     {
+        if (transition.NativeHarvest is { } harvest)
+        {
+            Require(transition.Request.NativeHarvestSettlement is not null && harvest.PickupSettlementPath is not null &&
+                    harvest.AppliedTileCount == transition.NativeAppliedItemCount && SamePath(harvest.AfterSnapshotPath, transition.AfterPath),
+                "Native crop lifecycle lost its original harvest and pickup receipt binding.");
+            return;
+        }
         if (transition.NativeWateringMaintenance is { } watering)
         {
             Require(transition.Request.NativeWateringPreparation is not null && watering.SelectedWateringResourcesVerified &&

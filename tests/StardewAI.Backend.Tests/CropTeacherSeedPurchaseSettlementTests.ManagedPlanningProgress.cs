@@ -8,6 +8,35 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ManagedSavedDayLimitRecognizesOnlyTheOriginalAcceptedSave(bool writeSave)
+    {
+        using var f = new OvernightFixture();
+        await using var owner = await f.Open();
+        await f.Home(owner);
+        var night = await f.PrepareNight(owner);
+        var intent = Path.Combine(f.Options.EvidenceDirectory, $"operation-{night.Sequence:D6}-intent.json");
+        var target = JsonNode.Parse(File.ReadAllText(intent))!["overnight_step"]!.Deserialize<CropTeacherRunStep>(JsonOptions)!.TotalDay;
+        var check = typeof(CropTeacherManagedSeedOwner).GetMethod("HasAcceptedOriginalSavedDay", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        bool Saved(int day) => (bool)check.Invoke(owner, new object[] { day })!;
+        Assert.False(Saved(target));
+        if (!writeSave)
+        {
+            await Assert.ThrowsAsync<InvalidDataException>(() => owner.ExecuteOriginalOvernightAsync(night, f.Shared.Runtime.Client,
+                () => f.EmitNight(owner, save: false)));
+            Assert.False(Saved(target));
+            return;
+        }
+        await owner.ExecuteOriginalOvernightAsync(night, f.Shared.Runtime.Client, () => f.EmitNight(owner));
+        await f.RebindNight(owner, night);
+        var calls = (f.NativeNightCalls, f.Shared.Runtime.Handler.Commits, f.Shared.Runtime.Handler.LedgerReads);
+        Assert.True(Saved(target));
+        Assert.False(Saved(target + 1));
+        Assert.Equal(calls, (f.NativeNightCalls, f.Shared.Runtime.Handler.Commits, f.Shared.Runtime.Handler.LedgerReads));
+    }
+
     [Fact]
     public async Task ManagedPlanningProgressDoesNotPromoteRouteOrMaintenanceAndDoesNotWrite()
     {

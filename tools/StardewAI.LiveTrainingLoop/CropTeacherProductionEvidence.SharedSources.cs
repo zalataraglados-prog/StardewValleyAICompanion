@@ -51,7 +51,7 @@ internal static partial class CropTeacherProductionEvidence
         for (var index = 1; index < all.Length; index++)
         {
             if (all[index - 1].OperationKind != "shared_source_return" && all[index].OperationKind != "shared_source_return") continue;
-            var after = artifacts.Read<SnapshotEnvelope>(all[index - 1].NativeTransition.AfterSnapshotPath);
+            var after = artifacts.Read<SnapshotEnvelope>(all[index - 1].NativeTransition.EffectiveAfterSnapshotPath);
             var before = artifacts.Read<SnapshotEnvelope>(all[index].NativeTransition.BeforeSnapshotPath);
             if (after.StateHash != before.StateHash || after.GameTick != before.GameTick)
             {

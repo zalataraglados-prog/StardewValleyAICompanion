@@ -1,0 +1,226 @@
+{
+  "schema_version": "functional_native_route_evidence.v1",
+  "snapshot": {
+    "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+    "sha256": "361e965da9d43b39bc1c684f0c0be7720e7376a6a265bfe2316f17bd1c93c50d"
+  },
+  "compile_request": {
+    "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\functional-admission-20261124-reviewed\\compile-request.json",
+    "sha256": "e27f2ec95f0431db07df141ba20a6189227b3da780dea3d0e96325ed12b19684"
+  },
+  "compile_response": {
+    "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\functional-admission-20261124-reviewed\\compile-response.json",
+    "sha256": "a22399f044f36ea6ec268573c907ef7195a2fcf8e8d41557906db6741d3b5244"
+  },
+  "target_qualified_item_id": "(O)836",
+  "native_actions": [
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "b5ca36bc1b612b871d18ffab8d8a4e05d319920a77cb2b7aa0133c3e438b6320"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "131aefd2cb5ca4d03e75d1b0486e346ad12726f2c8b65e8bc54c24c0964354ff"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "3ee6c17dd8378e9d86c926df02cb61a7225f4f8f4ea9c42f2d5edd8701105b35"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "cd37528377de514ccf385c9a581dc51d5abce4ce730a94fe6df04e27d358c3be"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "d29adfcb9c334223b49162c21ca11fc1f02d095525b27f8fad5837fa744ccdaa"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "5ae71e97cd5c1d2ce1f463ddd82b0e0b62052d3f06ed079d3dab10ee4251a443"
+      }
+    },
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "07743c1bbd5d58694e34175f29879ca5433e89807e93f89586d534dae03660b0"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "e0b1f0bbb1eea6d7e5443cedf33550d1de32326deb1fca0481af78983bf21392"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "449efcd160e95623d5076bd542083130f17eba8a822fcc776ffdee960c27f635"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "361e965da9d43b39bc1c684f0c0be7720e7376a6a265bfe2316f17bd1c93c50d"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "ccdbdf703ef1f69fdfea4eefa5450853c875eec2fa7ef5589051011cd7ad4b1c"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "34f5c7ff4e2805a177b15bfad777637e4154172ee9b926d476fe5c5aa1250168"
+      }
+    },
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "48306efbc8c7c8b8134b7437f49ce3ce91fa421b4623e668367f17f0302b489a"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "26e5d4809146180887493e2161c77db269cfb84274b6fde43d0b69edd330858d"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "8be8870ed20b3b5ca11e2dba7149cae829040c5f5a36f57557c4d35feab8b686"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "7f7c250425874fec218e3e03808612ca18bcc2b4f29849d852ea497676b9f5fe"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "117a2ee13e86e3d9306870b9c1469266e4d37c83f9b9ff7800da7be75451b5e6"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "e2dfba20d34015fb270449f46863bb19e377e51d31d445040a7384b4d262fb49"
+      }
+    },
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "d5684ee93533631934423a3d31ae794c326410891429efa1c38e3031517c5faf"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "99ff969e5f4675b28608f12bcf211c51fa97bdd047df481756eab2948e07ee52"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "cbd41c123a07235e36e011d9280f686fdf0e3523349cb321c17c1f01868925d7"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "54d885ef3e75205c5863c518a368b1f15ce023ebf07dc093ed272d4f6d14fb13"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "cf552b67147189547f8f8e2afed28d924527a628aa100767d4598c397d0cd4ad"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "c80101955eb5158c1b5c6c553d670835964b9a9b0dd412e362d11355cc6b7570"
+      }
+    },
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "6c947083226e3f03b54b01b3af2e47d9c6992da7308dc22b104e71105ae0398a"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "80fa8b68d37fcdf541a86d58d6db15ca38ead4762812700619f63045390b0960"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "1ef07b940ead2b13c15c8d3fd747ffcedc90c26136b7f8211bb7ec0f0d8b2c76"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "9f0fda0a614c33aa96d9464b751a75691cfb3d3d9e83704a6f46c3065a538bd9"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "ba05cbd5fb9dca2b764527febdf107460438701f72f63dae6f09ee42d2eeb5a9"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "6be1487c8d39c445c6e409d07ae81cba2b31da69e1e5c50b1ffb688ac088baea"
+      }
+    },
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "7a5bc92fc5a8ee29c464c278d5fd8726c5af29a71ad715e1982312dd0705d1cc"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "cfba8e1940a0343e988e05569ba18fcd718bb65d30e399f29a7f0c516aab4702"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "7daa038e4453bb8786d268e2e28888949f092afa97ee24edb926b59821fd5400"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "15f9727831e8e66499436d566b84177d91670bf2a81f1ca98c1581a91e8ecb39"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "7092c833071dee19696c1beb27f5c89a8c2223e7d5e4bd34a14d4d932819867e"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "a8d2c0bc68b36d77230d6278c5071218fcd51004648ab9d0eb04ef2d544122f8"
+      }
+    },
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "f4d411536b316351b1b3bbdf0dc763d5ef9c6cebb6c1a470693b7baf442883fe"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "640265d8a10a4a863801d806f53f30eff8211f078ce881a2ef0e39de075f7925"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "84349848f0627569351ae23fa1d4546e78818d9063024a195b6ce83acd5f0afc"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "1e577e48c14855b46c0f644e3bedd23babba6ad814830b2061e8965986358eca"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "d495298aaff31739539f9b803b04d2bdc556ee520ae5fd3b47bac2a0c4415e6d"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "bf63d6e1795baa6e5efa22b672a4f70098647ec114db94e7ee4de8b13382407f"
+      }
+    },
+    {
+      "queue": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "2618f53e26d3290307479b6ccb75c3969804d3ec8f77d77052ffb24b72c2da98"
+      },
+      "receipt": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "9f1aa570554d82e0e6215f8a32ab8eb8e6ea8c3fb254fb060022b3260785de5a"
+      },
+      "after_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "17710e1ea39fe9a471858b3a3070f07632fb9a8f30323f446ed761164be78334"
+      },
+      "before_snapshot": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "75aee301ca177f75abc05353a4f221a14153f5eac6828df1a3ce899a8e1b8985"
+      },
+      "request_journal": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "22a2b7d5db5bb2a966c8cbf33a65458ab30c3b64d11268551a532372bc01e49f"
+      },
+      "request_gzip": {
+        "path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "6c5eb6767f51d85b30ab6884daf40bbcb2225bb6f53f760784d323550df3c147"
+      }
+    }
+  ]
+}

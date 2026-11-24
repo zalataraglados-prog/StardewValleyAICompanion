@@ -1,0 +1,24 @@
+{
+  "other_report_gates_are_hermetic_fixture": true,
+  "real_native_gates_match_report_prepare_launch": true,
+  "native_gates": [
+    {
+      "GateId": "golden_walnut_master_angler_native_admission_not_bound",
+      "Status": "blocked",
+      "Reason": "functional_verified_target_plan_not_bound",
+      "Satisfied": false
+    },
+    {
+      "GateId": "gourmand_orders_2_3_native_admission_not_bound",
+      "Status": "blocked",
+      "Reason": "functional_verified_target_plan_not_bound",
+      "Satisfied": false
+    }
+  ],
+  "prepare_blocked": true,
+  "launch_blocked": true,
+  "launch_attempted": false,
+  "formal_authorized": false,
+  "changed_nested_artifact_rejected": true,
+  "changed_launch_attempted": false
+}

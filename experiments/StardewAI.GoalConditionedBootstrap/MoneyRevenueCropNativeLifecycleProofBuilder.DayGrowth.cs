@@ -12,7 +12,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var next = ReadCrop(after, location, tile.TileX, tile.TileY);
         Require(first is not null && next is not null && !first.Dead && !next.Dead &&
                 CropIdentityMatches(first, seedId, harvestId) && CropIdentityMatches(next, seedId, harvestId),
-            "Owned crop day-growth target is unavailable, dead or differs from its original commitment crop.");
+            $"Owned crop day-growth target is unavailable, dead or differs from its original commitment crop on tile {tile.TileX},{tile.TileY}.");
         var catalog = ReadCropCatalogRow(before, NormalizeObjectId(first!.SeedId));
         ValidateNativeDayGrowth(first, next, tile, seedId, harvestId, catalog.NeedsWatering);
     }

@@ -22,8 +22,9 @@ internal static partial class CropSeedResourceBoundary
         Require(before.SaveId.Value == after.SaveId.Value && before.PlayerId.Value == after.PlayerId.Value &&
                 before.GameVersion == after.GameVersion && after.GameTick > before.GameTick,
             "Harvest stock snapshot identity/tick changed.");
-        var inventory = ExactInventoryReceiptVerifier.Verify(before, after, qualifiedItemId, minimumUnits, minimumQuality: 0);
-        Require(inventory.Resolved && inventory.Verified, "Harvest retained stock is unavailable or insufficient: " +
+        var inventory = ExactInventoryReceiptVerifier.Verify(before, after, qualifiedItemId, Math.Max(1, minimumUnits), minimumQuality: 0);
+        Require(minimumUnits >= 0 && inventory.Resolved && inventory.QuantityIncrease >= minimumUnits,
+            "Harvest retained stock is unavailable or insufficient: " +
             string.Join(",", inventory.BlockingReasons));
         var (first, next, priorPlayer, player) = ReadStockGraphs(before, after);
         Require(priorPlayer.Capacity is > 0 and <= 512 && player.Capacity == priorPlayer.Capacity,
@@ -40,7 +41,33 @@ internal static partial class CropSeedResourceBoundary
             VerifySeedInventory(before, after, priorPlayer, player, qualifiedItemId,
                 rows[changes[0].SlotIndex]["item_id"]!.GetValue<string>());
         else SameField(before, after, "player", "seed_inventory", required: false);
-        return new(inventory, changes.Count);
+        return new(minimumUnits == 0 ? inventory with { RequiredQuantity = 0, Verified = true } : inventory, changes.Count);
+    }
+
+    internal static long CountHarvestDebris(SnapshotEnvelope snapshot, string itemId) =>
+        SumHarvestDebris(ReadHarvestDebris(snapshot, itemId));
+
+    internal static long SumHarvestDebris(IReadOnlyList<JsonObject> matches) => matches.Sum(row => (long)Int(row["item"]!, "stack"));
+
+    internal static IReadOnlyList<JsonObject> ReadHarvestDebris(SnapshotEnvelope snapshot, string itemId)
+    {
+        var field = Field(snapshot, "current_location", "debris", required: false);
+        if (!Readable(field) || Value(field!) is not JsonArray rows)
+            throw new InvalidDataException("Owned harvest matching debris is not readable.");
+        var matching = new List<JsonObject>();
+        foreach (var node in rows)
+        {
+            if (node is not JsonObject row) throw new InvalidDataException("Owned harvest has a malformed debris row.");
+            var item = row["item"] as JsonObject;
+            var outerId = row["qualified_item_id"]?.GetValue<string>();
+            var innerId = item?["qualified_item_id"]?.GetValue<string>();
+            if (outerId != itemId && innerId != itemId) continue;
+            var stack = item is null ? 0 : Int(item, "stack");
+            Require(outerId == itemId && innerId == itemId && stack > 0,
+                "Owned harvest matching debris has no exact native item quantity.");
+            matching.Add(row);
+        }
+        return matching;
     }
 
     private static IReadOnlyList<PhysicalStockDelta> VerifyHarvestRawStock(SnapshotEnvelope before, SnapshotEnvelope after, string itemId, int capacity)

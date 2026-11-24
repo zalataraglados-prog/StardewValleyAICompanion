@@ -15,7 +15,8 @@ param(
     [int] $RequiredVerifiedActions = 1,
     [ValidateRange(1, 128)]
     [int] $SaveBoundaryMaxAttempts = 16,
-    [switch] $Launch
+    [switch] $Launch,
+    [string] $NativeRouteProofPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -67,6 +68,10 @@ foreach ($path in @(
         throw "Required formal training input was not found: $path"
     }
 }
+
+$nativeRouteProof = if (-not [string]::IsNullOrWhiteSpace($NativeRouteProofPath)) {
+    Get-Content -LiteralPath ([IO.Path]::GetFullPath($NativeRouteProofPath)) -Raw -Encoding utf8 | ConvertFrom-Json
+} else { $null }
 
 foreach ($port in @(8765, 8767, $BackendPort, $ProductPort)) {
     if ($null -ne (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)) {
@@ -131,6 +136,9 @@ try {
         allow_game_launch = $true
         sound_enabled = $false
         window_style = "hidden"
+    }
+    if ($null -ne $nativeRouteProof) {
+        $request["native_route_proof"] = $nativeRouteProof
     }
     $body = $request | ConvertTo-Json -Depth 12
     $prepare = Invoke-RestMethod -Method Post -Uri "$backendUrl/api/v1/training/session/prepare" `

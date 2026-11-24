@@ -48,7 +48,8 @@ public static class CropTeacherManagedOwnerResume
         {
             UseSelectedRefillResourceEffects = true,
             UseNativeRefillOutcomeAuthority = header["native_refill_outcome_authority"]?.GetValue<bool>() == true,
-            NativeSaveBinding = binding
+            NativeSaveBinding = binding,
+            DeveloperSavedSourcePath = header["developer_saved_source_path"] is null ? null : InputPath(header, "developer_saved_source_path")
         };
         ValidateHeader();
         var owner = await CropTeacherManagedSeedOwner.OpenAsync(options, (path, json) =>

@@ -43,6 +43,37 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Fact]
+    public void OriginalHarvestCountsDelayedOutputOnlyWhenItEntersInventory()
+    {
+        using var f = new HarvestFixture();
+        f.SetStartingDebris(0);
+        var start = f.Open();
+        f.Emit(outputs: new[] { (0, 1), (2, 0) });
+
+        var outcome = start.VerifyTransition(f.Transition);
+
+        Assert.Equal(2, outcome.RetainedQuantityIncrease);
+        Assert.True(outcome.CompleteBatch);
+        Assert.Equal(f.After.StateHash, outcome.RebindRequest.StateHash);
+    }
+
+    [Theory]
+    [InlineData(0, 1, 1, 1, "needs verified pickup")]
+    [InlineData(0, 0, 2, 0, "minimum produced output")]
+    [InlineData(1, 2, 3, 0, "pre-existing matching debris")]
+    public void OriginalHarvestRejectsUnsettledOrUnattributedOutput(int initialGround, int firstGround,
+        int secondHeld, int finalGround, string error)
+    {
+        using var f = new HarvestFixture();
+        f.SetStartingDebris(initialGround);
+        var start = f.Open();
+        f.Emit(outputs: new[] { (0, firstGround), (secondHeld, finalGround) });
+
+        Assert.Contains(error, Assert.Throws<InvalidDataException>(() => start.VerifyTransition(f.Transition)).Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OriginalHarvestResultStillPinsAllInputsBeforeOfferingItsOriginalMarker()
     {
         using var f = new HarvestFixture(); var start = f.Open(); f.Emit();

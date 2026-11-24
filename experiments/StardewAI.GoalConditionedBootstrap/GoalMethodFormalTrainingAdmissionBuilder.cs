@@ -1,3 +1,4 @@
+using StardewAI.Contracts.Training;
 using StardewAI.Core.Training;
 
 namespace StardewAI.GoalConditionedBootstrap;
@@ -19,7 +20,8 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
         string coverageRequestPath,
         string corpusManifestPath,
         string checkpointPath,
-        string supportTerminalCoverageRequestPath)
+        string supportTerminalCoverageRequestPath,
+        FormalNativeRouteProofReference? nativeRouteProof = null)
     {
         var fullCoverageRequestPath = RequiredFullPath(
             coverageRequestPath,
@@ -72,18 +74,20 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
             CurrentTeacherFrontierSupport.HashFile(fullCheckpointPath),
             support,
             true);
-        return BuildReport(reconciliation, evidence);
+        return BuildReport(reconciliation, evidence, nativeRouteProof);
     }
 
     internal static GoalMethodFormalTrainingAdmissionReport BuildReport(
         GoalMethodCoverageReconciliationReport reconciliation,
-        VerifiedEvidence evidence)
+        VerifiedEvidence evidence,
+        FormalNativeRouteProofReference? nativeRouteProof = null)
     {
         ValidateReconciliation(reconciliation);
         var currentBlockers = CurrentTeacherBlockers(reconciliation);
         var optionBlockers = DownstreamPromotionBlockers(
             reconciliation);
-        var nativeBlockers = StardewTrainingSessionLauncher.PendingNativeAdmissionBlockers;
+        var native = FormalNativeRouteAdmissionConsumer.Evaluate(nativeRouteProof);
+        var nativeBlockers = native.Gates.Where(gate => !gate.Satisfied).Select(gate => gate.GateId);
         var downstreamBlockers = optionBlockers.Concat(nativeBlockers).ToArray();
         var teacherCoverageReady =
             reconciliation.CoverageGateReadyCriterionCount ==
@@ -161,11 +165,11 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
                 GoalMethodFormalTrainingGateCategories.SafetyIsolation,
                 true,
                 IntentionalSafetyLocks)
-        }.Concat(nativeBlockers.Select(blocker => Gate(
-            blocker,
+        }.Concat(native.Gates.Select(gate => Gate(
+            gate.GateId,
             GoalMethodFormalTrainingGateCategories.RuntimePromotion,
-            false,
-            "Authoritative native admission replay is not bound; diagnostic and self-attested artifacts are ineligible."))).ToArray();
+            gate.Satisfied,
+            gate.Reason, native.Detail))).ToArray();
         var readyForReview = gates
             .Where(gate => gate.RequiredForPromotionReview)
             .All(gate => gate.Satisfied);
@@ -206,6 +210,7 @@ public static class GoalMethodFormalTrainingAdmissionBuilder
             RuntimeProductPromotionReady = runtimePromotionReady,
             ReadyForSeparatePromotionReview = readyForReview,
             FormalProductTrainingAuthorized = false,
+            NativeRouteAssessment = native,
             ArtifactBindings = evidence.ArtifactBindings,
             Gates = gates,
             IntentionalSafetyLocks = IntentionalSafetyLocks.ToArray(),

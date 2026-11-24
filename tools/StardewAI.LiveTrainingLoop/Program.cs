@@ -76,7 +76,7 @@ if (args.Length > 0 && args[0] is "recover-crop-shared-preparation" or "continue
 var continueLiveManagedOwner = args.Length > 0 && args[0] == "continue-live-crop-managed-owner";
 var continueManagedOwner = continueLiveManagedOwner || args.Length > 0 && args[0] == "continue-crop-managed-owner";
 if (continueManagedOwner) args = args.Skip(1).ToArray();
-var options = LiveTrainingOptions.Parse(args);
+var options = continueManagedOwner ? LiveTrainingOptions.ParseManagedContinuation(args) : LiveTrainingOptions.Parse(args);
 if (continueLiveManagedOwner) options.ValidateManagedCropTeacherLiveContinueMode();
 else if (continueManagedOwner) options.ValidateManagedCropTeacherContinueMode();
 else if (!string.IsNullOrWhiteSpace(options.ResumeManagedCropOwnerDirectory))
@@ -126,6 +126,7 @@ var cropTeacherPreparedCommitmentIds = new HashSet<string>(
     StringComparer.Ordinal);
 var cropTeacherControlAttemptsStarted = 0;
 var cropTeacherFirstDayCompleted = false;
+int? developerSavedSourceTotalDay = null;
 var cropTeacherRunCompleted = false;
 var cropTeacherReplanRequired = false;
 var cropTeacherReplanReason = string.Empty;
@@ -244,7 +245,10 @@ if (continueManagedOwner)
     cropTeacherManagedOwner.Attach(continued.Owner, continued.GameProcess);
     activeCropTeacherRunPlanRequest = continued.Source.RunPlanRequest;
     activeCropTeacherRunPlan = continued.Source.RunPlan;
+    developerSavedSourceTotalDay = continued.Source.DeveloperSavedSourceTotalDay;
     lastPlanningHandoffNativeRunPlanPath = continued.Source.NativeRunPlanPath;
+    if (options.StopAfterManagedCropSavedDay is { } targetDay)
+        ValidateManagedCropSavedDayRange(targetDay, continued.Source);
     AppendProgress(options, continueLiveManagedOwner ? "crop_teacher_managed_live_run_continued" : "crop_teacher_managed_run_continued", 0, continued.Restore.StateHash, string.Empty,
         "owner=" + options.ResumeManagedCropOwnerDirectory + " original_plan=" + continued.Source.NativeRunPlanPath +
         " next_artifact_iteration=" + nextArtifactIteration +
@@ -253,6 +257,14 @@ if (continueManagedOwner)
 
 for (var attemptOrdinal = 1; ; attemptOrdinal++)
 {
+    if (options.StopAfterManagedCropSavedDay is { } savedDay &&
+        cropTeacherManagedOwner.Current?.HasAcceptedOriginalSavedDay(savedDay) == true)
+    {
+        stopReason = "crop_teacher_managed_target_day_saved_owner_retained";
+        AppendProgress(options, "stopped", nextArtifactIteration + attemptOrdinal - 1, lastStateHash, lastQueueId,
+            stopReason + " from_total_day=" + savedDay);
+        break;
+    }
     cropTeacherManagedOwner.RequireLiveContinuation();
     var explicitPrimaryTargetMet =
         (options.RequiredVerifiedActions <= 0 ||
@@ -369,6 +381,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                 options.SnapshotFile)
             : await http.GetStringAsync(options.BridgeSnapshotUrl);
         var beforeSnapshot = JsonNode.Parse(rawSnapshotJson)?.AsObject() ?? new JsonObject();
+        if (options.StopAfterManagedCropSavedDay is { } lastAllowedDay &&
+            ReadCropTeacherTotalDay(beforeSnapshot) > lastAllowedDay)
+        {
+            stopReason = "crop_teacher_managed_target_day_crossed_without_accepted_save";
+            AppendProgress(options, "stopped", iteration, ReadString(beforeSnapshot, "state_hash"), lastQueueId, stopReason);
+            break;
+        }
         if (attemptOrdinal == 1 && activeCropTeacherRunPlan is not null)
         {
             var resumeSnapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(
@@ -730,7 +749,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             activeCropTeacherTransitionLedger,
             managedOwner);
         if (!cropTeacherFirstDayCompleted &&
-            (cropStep.TotalDay > activeCropTeacherRunPlan.FirstTotalDay ||
+            (cropStep.TotalDay > (developerSavedSourceTotalDay ?? activeCropTeacherRunPlan.FirstTotalDay) ||
              cropStep.Stage == CropTeacherRunStageKinds.Complete))
         {
             cropTeacherFirstDayCompleted = true;
@@ -2569,8 +2588,14 @@ var report = new LiveTrainingLoopReport
     Prediction = lastPrediction
 };
 
-var reportPath = Path.Combine(options.RunDir, "live-training-loop-report.json");
-await File.WriteAllTextAsync(reportPath, JsonSerializer.Serialize(report, JsonOptions), Encoding.UTF8);
+var reportPath = Path.Combine(options.RunDir, options.StopAfterManagedCropSavedDay.HasValue
+    ? $"live-training-loop-report-managed-{nextArtifactIteration:D4}-{Guid.NewGuid():N}.json"
+    : "live-training-loop-report.json");
+var reportJson = JsonSerializer.Serialize(report, JsonOptions);
+if (options.StopAfterManagedCropSavedDay.HasValue)
+    await WritePortfolioJournalFileAsync(reportPath, reportJson);
+else
+    await File.WriteAllTextAsync(reportPath, reportJson, Encoding.UTF8);
 AppendProgress(options, verifiedTargetMet ? "complete" : "incomplete", attemptsStarted, lastStateHash, lastQueueId, "report=" + reportPath + " verified_actions=" + verifiedActions + " required_verified_actions=" + options.RequiredVerifiedActions + " max_attempts=" + options.MaxAttempts);
 
 Console.WriteLine(JsonSerializer.Serialize(new

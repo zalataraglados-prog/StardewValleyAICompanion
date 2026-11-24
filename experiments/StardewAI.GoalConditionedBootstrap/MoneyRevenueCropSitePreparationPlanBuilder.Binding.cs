@@ -6,6 +6,16 @@ namespace StardewAI.GoalConditionedBootstrap;
 
 public static partial class MoneyRevenueCropSitePreparationPlanBuilder
 {
+    private static MoneyRevenueCropSitePreparationStep BuildProtectionStep(
+        MoneyRevenueCropPlantingTile tile, string sourceId, EventCandidate[] candidates)
+    {
+        var matching = candidates.Where(candidate =>
+            candidate.TileX == tile.TileX && candidate.TileY == tile.TileY &&
+            candidate.Parameters.Any(parameter => parameter.Name == "clear_source_id" && parameter.Value == sourceId)).ToArray();
+        return BoundStep(tile, "spreading_debris", matching.Length == 1 ? matching[0] : null,
+            "executor.clear_obstacle", "clear_then_fresh_snapshot_rebind", "fresh_snapshot_crop_protection");
+    }
+
     private static MoneyRevenueCropSitePreparationStep BuildStep(
         MoneyRevenueCropPlantingTile tile,
         JsonElement contextTiles,

@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.RuntimePrimitives;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -283,6 +284,10 @@ public sealed partial class ModEntry : Mod
         public bool ClearanceButtonHeld { get; set; }
         public int ClearanceSwings { get; set; }
         public string LastNoProgressReason { get; set; } = string.Empty;
+        public NativeToolActionLifecycle RockCrabShellLifecycle { get; } = new();
+        public Pickaxe? RockCrabShellPickaxe { get; set; }
+        public int? RockCrabShellHealthBefore { get; set; }
+        public bool RockCrabWaiterBefore { get; set; }
         public List<int> TargetHealthSequence { get; } = new();
         public List<int> PlayerHealthSequence { get; } = new();
 

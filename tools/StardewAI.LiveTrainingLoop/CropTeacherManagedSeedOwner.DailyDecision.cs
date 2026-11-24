@@ -70,7 +70,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         {
             RequireDailyDecisionHead();
             var day = SnapshotInt(Read<SnapshotEnvelope>(headSnapshotPath), "time", "total_days");
-            var history = ReadAcceptedPlanningCertificates().ToArray();
+            (int Sequence, string Path, string Hash, JsonObject Certificate)[]? history = null;
             var candidates = new List<CropTeacherManagedDailyDecision>();
             foreach (var path in Directory.EnumerateFiles(options.EvidenceDirectory, "joint-daily-decision-*.json"))
             {
@@ -82,6 +82,7 @@ public sealed partial class CropTeacherManagedSeedOwner
                     throw new InvalidDataException("Retained daily metadata belongs to another owner.");
                 // Expired choices need no historical snapshot graph materialization.
                 if (metadata["total_day"]?.GetValue<int>() != day) continue;
+                history ??= ReadAcceptedPlanningCertificates().ToArray();
                 var decision = ReadDailyDecisionReference(reference, history);
                 if (decision.TotalDay == day) candidates.Add(decision);
             }

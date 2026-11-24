@@ -151,6 +151,7 @@ public sealed partial class CropTeacherManagedSeedOwner
             var expected = new JsonObject();
             AddHarvestOutcomeEvidence(harvest, expected);
             if (expected.Any(field => !JsonNode.DeepEquals(field.Value, accepted[field.Key])) ||
+                harvest.PickupSettlementPath is null && (accepted["harvest_pickup_settlement_path"] is not null || accepted["harvest_settled_snapshot_path"] is not null) ||
                 accepted["route_native_claim_sha256"] is not null || accepted["route_native_result_sha256"] is not null ||
                 accepted["maintenance_native_claim_sha256"] is not null || accepted["maintenance_native_result_sha256"] is not null ||
                 accepted["native_watering_prefix_verified"] is not null || accepted["route_target_reached"] is not null ||
@@ -161,6 +162,7 @@ public sealed partial class CropTeacherManagedSeedOwner
         else if (accepted["native_harvest_prefix_verified"] is not null || accepted["harvest_native_claim_sha256"] is not null ||
                  accepted["harvest_native_result_sha256"] is not null || accepted["harvest_wave_index"] is not null ||
                  accepted["output_retention_key"] is not null || accepted["observed_retained_quantity_increase"] is not null ||
+                 accepted["harvest_pickup_settlement_path"] is not null || accepted["harvest_settled_snapshot_path"] is not null ||
                  accepted["whole_wave_output_retention_verified"] is not null)
             throw new InvalidDataException("A different supporting phase cannot claim harvest evidence.");
         if (operation.Watering is { } watering)
