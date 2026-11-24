@@ -1,0 +1,24 @@
+{
+  "schema_version": "r2_lab_existing_species_rejection_diagnostic.v1",
+  "item": "(O)708",
+  "before": {
+    "item_id": "708",
+    "qualified_item_id": "(O)708",
+    "display_name": "[LocalizedText Strings\\Objects:Halibut_Name]",
+    "caught": true,
+    "caught_count": 3,
+    "max_size": 34
+  },
+  "after": {
+    "item_id": "708",
+    "qualified_item_id": "(O)708",
+    "display_name": "[LocalizedText Strings\\Objects:Halibut_Name]",
+    "caught": true,
+    "caught_count": 4,
+    "max_size": 34
+  },
+  "strict_builder_result": "rejected_no_single_exact_newly_collected_species",
+  "counted_as_new_collection_proof": false,
+  "source_receipt": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\execution-0537-item-0002.json",
+  "formal_training_authorized": false
+}

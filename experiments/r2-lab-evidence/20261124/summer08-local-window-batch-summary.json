@@ -1,0 +1,27 @@
+{
+  "schema_version": "r2_lab_bounded_collection_summary.v1",
+  "run_id": "r2-global-daily-20261117-171253",
+  "status": "ok",
+  "attempts_started": 9,
+  "verified_actions": 6,
+  "reported_objective_completed": true,
+  "completion_scope": "Local Octopus capture and bounded collection/control actions, not island or community-center completion.",
+  "source_arguments_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-current-window-collection-20261124\\arguments.json",
+  "source_arguments_sha256": "3967F388BF8FEF665C4D67EF2F57B021702E71880989A12DC5423197A4447317",
+  "before_snapshot_sha256": "A42C1B67281021CF6E73801C7F17560AF282FA620BE88CA44B1E5AD1CE4CEFEC",
+  "after_snapshot_sha256": "FE2F753943807E176EBC94D47E041CA174C790BE7423721DC7C7262C92F0AD18",
+  "total_day": 35,
+  "time": 1100,
+  "location": "Farm",
+  "cash": 4106,
+  "fish_collection_caught": 24,
+  "fish_collection_denominator": 72,
+  "octopus_native_replay_verified": true,
+  "goby_first_original_failure": {
+    "reason": "master_angler_no_exact_runtime_source_attempt",
+    "iteration": 540,
+    "original_refresh_evidence": "training/runs/r2-global-daily-20261117-171253/live-snapshots/candidate-refresh-evidence-0540.json",
+    "no_code_bug_conclusion": true
+  },
+  "formal_training_authorized": false
+}

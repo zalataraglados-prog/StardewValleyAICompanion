@@ -8,10 +8,15 @@ param(
     [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$Attempt,
     [object[]]$CandidateParameters = @(),
     [switch]$UseOriginalFreshSelection,
+    [switch]$RetainFullExecutionSnapshots,
+    [ValidateRange(1, 64)][int]$MaximumAttempts = 1,
+    [ValidateRange(1, 64)][int]$RequiredVerifiedActions = 1,
+    [switch]$StopAfterObjectiveComplete,
     [ValidateRange(1,1000000)][int]$MaxPersistedIterations = 600
 )
 
 $ErrorActionPreference = 'Stop'
+if ($RequiredVerifiedActions -gt $MaximumAttempts) { throw 'Verification target exceeds the bounded attempt count.' }
 $script:RunDirectory = [IO.Path]::GetFullPath($RunDirectory)
 $runtime = Join-Path $RunDirectory $RuntimeAttempt
 $live = Get-Content -LiteralPath (Join-Path $runtime 'live-session.json') -Raw | ConvertFrom-Json -DateKind String
@@ -40,6 +45,9 @@ if ($settings.STARDEWAI_PRODUCT_ALLOWED_SAVE_ROOT -ne $live.save_root -or
 foreach ($setting in $settings.Keys) { [Environment]::SetEnvironmentVariable($setting, $settings[$setting], 'Process') }
 $lab = Split-Path -Parent $PSScriptRoot
 $build = Join-Path $lab 'published\c42508c1-managed-lab\live-training-loop\StardewAI.LiveTrainingLoop.dll'
+if ($RetainFullExecutionSnapshots) {
+    $build = Join-Path $lab 'published\full-native-replay-20261124\live-training-loop\StardewAI.LiveTrainingLoop.dll'
+}
 $arguments = [Collections.Generic.List[string]]::new([string[]]@(
     $build, '--root', (Join-Path $RunDirectory 'training'), '--run-id', $live.run_id, '--no-manifest',
     '--backend-url', $settings.ASPNETCORE_URLS, '--bridge-snapshot-url', $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL,
@@ -47,10 +55,15 @@ $arguments = [Collections.Generic.List[string]]::new([string[]]@(
     '--use-product-executor', '--skip-training', '--use-daily-plan', '--daily-plan-candidate-options', $selected.option_id,
     '--daily-plan-max-candidates', '1', '--daily-plan-candidate-kind', $selected.kind, '--daily-plan-candidate-id', $CandidateId,
     '--execution-snapshot-profile', 'full', '--snapshot-artifact-mode', 'content_addressed_gzip', '--artifact-retention-mode', 'stop',
-    '--max-attempts', '1', '--required-verified-actions', '1', '--max-persisted-iterations', $MaxPersistedIterations.ToString(),
+    '--max-attempts', $MaximumAttempts.ToString(), '--required-verified-actions', $RequiredVerifiedActions.ToString(), '--max-persisted-iterations', $MaxPersistedIterations.ToString(),
     '--sleep-ms', '1000', '--after-snapshot-wait-ms', '500', '--continue-after-blocked-queue-items',
-    '--emit-queue-execution-receipt', '--max-queue-item-attempts', '12', '--save-isolation-path', $live.save_root, '--save-slot', $live.slot
+    '--max-queue-item-attempts', '12', '--save-isolation-path', $live.save_root, '--save-slot', $live.slot
 ))
+if ($RetainFullExecutionSnapshots) { $arguments.Add('--retain-full-execution-snapshots') }
+if ($StopAfterObjectiveComplete) { $arguments.Add('--stop-after-objective-complete') }
+# The optional aggregate queue receipt is a single-attempt CLI mode. Bounded
+# multi-attempt mode still retains the original per-item native/Product files.
+if ($MaximumAttempts -eq 1 -and $RequiredVerifiedActions -eq 1) { $arguments.Add('--emit-queue-execution-receipt') }
 foreach ($parameter in $CandidateParameters) {
     $arguments.Add('--daily-plan-candidate-parameter')
     $arguments.Add($parameter.name + '=' + $parameter.value)

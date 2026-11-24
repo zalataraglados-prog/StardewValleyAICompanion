@@ -3,7 +3,10 @@ param(
     [Parameter(Mandatory)][string]$RuntimeAttempt,
     [Parameter(Mandatory)][string]$TargetItemId,
     [Parameter(Mandatory)][string]$TargetLocation,
-    [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$Attempt
+    [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$Attempt,
+    [ValidateRange(1, 64)][int]$MaximumAttempts = 1,
+    [ValidateRange(1, 64)][int]$RequiredVerifiedActions = 1,
+    [switch]$StopAfterObjectiveComplete
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,13 +21,13 @@ $snapshotPath = Join-Path $dir.FullName 'before.json'
 $null = Invoke-RestMethod -Uri ($settings.ASPNETCORE_URLS + '/api/v1/snapshots') -Method Post `
     -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)) -TimeoutSec 40
 $lab = Split-Path -Parent $PSScriptRoot
-$bin = Join-Path $lab 'published\c42508c1-managed-lab\live-training-loop'
+$bin = Join-Path $lab 'published\full-native-replay-20261124\live-training-loop'
 $windows = Join-Path (Split-Path -Parent $lab) 'R2第5步离线校验\52e681b1\local-master-angler-windows.json'
 $intentPath = Join-Path $dir.FullName 'intents.json'
 & 'D:\StardewAI-TestLab\dotnet\dotnet.exe' exec --runtimeconfig (Join-Path $bin 'StardewAI.LiveTrainingLoop.runtimeconfig.json') `
     --depsfile (Join-Path $bin 'StardewAI.LiveTrainingLoop.deps.json') (Join-Path $bin 'StardewAI.GoalConditionedBootstrap.dll') `
     build-master-angler-target-date-intents --windows $windows --snapshot $snapshotPath `
-    --timing-calibration 'D:\StardewAI-TestLab\route-timing-calibration.json' --output $intentPath
+    --timing-calibration 'D:\Recovered-From-OldPC\I\StardewAITrainingLab\goal-conditioned-bootstrap-v1\artifacts\runtime-movement-timing-calibration\runtime-movement-timing-calibration-20260906-043908\summary.json' --output $intentPath
 if (!(Test-Path -LiteralPath $intentPath)) { throw 'The original intent builder returned no authoritative date report.' }
 $intents = Get-Content -LiteralPath $intentPath -Raw | ConvertFrom-Json
 $target = @($intents.candidates | Where-Object { $_.target_qualified_item_id -eq $TargetItemId -and $_.target_location -eq $TargetLocation })
@@ -49,5 +52,6 @@ $selected = $rank.ranked_event_candidates | Where-Object {
 if (!$selected) { throw 'The original planner did not compile an available target candidate on this live source.' }
 & (Join-Path $PSScriptRoot 'Invoke-IsolatedRankedQueue.ps1') -RunDirectory $RunDirectory -RuntimeAttempt $RuntimeAttempt -RankPath $rankPath `
     -CandidateId $selected.candidate_id -ExpectedStateHash $snapshot.state_hash -GoalId $goal -Attempt $Attempt `
-    -CandidateParameters $target[0].parameters
+    -CandidateParameters $target[0].parameters -RetainFullExecutionSnapshots `
+    -MaximumAttempts $MaximumAttempts -RequiredVerifiedActions $RequiredVerifiedActions -StopAfterObjectiveComplete:$StopAfterObjectiveComplete
 exit $LASTEXITCODE
