@@ -1,0 +1,24 @@
+{
+  "created_at": "2026-11-24T16:20:55.5733199+08:00",
+  "source_state_hash": "4bebddefa777420a3df8160df60b5be9106336050fb9e78c6b48472603c1af42",
+  "source_total_day": 37,
+  "cash": 5110,
+  "ledger_revision": 329,
+  "actual_ledger_sha256": "E6F1822B5D919FD27056B24B59378F3730B1C09797E3A1F84A2783B0ECA19295",
+  "bootstrap_sha256": "C9AC0991683380F030DB99FF1938A2BEA6DE52D3689F9E3ACC96DFE414F90E4A",
+  "core_sha256": "D34BC3371E6050053E7C8E8059E481FCEFCECAEBDA1B72F8D06DF073984A0F6C",
+  "command_count": 15,
+  "preference": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-island-native-catch-preference.json",
+  "preference_sha256": "1903DEDFBB4015D5DECFFD1411F80A10CBA7B469D8CDE217B1BFE60516689458",
+  "status": "blocked_portfolio_teacher_preference",
+  "selection_disposition": "InvalidDenominator",
+  "candidate_denominator_complete": false,
+  "selected_proposal_present": false,
+  "blocking_reasons": [
+    "portfolio_teacher_scoped_opportunity_denominator_incomplete:master_angler/master_angler%3Aitem%3A836",
+    "portfolio_teacher_scoped_opportunity_denominator_incomplete:master_angler/master_angler%3Aitem%3A837",
+    "portfolio_teacher_scoped_opportunity_denominator_incomplete:master_angler/master_angler%3Aitem%3A838"
+  ],
+  "scope": "Read-only current-source scoped island selection through original builders; no invented fishing forecasts and no native gate relaxation.",
+  "formal_training_authorized": false
+}

@@ -1,0 +1,71 @@
+{
+  "created_at": "2026-11-24T16:27:20.5735529+08:00",
+  "scope": "Original action-source reader replay of the actual bounded native fishing window; these are repeated catches, not new Master Angler collection receipts.",
+  "source_replays_passed": 12,
+  "source_replays_failed": 0,
+  "rows": [
+    {
+      "receipt": "execution-0587-item-0006.json",
+      "source_replay_verified": true,
+      "fish": "(O)701"
+    },
+    {
+      "receipt": "execution-0587-item-0007.json",
+      "source_replay_verified": true,
+      "fish": "(O)701"
+    },
+    {
+      "receipt": "execution-0587-item-0008.json",
+      "source_replay_verified": true,
+      "fish": "(O)152"
+    },
+    {
+      "receipt": "execution-0587-item-0009.json",
+      "source_replay_verified": true,
+      "fish": "(O)152"
+    },
+    {
+      "receipt": "execution-0587-item-0010.json",
+      "source_replay_verified": true,
+      "fish": "(O)267"
+    },
+    {
+      "receipt": "execution-0587-item-0011.json",
+      "source_replay_verified": true,
+      "fish": "(O)267"
+    },
+    {
+      "receipt": "execution-0587-item-0012.json",
+      "source_replay_verified": true,
+      "fish": "(O)SeaJelly"
+    },
+    {
+      "receipt": "execution-0588-item-0001.json",
+      "source_replay_verified": true,
+      "fish": "(O)152"
+    },
+    {
+      "receipt": "execution-0588-item-0002.json",
+      "source_replay_verified": true,
+      "fish": "(O)152"
+    },
+    {
+      "receipt": "execution-0589-item-0001.json",
+      "source_replay_verified": true,
+      "fish": "(O)152"
+    },
+    {
+      "receipt": "execution-0589-item-0002.json",
+      "source_replay_verified": true,
+      "fish": "(O)146"
+    },
+    {
+      "receipt": "execution-0589-item-0003.json",
+      "source_replay_verified": true,
+      "fish": "(O)152"
+    }
+  ],
+  "new_eligible_species_count": 0,
+  "target_128_caught": false,
+  "formal_training_authorized": false
+}

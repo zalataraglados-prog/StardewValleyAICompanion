@@ -1,0 +1,35 @@
+{
+  "created_at": "2026-11-24T16:27:20.7299505+08:00",
+  "source_main_sha256": "A3FB8392EAF62877C7898ABAFBFE5C7EF41FDC91373A7B922644571123EE3C57",
+  "season": "summer",
+  "day": 10,
+  "money": 5110,
+  "four_original_crops_alive": true,
+  "crops": [
+    {
+      "x": 71,
+      "y": 16,
+      "harvest_item": "258",
+      "dead": "false"
+    },
+    {
+      "x": 70,
+      "y": 17,
+      "harvest_item": "254",
+      "dead": "false"
+    },
+    {
+      "x": 71,
+      "y": 17,
+      "harvest_item": "256",
+      "dead": "false"
+    },
+    {
+      "x": 72,
+      "y": 18,
+      "harvest_item": "260",
+      "dead": "false"
+    }
+  ],
+  "formal_training_authorized": false
+}

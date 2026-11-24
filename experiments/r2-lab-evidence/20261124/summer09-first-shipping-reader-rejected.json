@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-11-24T16:03:09.5678550+08:00",
+  "reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "replay_verified": false,
+  "rejection": "Native queue does not bind this action frame.",
+  "execution_receipt": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\execution-0576-item-0002.json",
+  "mechanical_compiled_queue": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\training\\runs\\r2-global-daily-20261117-171253\\live-snapshots\\compiled-queue-0576.json",
+  "queue_source_state_hash": "cc0d4735b9a17b9ad7e4508c645d7fed8cc6ac9b62ef13d16b33153e5748b06a",
+  "action_before_state_hash": "be9e84884f464bfc5bfdbe7281354f61969eb36d299c18b9d62ebc2d04ecc579",
+  "native_status": "applied",
+  "primitive_verified": "verified",
+  "original_evidence_unchanged": true,
+  "subsequent_call_change": "Compile original movement independently, then re-rank the one-item shipping action on its actual arrival frame.",
+  "formal_training_authorized": false
+}

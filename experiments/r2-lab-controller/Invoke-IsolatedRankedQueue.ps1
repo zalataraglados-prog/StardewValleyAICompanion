@@ -12,7 +12,7 @@ param(
     [ValidateRange(1, 64)][int]$MaximumAttempts = 1,
     [ValidateRange(1, 64)][int]$RequiredVerifiedActions = 1,
     [switch]$StopAfterObjectiveComplete,
-    [ValidateRange(1,1000000)][int]$MaxPersistedIterations = 600
+    [ValidateRange(1,1000000)][int]$MaxPersistedIterations = 800
 )
 
 $ErrorActionPreference = 'Stop'

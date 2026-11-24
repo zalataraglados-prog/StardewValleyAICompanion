@@ -1,0 +1,20 @@
+{
+  "purpose": "Bounded warm-run inventory capacity recovery through the original shipping compiler; no global ledger or training admission claim.",
+  "verified_transfers": [
+    {
+      "slot": 9,
+      "item": "(O)708",
+      "quantity": 1,
+      "quality": 4,
+      "physical_copies_before": 3,
+      "inventory_before": 3,
+      "inventory_after": 2,
+      "before": "b70221f5146714f0c7144212315889873a7f2c9cf3ae7f29999fb4c649bcdc3a",
+      "after": "d59cabaf77cd6ae5f7b40e2f70c44c3ae31f2f25fa2d04fb1c3b95658c687cb8",
+      "queue": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-separated-approach-shipping-v2-20261124-evidence\\slot-9-pass-1-queue.json",
+      "queue_sha256": "8FBE4EAF02281847FA18DC4173F3B048F8D1D14AE638804503A2F585DAA105E1",
+      "empty_slots": 4
+    }
+  ],
+  "formal_training_authorized": false
+}

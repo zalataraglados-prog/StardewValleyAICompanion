@@ -1,0 +1,107 @@
+[
+  {
+    "name": "calendar",
+    "exit_code": 0,
+    "command": "build-current-native-acquisition-route-calendar-resolution",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-current-native-calendar-resolution.json",
+    "output_exists": true
+  },
+  {
+    "name": "target-calendar",
+    "exit_code": 0,
+    "command": "build-current-native-acquisition-route-target-date-calendar",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-calendar-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "target-unlock",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-unlock-state",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-unlock-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "festival",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-festival-state",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-festival-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "location",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-location-route",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-location-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "facility",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-facility-capacity",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-facility-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "resource",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-resource-inputs",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-resource-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "currency",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-currency-budget",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-currency-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "reservation",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-inventory-reservation",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-reservation-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "processing",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-processing-lead-time",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-processing-current-day.json",
+    "output_exists": true
+  },
+  {
+    "name": "fishing-probability",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-fishing-probability",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-fishing-probability-no-supplied-forecast.json",
+    "output_exists": true
+  },
+  {
+    "name": "stochastic-retry",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-stochastic-retry-budget",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-stochastic-retry-no-supplied-forecast.json",
+    "output_exists": true
+  },
+  {
+    "name": "daily-time-energy",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-daily-time-energy-budget",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-daily-time-energy-no-supplied-forecast.json",
+    "output_exists": true
+  },
+  {
+    "name": "opportunity-cost",
+    "exit_code": 0,
+    "command": "build-acquisition-route-target-date-opportunity-cost",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-target-date-opportunity-cost-no-supplied-forecast.json",
+    "output_exists": true
+  },
+  {
+    "name": "island-preference",
+    "exit_code": 2,
+    "command": "build-acquisition-route-portfolio-teacher-preference",
+    "output": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-global-route-selection-v2-20261124\\summer10-island-native-catch-preference.json",
+    "output_exists": true
+  }
+]

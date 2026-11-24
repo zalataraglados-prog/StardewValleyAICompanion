@@ -1,0 +1,48 @@
+{
+  "purpose": "Bounded warm-run inventory capacity recovery through the original shipping compiler; no global ledger or training admission claim.",
+  "verified_transfers": [
+    {
+      "slot": 0,
+      "item": "(O)701",
+      "quantity": 1,
+      "quality": 1,
+      "physical_copies_before": 2,
+      "inventory_before": 2,
+      "inventory_after": 1,
+      "before": "cc0d4735b9a17b9ad7e4508c645d7fed8cc6ac9b62ef13d16b33153e5748b06a",
+      "after": "5db7062059f4fce8b6a738e50b12dae61a4c348e802453847e4cefbf7a5266ed",
+      "queue": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-duplicate-fish-shipping-20261124-evidence\\slot-0-queue.json",
+      "queue_sha256": "E9760317961D87E92B9EC198346807F8218C534464074C77A1E7B0397FE3C2AF",
+      "empty_slots": 3
+    },
+    {
+      "slot": 5,
+      "item": "(O)267",
+      "quantity": 1,
+      "quality": 2,
+      "physical_copies_before": 6,
+      "inventory_before": 6,
+      "inventory_after": 5,
+      "before": "5db7062059f4fce8b6a738e50b12dae61a4c348e802453847e4cefbf7a5266ed",
+      "after": "e8f0f6858130d6c7db522e05d1102f69fcf4199a4f7ef1751b79e11844f25238",
+      "queue": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-duplicate-fish-shipping-20261124-evidence\\slot-5-queue.json",
+      "queue_sha256": "63E7F1CC80CD61FB8BE7C38A708DA9ECCBB3792F14FBA0E6E695D7B519877454",
+      "empty_slots": 4
+    },
+    {
+      "slot": 6,
+      "item": "(O)146",
+      "quantity": 1,
+      "quality": 2,
+      "physical_copies_before": 5,
+      "inventory_before": 5,
+      "inventory_after": 4,
+      "before": "e8f0f6858130d6c7db522e05d1102f69fcf4199a4f7ef1751b79e11844f25238",
+      "after": "a32acbc2d1c0f7f35879a812fe44d144364d25eb00c6337764819a8e8c13b48b",
+      "queue": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-duplicate-fish-shipping-20261124-evidence\\slot-6-queue.json",
+      "queue_sha256": "C8693D524378131F9646220B2FC989DE6A4556938B622900FBFCB6AC22C18105",
+      "empty_slots": 5
+    }
+  ],
+  "formal_training_authorized": false
+}

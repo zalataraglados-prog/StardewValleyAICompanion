@@ -32,7 +32,7 @@ $arguments = [string[]](Get-Content -LiteralPath $template -Raw | ConvertFrom-Js
 # The explicit save-boundary parameter binds exactly one existing candidate.
 # A required profession choice is a separate planned action, never another sleep.
 $arguments[[Array]::IndexOf($arguments, '--daily-plan-candidate-options') + 1] = 'recovery.stabilize_day'
-$arguments[[Array]::IndexOf($arguments, '--max-persisted-iterations') + 1] = '600'
+$arguments[[Array]::IndexOf($arguments, '--max-persisted-iterations') + 1] = '800'
 foreach ($binding in @{
     '--run-id' = $session.run_id
     '--save-isolation-path' = $session.save_root

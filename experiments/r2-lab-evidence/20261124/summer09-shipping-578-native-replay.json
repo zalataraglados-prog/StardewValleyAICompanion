@@ -1,0 +1,72 @@
+{
+  "reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "reader_assembly": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\full-native-replay-20261124\\live-training-loop\\StardewAI.GoalConditionedBootstrap.dll",
+  "reader_assembly_sha256": "C9AC0991683380F030DB99FF1938A2BEA6DE52D3689F9E3ACC96DFE414F90E4A",
+  "original_native_source_replay_verified": true,
+  "run_id": "r2-global-daily-20261117-171253",
+  "queue_id": "queue.19456de6cd54406b9d0eb0010d2feb27",
+  "queue_item_id": "queue_item.2a3a71aad4ce41399419078accd019c4",
+  "option_id": "executor.ship_inventory_item_to_bin",
+  "native_status": "applied",
+  "before_state_hash": "e8f0f6858130d6c7db522e05d1102f69fcf4199a4f7ef1751b79e11844f25238",
+  "after_state_hash": "adcbb8a8d66b309ade0735e6e223aee3c71282d7e4a52915ecd292501f71dafc",
+  "before_game_tick": 875,
+  "after_game_tick": 883,
+  "combat_target_runtime_identity": "",
+  "combat_target_defeated": null,
+  "combat_attack_count": null,
+  "combat_hit_count": null,
+  "combat_damage_taken": null,
+  "native_changed_facts": [
+    {
+      "Path": "player.inventory.(O)146.count",
+      "Before": "5",
+      "After": "4"
+    },
+    {
+      "Path": "player.inventory.slot.6.stack",
+      "Before": "1",
+      "After": "0"
+    },
+    {
+      "Path": "player.inventory.slot.6.qualified_item_id",
+      "Before": "(O)146",
+      "After": ""
+    },
+    {
+      "Path": "farm.shipping_bin.(O)146.count",
+      "Before": "0",
+      "After": "1"
+    },
+    {
+      "Path": "farm.shipping_bin.total_count",
+      "Before": "2",
+      "After": "3"
+    },
+    {
+      "Path": "farm.shipping_bin.distinct_count",
+      "Before": "2",
+      "After": "3"
+    },
+    {
+      "Path": "farm.shipping_bin.contents_signature",
+      "Before": "783d99ada6901190138dc9975b3f3552818849609b2c3f54c1d43d0dd640510e",
+      "After": "7f1ba1787b718af163577d4d5c17a9632dbece350f39ec67a94a7b242dc1974d"
+    },
+    {
+      "Path": "ship.pending_receipt_path",
+      "Before": "",
+      "After": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer03-native-resume-20261123\\pending_receipts\\ship_r2-global-daily-20261117-171253_queue_item.2a3a71aad4ce41399419078accd019c4_74008ea0280d4ed2914b8bc2fe1ea752.json"
+    }
+  ],
+  "source_sha256": {
+    "queue": "ecea374f51c290f540cadc17bc33431645cc122ea098cec9f73af884878d083e",
+    "result": "9b412fd79f2493acc31831db9af10ed9ab253c434fe79cb3987a8e2d02b3a5b5",
+    "before": "016dab2ee4507e728d9e6afafe35f32f2aaf6c693d9c0edaf86e15b398aa39bf",
+    "after": "8603bf0a6fd68bf7ab5a27a1217e2d3c0d40b97e4c24c3b21854a5eaa9a86238",
+    "journal": "8a048384df20384c60d584c1d4c2b1a0ae3e41f724146a805f2134fe1c04e977",
+    "request_gzip": "30ba50f29c5c1ec5a51746e6f5cc60c723a1034ceacf15d61ef75fae3b82d82d",
+    "product_after": "8603bf0a6fd68bf7ab5a27a1217e2d3c0d40b97e4c24c3b21854a5eaa9a86238"
+  },
+  "formal_training_authorized": false
+}

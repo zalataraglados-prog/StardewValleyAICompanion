@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-11-24T16:15:37.9458388+08:00",
+  "total_day": 37,
+  "cash": 5110,
+  "shipping_income": 643,
+  "four_original_crops_alive": true,
+  "octopus_caught": true,
+  "puffer_caught": false,
+  "fish_collection": 24,
+  "source_state_hash": "59f399dfcd280bdb1e4b67a41db8430183cb5b3b21136e641b1673cf4eff39e8",
+  "formal_training_authorized": false
+}

@@ -45,7 +45,7 @@ foreach ($binding in @{
 foreach ($binding in @{
     '--goal' = $queue.goal_id
     '--precompiled-queue' = [IO.Path]::GetFullPath($QueuePath)
-    '--max-persisted-iterations' = '600'
+    '--max-persisted-iterations' = '800'
     '--max-queue-item-attempts' = $MaximumQueueItemAttempts.ToString()
 }.GetEnumerator()) {
     $index = [Array]::IndexOf($arguments, $binding.Key)
