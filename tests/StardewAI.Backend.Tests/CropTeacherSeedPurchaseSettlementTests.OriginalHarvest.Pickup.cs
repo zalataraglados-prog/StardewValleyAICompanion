@@ -56,6 +56,21 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
     }
 
     [Fact]
+    public void OriginalHarvestPickupRejectsUnexplainedStockGainDuringRefresh()
+    {
+        using var f = new HarvestFixture();
+        f.SetStartingDebris(0);
+        var start = f.Open();
+        f.Emit(outputs: new[] { (0, 1), (1, 1) });
+        var batch = start.ReadNativeBatch(f.Transition);
+        var (_, files, _, _) = f.EmitPickup(batch, "quantity");
+
+        var error = Assert.Throws<InvalidDataException>(() => batch.PreparePickupOrObserve(files.AfterSnapshotPath));
+        Assert.Contains("did not conserve the crop drop quantity", error.Message, StringComparison.Ordinal);
+        Assert.True(batch.NeedsPickup);
+    }
+
+    [Fact]
     public void OriginalHarvestPickupProductionReplayBindsBothClosingFrames()
     {
         using var f = new HarvestFixture();

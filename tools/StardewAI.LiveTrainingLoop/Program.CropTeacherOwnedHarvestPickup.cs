@@ -27,10 +27,12 @@ static partial class Program
             var frame = await ReadExecutionSnapshotAsync(http, runtime, forceRefresh: true,
                 snapshotUrlOverride: fullUrl, snapshotProfileOverride: "full").ConfigureAwait(false);
             await ContentAddressedJsonArtifactStore.WriteAsync(beforePath, frame.Json, runtime.SnapshotArtifactMode).ConfigureAwait(false);
-            var pickup = batch.PreparePickup(beforePath);
+            var (command, observed, sourceHash) = batch.PreparePickupOrObserve(beforePath);
             var ingest = await PostJsonStringAsync(http, SnapshotIngestUrl(runtime, "full"), frame.Json).ConfigureAwait(false);
-            if (ingest["accepted"]?.GetValue<bool>() != true || ReadString(ingest, "state_hash") != pickup.Queue.StateHash)
+            if (ingest["accepted"]?.GetValue<bool>() != true || ReadString(ingest, "state_hash") != sourceHash)
                 throw new InvalidDataException("Owned harvest pickup source was not accepted by the backend.");
+            if (observed is not null) { files.Add(observed); continue; }
+            var pickup = command ?? throw new InvalidDataException("Owned harvest pickup capture produced no action or observation.");
             var queuePath = Path.Combine(root, "pickup-" + suffix + "-queue.json");
             var modelPath = Path.Combine(root, "pickup-" + suffix + "-model.json");
             await WriteTypedJsonAsync(queuePath, pickup.Queue).ConfigureAwait(false);

@@ -45,7 +45,9 @@ internal static partial class CropSeedResourceBoundary
     }
 
     internal static long CountHarvestDebris(SnapshotEnvelope snapshot, string itemId) =>
-        ReadHarvestDebris(snapshot, itemId).Sum(row => (long)Int(row["item"]!, "stack"));
+        SumHarvestDebris(ReadHarvestDebris(snapshot, itemId));
+
+    internal static long SumHarvestDebris(IReadOnlyList<JsonObject> matches) => matches.Sum(row => (long)Int(row["item"]!, "stack"));
 
     internal static IReadOnlyList<JsonObject> ReadHarvestDebris(SnapshotEnvelope snapshot, string itemId)
     {

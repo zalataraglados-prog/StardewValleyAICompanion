@@ -127,7 +127,7 @@ public sealed partial class CropTeacherHarvest : ICropTeacherSupportingTransitio
         {
             var batch = ReadNativeBatch(transition);
             foreach (var pickup in NativeBatch.ReadPickupFiles(pickupSettlementPath))
-                batch.ObservePickup(batch.PreparePickup(pickup.BeforeSnapshotPath), pickup);
+                batch.ReplayPickup(pickup);
             return batch.Complete(pickupSettlementPath);
         }
         ICropTeacherSupportingTransition ICropTeacherSupportingPreparation.VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition) => VerifyTransition(transition);

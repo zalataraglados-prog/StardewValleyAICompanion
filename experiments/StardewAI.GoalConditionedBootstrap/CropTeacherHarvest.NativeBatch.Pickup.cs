@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
@@ -7,7 +8,11 @@ using StardewAI.Core.Execution;
 
 namespace StardewAI.GoalConditionedBootstrap;
 
-public sealed record CropTeacherHarvestPickupFiles(string BeforeSnapshotPath, string QueuePath, string ReceiptPath, string AfterSnapshotPath);
+public sealed record CropTeacherHarvestPickupFiles(string BeforeSnapshotPath, string QueuePath, string ReceiptPath, string AfterSnapshotPath)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool ObservedWithoutDispatch { get; init; }
+}
 
 public sealed partial class CropTeacherHarvest
 {
@@ -33,23 +38,14 @@ public sealed partial class CropTeacherHarvest
             }
         }
 
-        public Pickup PreparePickup(string path)
+        public Pickup PreparePickup(string path) => PreparePickup(ReadPickupCapture(path));
+
+        private Pickup PreparePickup(PickupCapture capture)
         {
-            Require(!completed && NeedsPickup && Path.IsPathFullyQualified(path) && Comparer.Equals(path, Path.GetFullPath(path)) && !InputHashes.ContainsKey(path),
-                "Owned harvest pickup requires a new capture and an outstanding inventory deficit.");
-            var source = new CropTeacherRetainedInputs(new[] { path });
-            var before = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(path, "native harvest pickup before");
+            Require(capture.PassiveGain == 0, "An already observed crop pickup must settle before native dispatch.");
+            var before = capture.Snapshot;
             var item = Prepared.HarvestItemQualifiedId;
-            MoneyRevenueCropSeedAcquisitionProofBuilder.ValidateSnapshot(before, "native harvest pickup before");
-            MoneyRevenueCropNativeLifecycleProofBuilder.VerifyMaintenanceLocation(After, before, Prepared.LocationId);
-            var ground = CropSeedResourceBoundary.CountHarvestDebris(before, item);
-            Require(before.SaveId.Value == After.SaveId.Value && before.PlayerId.Value == After.PlayerId.Value && before.GameVersion == After.GameVersion &&
-                    before.GameTick >= After.GameTick && MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(before, "time", "total_days") == Prepared.TotalDay &&
-                    MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(before, "time", "time") >= MoneyRevenueCropSeedAcquisitionProofBuilder.ReadInt(After, "time", "time") &&
-                    ground == CropSeedResourceBoundary.CountHarvestDebris(After, item) && ground >= (long)AppliedTileCount * Prepared.MinimumUnitsPerTile - HeldIncrease,
-                "Owned harvest pickup capture does not continue the original crop drops.");
-            CropSeedResourceBoundary.VerifyUnconsumedCropAction(After, before, "Harvest pickup capture", requireSeedInventory: false);
-            foreach (var drop in CropSeedResourceBoundary.ReadHarvestDebris(before, item))
+            foreach (var drop in capture.Drops)
             {
                 if (drop["debris_index"]?.GetValue<int>() is not int index || index < 0 ||
                     drop["item_quality"]?.GetValue<int>() is not int quality || quality < 0 ||
@@ -71,14 +67,14 @@ public sealed partial class CropTeacherHarvest
                 };
                 var compiled = new ActionQueueCompiler().Compile(model, before);
                 if (compiled.Status == "pending" && compiled.Items is [{ Status: "pending", OptionId: "executor.pickup_debris" }])
-                    return new(this, before, path, source, ground, model, compiled, candidate);
+                    return new(this, before, capture.Path, capture.Input, capture.GroundQuantity, model, compiled, candidate);
             }
             throw new InvalidDataException("Owned harvest has no compilable native crop drop pickup.");
         }
 
         public void ObservePickup(Pickup pickup, CropTeacherHarvestPickupFiles files)
         {
-            Require(!completed && NeedsPickup && ReferenceEquals(pickup.Batch, this) && Comparer.Equals(AfterSnapshotPath, pickup.PreviousPath) &&
+            Require(!files.ObservedWithoutDispatch && !completed && NeedsPickup && ReferenceEquals(pickup.Batch, this) && Comparer.Equals(AfterSnapshotPath, pickup.PreviousPath) &&
                     Comparer.Equals(files.BeforeSnapshotPath, pickup.SourcePath), "Owned harvest pickup does not follow its prepared batch.");
             var paths = new[] { files.QueuePath, files.ReceiptPath, files.AfterSnapshotPath };
             var retained = InputHashes;
@@ -108,17 +104,13 @@ public sealed partial class CropTeacherHarvest
                 var stepAfter = CurrentTeacherFrontierSupport.Read<SnapshotEnvelope>(stepPath, "native harvest pickup step after");
                 Require(EqualJson(stepAfter, after), "Owned harvest pickup has an unbound native after frame.");
             }
-            var gained = CropSeedResourceBoundary.VerifyHarvestPickupStock(pickup.Before, after, Prepared.HarvestItemQualifiedId);
-            Require(pickup.GroundQuantity - CropSeedResourceBoundary.CountHarvestDebris(after, Prepared.HarvestItemQualifiedId) == gained,
-                "Owned harvest pickup did not conserve the crop drop quantity.");
+            var gained = VerifyPickupDelta(pickup.Before, after,
+                pickup.GroundQuantity - CropSeedResourceBoundary.CountHarvestDebris(after, Prepared.HarvestItemQualifiedId));
             pickup.Source.Validate();
             if (stepInputs is not null) inputs.Add(stepInputs);
             inputs.Add(pickup.Source);
             inputs.Add(outputInputs);
-            pickups.Add(files);
-            AfterSnapshotPath = files.AfterSnapshotPath;
-            After = after;
-            HeldIncrease = checked(HeldIncrease + gained);
+            AdvancePickup(files, after, gained);
         }
 
         internal static CropTeacherHarvestPickupFiles[] ReadPickupFiles(string path)
@@ -127,8 +119,12 @@ public sealed partial class CropTeacherHarvest
             var root = Path.GetDirectoryName(path)! + Path.DirectorySeparatorChar;
             var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             var files = CurrentTeacherFrontierSupport.Read<CropTeacherHarvestPickupFiles[]>(path, "harvest pickup settlement");
-            Require(files is { Length: > 0 } && files.All(row => row is not null && new[] { row.BeforeSnapshotPath, row.QueuePath, row.ReceiptPath, row.AfterSnapshotPath }
-                .All(input => Path.IsPathFullyQualified(input) && Comparer.Equals(input, Path.GetFullPath(input)) && input.StartsWith(root, comparison) && !Comparer.Equals(path, input))),
+            bool Canonical(string input) => Path.IsPathFullyQualified(input) && Comparer.Equals(input, Path.GetFullPath(input));
+            bool Inside(string input) => Canonical(input) && input.StartsWith(root, comparison) && !Comparer.Equals(path, input);
+            Require(files is { Length: > 0 } && files.All(row => row is not null && Inside(row.AfterSnapshotPath) &&
+                (row.ObservedWithoutDispatch
+                    ? Canonical(row.BeforeSnapshotPath) && row.QueuePath == string.Empty && row.ReceiptPath == string.Empty
+                    : Inside(row.BeforeSnapshotPath) && Inside(row.QueuePath) && Inside(row.ReceiptPath))),
                 "Owned harvest pickup artifacts escaped their settlement directory.");
             return files;
         }

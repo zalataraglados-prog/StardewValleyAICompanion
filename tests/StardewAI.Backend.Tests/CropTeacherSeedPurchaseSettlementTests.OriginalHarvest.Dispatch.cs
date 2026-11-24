@@ -14,8 +14,10 @@ namespace StardewAI.Backend.Tests;
 
 public sealed partial class CropTeacherSeedPurchaseSettlementTests
 {
-    [Fact]
-    public async Task OwnedHarvestPickupDispatchesOnceThenRestoresItsAcceptedSettledHead()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task OwnedHarvestPickupRestoresItsSettledHeadWithoutRepeatingDispatch(bool settlesWhileRefreshing)
     {
         using var f = new OvernightFixture(productExecutor: true,
             prepareSource: source => HarvestFixture.Put(source.Before, "current_location", "debris", new JsonArray()));
@@ -31,7 +33,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         options.ExecutorUrl = "http://test";
         options.SnapshotArtifactMode = ContentAddressedJsonArtifactStore.PlainMode;
         var output = f.Shared.Source.Ledger.CropPlantingCommitments.Single().HarvestItemQualifiedId;
-        using var transport = new HarvestPickupTransport(f.Shared.Runtime.Handler, f.HarvestAfter, output);
+        using var transport = new HarvestPickupTransport(f.Shared.Runtime.Handler, f.HarvestAfter, output, settlesWhileRefreshing);
         using var client = new HttpClient(transport);
         var bridge = typeof(CropTeacherManagedSeedOwner).GetMethod("ExecuteOriginalHarvestSettlingPickupAsync",
             BindingFlags.Instance | BindingFlags.NonPublic)!;
@@ -40,7 +42,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         await (Task)bridge.Invoke(owner, [operation, client, new Func<Task<JsonObject>>(() => f.EmitHarvest(owner, leaveDrop: true)), settle])!;
         await f.RebindHarvest(owner, operation);
 
-        Assert.Equal(1, transport.Dispatches);
+        Assert.Equal(settlesWhileRefreshing ? 0 : 1, transport.Dispatches);
         Assert.Equal(1, f.NativeHarvestCalls);
         Assert.Equal(5, f.Shared.Runtime.Handler.Commits);
         var acceptedPath = owner.CurrentSnapshotPath;
@@ -49,6 +51,16 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         Assert.Equal(f.HarvestAfter, harvest.AfterSnapshotPath);
         Assert.Equal(acceptedPath, harvest.EffectiveAfterSnapshotPath);
         Assert.NotEqual(harvest.AfterSnapshotPath, acceptedPath);
+        var manifest = JsonSerializer.Deserialize<CropTeacherHarvestPickupFiles[]>(
+            File.ReadAllText(harvest.NativeHarvestSettlement!.SettlementPath), JsonOptions)!;
+        var settlement = Assert.Single(manifest);
+        Assert.Equal(settlesWhileRefreshing, settlement.ObservedWithoutDispatch);
+        if (settlesWhileRefreshing)
+        {
+            Assert.Empty(settlement.QueuePath);
+            Assert.Empty(settlement.ReceiptPath);
+            Assert.Equal(harvest.AfterSnapshotPath, settlement.BeforeSnapshotPath);
+        }
         trace.ValidateInputsUnchanged();
         var ledger = ReadLedger(owner.CurrentLedgerPath);
         Assert.Equal(2, ledger.MaterialReservations.Where(row => row.Status == StrategyCommitmentStatuses.Active &&
@@ -62,10 +74,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
         var restored = await reopened.ReadProductionTraceAsync();
         Assert.Equal(JsonSerializer.Serialize(harvest, JsonOptions), JsonSerializer.Serialize(restored.Transitions[^1].NativeTransition, JsonOptions));
         Assert.Equal(5, f.Shared.Runtime.Handler.Commits);
-        Assert.Equal(1, transport.Dispatches);
+        Assert.Equal(settlesWhileRefreshing ? 0 : 1, transport.Dispatches);
     }
 
-    private sealed class HarvestPickupTransport(HttpMessageHandler backendHandler, string harvestAfter, string itemId) : HttpMessageHandler
+    private sealed class HarvestPickupTransport(HttpMessageHandler backendHandler, string harvestAfter, string itemId,
+        bool settlesWhileRefreshing) : HttpMessageHandler
     {
         private readonly HttpMessageInvoker backend = new(backendHandler, disposeHandler: false);
         private SnapshotEnvelope? current;
@@ -76,7 +89,11 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             var path = request.RequestUri!.AbsolutePath;
             if (path == "/fixture/pickup-snapshot")
             {
-                current ??= JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(harvestAfter), JsonOptions)!;
+                if (current is null)
+                {
+                    current = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(harvestAfter), JsonOptions)!;
+                    if (settlesWhileRefreshing) Collect(current);
+                }
                 return Reply(current);
             }
             if (path != "/api/v1/product/execute") return await backend.SendAsync(request, token);
@@ -89,10 +106,7 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
             Dispatches++;
             var beforeHash = current.StateHash;
             var beforeTick = current.GameTick;
-            HarvestFixture.AddHeldOutput(current, itemId, 1);
-            HarvestFixture.Put(current, "current_location", "debris", new JsonArray());
-            current.StateHash = SnapshotHash.ComputeStateHash(current.State);
-            current.GameTick++;
+            Collect(current);
             return Reply(new JsonObject
             {
                 ["schema_version"] = "training_execution_result.v1", ["status"] = "applied", ["source"] = "product_executor",
@@ -104,6 +118,14 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                 ["product_after_state_hash"] = current.StateHash, ["product_after_game_tick"] = current.GameTick,
                 ["changed_facts"] = new JsonArray(new JsonObject { ["path"] = "current_location.debris.count", ["before"] = "1", ["after"] = "0" })
             });
+        }
+
+        private void Collect(SnapshotEnvelope snapshot)
+        {
+            HarvestFixture.AddHeldOutput(snapshot, itemId, 1);
+            HarvestFixture.Put(snapshot, "current_location", "debris", new JsonArray());
+            snapshot.StateHash = SnapshotHash.ComputeStateHash(snapshot.State);
+            snapshot.GameTick++;
         }
 
         private static HttpResponseMessage Reply<T>(T value) => new(HttpStatusCode.OK) { Content = JsonContent.Create(value, options: JsonOptions) };
