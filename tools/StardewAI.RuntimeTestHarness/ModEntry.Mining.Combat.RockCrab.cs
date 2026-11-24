@@ -106,7 +106,10 @@ public sealed partial class ModEntry
 
     private void ReleaseRockCrabShellInput(ActiveCombatMonster active)
     {
-        if (active.RockCrabShellHealthBefore.HasValue)
-            TryApplySmapiButtonOverride(SButton.C, pressed: false, out _);
+        if (active.RockCrabShellHealthBefore.HasValue &&
+            TryApplySmapiButtonOverride(SButton.C, pressed: false, out _))
+        {
+            active.RockCrabShellLifecycle.NotifyInputReleased();
+        }
     }
 }

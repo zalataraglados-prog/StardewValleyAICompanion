@@ -154,6 +154,19 @@ namespace StardewAI.RuntimePrimitives
             }
         }
 
+        // A higher-priority handler can release the physical button while this
+        // observer is suspended. Await native idle even if its start was missed;
+        // callers still have to verify the actual tool effect independently.
+        public void NotifyInputReleased()
+        {
+            if (Phase == NativeToolActionPhase.WaitingForNativeStart ||
+                Phase == NativeToolActionPhase.WaitingForRelease)
+            {
+                Phase = NativeToolActionPhase.WaitingForNativeCompletion;
+                phaseTicks = 0;
+            }
+        }
+
         public void Reset()
         {
             Phase = NativeToolActionPhase.Ready;

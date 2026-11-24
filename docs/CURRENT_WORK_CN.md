@@ -1,5 +1,14 @@
 # StardewAI 当前工作
 
+## 2026-11-25T00:23:35+08:00 岩石蟹紧急进食中断 P2（301，待合入）
+
+- 核对 #594 未解决的 `4668805547`：`EmergencyCombatFoodNeeded` 为真时原 combat 每tick松键并提前返回，工具原生开始／结束可全部发生在未观察期间；原 `ReleaseRockCrabShellInput` 未通知状态机，恢复后仍停在 WaitingForNativeStart。此前正常闭壳原生5→4与击杀证据保留，但它不覆盖此中断边界。
+- 基线 `c3f764fa` 的实际共享状态机／实际松键钩子控制重放复现 `native_tool_action_did_not_start`；修复后同序列 CycleCompleted。新增显式外部松键通知，仅成功释放C键后进入原有完成等待；仍待原生工具／动画结束，重复通知不重置超时。壳耐久真实下降、目标身份及不得直接改壳／血量的检查保留。
+- 输入生命周期及RockCrab源码接线20/20通过，含8个新增中断／超时／无动作／已阻塞边界用例；Harness Release构建0警告0错误。属于确定控制重放与回归，不宣称新的游戏内紧急进食实测。公开摘要见 `experiments/r2-lab-evidence/20261125/rock-crab-interruption.json`；完整日志留D盘 `验证测评/20261125/rock-crab-interruption`。
+- 当前分支 `fix/r2-rock-crab-interruption-20261125`：最终CI／独立复核按本次head验后合入并解决原审查线程。#570工程交接不重开，#569数据／选型／测评继续并行，不要求重跑原正常闭壳场景或整局。
+
+<!-- audit_invalidation: scope=以594正常闭壳原生复验扩大推断已覆盖紧急进食中断; invalidated_at=2026-11-25T00:23:35+08:00; superseded_by=本节301及594原P2补正; reason=物理松键与状态机未同步会漏观测原生开始且正常复验不覆盖该时序; historical_only=true -->
+
 ## 2026-11-24 正常交接与并行验证（300）
 
 - 2026-11-24T23:42:55+08:00 最终f8 CI保留4181通过/2失败：两项museum恢复用例仅触发15秒测试外层watchdog，未报语义断言失败。原协议单次lookup已有15秒预算，测试外层还含原RPC及write-through日志/观察写入，现仅将测试总watchdog改为60秒；生产期限、次数、哈希/账本/结果断言不变。此前同类负载敏感记录保留，当前不推断精确调度根因；最终head重新验证。
