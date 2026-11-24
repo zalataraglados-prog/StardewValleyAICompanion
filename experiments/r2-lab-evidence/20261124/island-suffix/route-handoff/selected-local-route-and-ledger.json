@@ -1,0 +1,742 @@
+{
+  "schema_version": "r2_existing_access_local_route_handoff.v1",
+  "recorded_at": "2026-11-24T18:15:21.9465607+08:00",
+  "scope": "User-authorized post-unlock local suffix; existing R2 L1/L2 prerequisites reused. Not an L3 fresh-save acquisition trajectory.",
+  "entry_resolution": "The user explicitly directed use of an already-unlocked island save to verify the remaining suffix. This replaces continuing acquisition on the earlier locked test save; it does not join that other player or reopen accepted prerequisites.",
+  "run_id": "island-suffix-20261124-native",
+  "save_id": "自动化",
+  "player_id": "-8577884337094229036",
+  "game_version": "1.6.15",
+  "selected_local_goal": "goal.fishing.complete_master_angler",
+  "selected_local_target": "(O)836",
+  "selected_location": "IslandSouthEastCave",
+  "selection_origin": "Original candidate evaluator/ranker, DailyPlanCompiler, ActionQueueCompiler and Product/native execution; caller scoped the local island destination. Not a whole-game/global selector lease.",
+  "actual_start_readback": {
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\initial-readback.json",
+    "sha256": "F02980DB78CF6D79B2453F4483ADAF4D02F65DCE0BF1F90FA28584CF2DEF2FA1"
+  },
+  "original_save": {
+    "path": "D:\\Recovered-From-OldPC\\I\\StardewAITraining\\golden-walnut-source-schedule-v102\\validation-saves\\ginger-island-unlocked-baseline-20261103\\CrabPotAudit_442159967\\CrabPotAudit_442159967",
+    "sha256": "7F34A5731208788F37EF2D1F76B64B890466293878F876ABCA6FE4A05A052CB0"
+  },
+  "existing_access_certificate": {
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\route-handoff\\current-source-access-certificate.json",
+    "sha256": "30FDCBC5D13824004C1BDC81A966E2C96C99FFBD7B991737AE44483CF46BAE01"
+  },
+  "original_certificate_replay": "MasterAnglerSharedCapabilityCertificateBuilder.ReadAndReplay: ready; same run/save/player/source hash",
+  "resource_ledger": {
+    "source": "Existing native save balance, independently matched to original XML goldenWalnuts",
+    "starting_walnuts": 12,
+    "ending_walnuts": 12,
+    "new_source_completions": [],
+    "new_payments": [],
+    "new_payment_order": [],
+    "new_walnuts_required": 0,
+    "existing_upgrades": [
+      {
+        "name": "first_parrot",
+        "native_state": "Complete",
+        "complete_or_pending": true,
+        "identity_exact": true,
+        "native_cost": 1,
+        "new_payment_in_local_suffix": false
+      },
+      {
+        "name": "western_turtle_parrot",
+        "native_state": "Complete",
+        "complete_or_pending": true,
+        "identity_exact": true,
+        "native_cost": 10,
+        "new_payment_in_local_suffix": false
+      },
+      {
+        "name": "island_house_parrot",
+        "native_state": "Complete",
+        "complete_or_pending": true,
+        "identity_exact": true,
+        "native_cost": 20,
+        "new_payment_in_local_suffix": false
+      },
+      {
+        "name": "resort_parrot",
+        "native_state": "Complete",
+        "complete_or_pending": true,
+        "identity_exact": true,
+        "native_cost": 20,
+        "new_payment_in_local_suffix": false
+      }
+    ],
+    "payment_history_claim": false,
+    "global_joint_calendar_claim": false
+  },
+  "fishing_date": {
+    "year": 5,
+    "season": "spring",
+    "day": 25,
+    "total_day": 472,
+    "stingray_cast_before_time": 610,
+    "stingray_cast_after_time": 620,
+    "source_rule": "Data/Locations:IslandSouthEastCave#5:(O)836",
+    "actual_native_outcome": "(O)836",
+    "year_three_deadline_claim": false
+  },
+  "cases": [
+    {
+      "case_path": "cove-catch-02/action-01",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\action-01\\plan.json",
+        "sha256": "6FEDD189D828CCB8B85D007D7CA596606491F797E22F37D33057156FFF24FEAF"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "B5CA36BC1B612B871D18FFAB8D8A4E05D319920A77CB2B7AA0133C3E438B6320"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "131AEFD2CB5CA4D03E75D1B0486E346AD12726F2C8B65E8BC54C24C0964354FF"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "D29ADFCB9C334223B49162C21CA11FC1F02D095525B27F8FAD5837FA744CCDAA"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "5AE71E97CD5C1D2CE1F463DDD82B0E0B62052D3F06ED079D3DAB10EE4251A443"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "CD37528377DE514CCF385C9A581DC51D5ABCE4CE730A94FE6DF04E27D358C3BE"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "3EE6C17DD8378E9D86C926DF02CB61A7225F4F8F4EA9C42F2D5EDD8701105B35"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-02\\independent-original-replay.json",
+        "sha256": "E1083BA514E635A8E28363ABEE3068CF43D572B9415D812A4EDDBB851AFF9932"
+      },
+      "independent_source_hashes": {
+        "queue": "b5ca36bc1b612b871d18ffab8d8a4e05d319920a77cb2b7aa0133c3e438b6320",
+        "result": "131aefd2cb5ca4d03e75d1b0486e346ad12726f2c8b65e8bc54c24c0964354ff",
+        "before": "cd37528377de514ccf385c9a581dc51d5abce4ce730a94fe6df04e27d358c3be",
+        "after": "3ee6c17dd8378e9d86c926df02cb61a7225f4f8f4ea9c42f2d5edd8701105b35",
+        "journal": "d29adfcb9c334223b49162c21ca11fc1f02d095525b27f8fad5837fa744ccdaa",
+        "request_gzip": "5ae71e97cd5c1d2ce1f463ddd82b0e0b62052d3f06ed079d3dab10ee4251a443"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "fishing:attempt:IslandSouthEastCave|3|20|25|27|25|1|7",
+          "kind": "catch_fish",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 43,
+          "candidate_energy_cost": 7,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.catch_fish",
+      "before_state_hash": "2957a9e836bc2a1bb6a6195f9a6b9839d5351cd0711272e6f5022b1445fa1f4e",
+      "after_state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 600,
+        "after_time": 610
+      },
+      "from": "IslandSouthEastCave",
+      "to": "IslandSouthEastCave",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": [
+        "(O)267"
+      ]
+    },
+    {
+      "case_path": "cove-catch-03/action-01",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\plan.json",
+        "sha256": "58F597B994C8AC9128F77FE2C5599DB83522DE51FB93FC075C6A59D70EBA937C"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "07743C1BBD5D58694E34175F29879CA5433E89807E93F89586D534DAE03660B0"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "E0B1F0BBB1EEA6D7E5443CEDF33550D1DE32326DEB1FCA0481AF78983BF21392"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "CCDBDF703EF1F69FDFEA4EEFA5450853C875EEC2FA7EF5589051011CD7AD4B1C"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "34F5C7FF4E2805A177B15BFAD777637E4154172EE9B926D476FE5C5AA1250168"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "361E965DA9D43B39BC1C684F0C0BE7720E7376A6A265BFE2316F17BD1C93C50D"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "449EFCD160E95623D5076BD542083130F17EBA8A822FCC776FFDEE960C27F635"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-catch-03\\independent-original-replay.json",
+        "sha256": "2DD63932A83DE848BBDAC66533DBB20B0F825FBFF33D562BEA745BB38CC355E4"
+      },
+      "independent_source_hashes": {
+        "queue": "07743c1bbd5d58694e34175f29879ca5433e89807e93f89586d534dae03660b0",
+        "result": "e0b1f0bbb1eea6d7e5443cedf33550d1de32326deb1fca0481af78983bf21392",
+        "before": "361e965da9d43b39bc1c684f0c0be7720e7376a6a265bfe2316f17bd1c93c50d",
+        "after": "449efcd160e95623d5076bd542083130f17eba8a822fcc776ffdee960c27f635",
+        "journal": "ccdbdf703ef1f69fdfea4eefa5450853c875eec2fa7ef5589051011cd7ad4b1c",
+        "request_gzip": "34f5c7ff4e2805a177b15bfad777637e4154172ee9b926d476fe5c5aa1250168"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "fishing:attempt:IslandSouthEastCave|3|20|25|27|25|1|7",
+          "kind": "catch_fish",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 43,
+          "candidate_energy_cost": 7,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.catch_fish",
+      "before_state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+      "after_state_hash": "626790c51c6b797281b1457e239eb4f468eb9ea568131af7f5776c160906e95f",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 610,
+        "after_time": 620
+      },
+      "from": "IslandSouthEastCave",
+      "to": "IslandSouthEastCave",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": [
+        "(O)836"
+      ]
+    },
+    {
+      "case_path": "cove-to-west/action-01",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\plan.json",
+        "sha256": "536B4A06E6D55425B45D3320C25BE6338058F709F673DD5EFF04167973433801"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "48306EFBC8C7C8B8134B7437F49CE3CE91FA421B4623E668367F17F0302B489A"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "26E5D4809146180887493E2161C77DB269CFB84274B6FDE43D0B69EDD330858D"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "117A2EE13E86E3D9306870B9C1469266E4D37C83F9B9FF7800DA7BE75451B5E6"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "E2DFBA20D34015FB270449F46863BB19E377E51D31D445040A7384B4D262FB49"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "7F7C250425874FEC218E3E03808612CA18BCC2B4F29849D852EA497676B9F5FE"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "8BE8870ED20B3B5CA11E2DBA7149CAE829040C5F5A36F57557C4D35FEAB8B686"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-01\\independent-original-replay.json",
+        "sha256": "4B5DF34FADCD9798ADE0198D1A927755435ECE04C26B2AF04017BE99AF60FCAA"
+      },
+      "independent_source_hashes": {
+        "queue": "48306efbc8c7c8b8134b7437f49ce3ce91fa421b4623e668367f17f0302b489a",
+        "result": "26e5d4809146180887493e2161c77db269cfb84274b6fde43d0b69edd330858d",
+        "before": "7f7c250425874fec218e3e03808612ca18bcc2b4f29849d852ea497676b9f5fe",
+        "after": "8be8870ed20b3b5ca11e2dba7149cae829040c5f5a36f57557c4d35feab8b686",
+        "journal": "117a2ee13e86e3d9306870b9c1469266e4d37c83f9b9ff7800da7be75451b5e6",
+        "request_gzip": "e2dfba20d34015fb270449f46863bb19e377e51d31d445040a7384b4d262fb49"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "route:IslandSouthEastCave:0,7:warp:to=IslandSouthEast:arrival=30,19",
+          "kind": "route_connector_tile",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 79,
+          "candidate_energy_cost": 0,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "626790c51c6b797281b1457e239eb4f468eb9ea568131af7f5776c160906e95f",
+      "after_state_hash": "50e2385fa18f7e3ca561fc1abfec195cee8a90e22e1968205fd6a925ee3ef24e",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 620,
+        "after_time": 620
+      },
+      "from": "IslandSouthEastCave",
+      "to": "IslandSouthEast",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": []
+    },
+    {
+      "case_path": "cove-to-west/action-02",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\plan.json",
+        "sha256": "665C725A9A6867E4B444503461812D1D44B765D6679E681A56C2BFB0B206A56F"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "D5684EE93533631934423A3D31AE794C326410891429EFA1C38E3031517C5FAF"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "99FF969E5F4675B28608F12BCF211C51FA97BDD047DF481756EAB2948E07EE52"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "CF552B67147189547F8F8E2AFED28D924527A628AA100767D4598C397D0CD4AD"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "C80101955EB5158C1B5C6C553D670835964B9A9B0DD412E362D11355CC6B7570"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "54D885EF3E75205C5863C518A368B1F15CE023EBF07DC093ED272D4F6D14FB13"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "CBD41C123A07235E36E011D9280F686FDF0E3523349CB321C17C1F01868925D7"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-02\\independent-original-replay.json",
+        "sha256": "CD7C5EC5A5A3F41BDBB1FD6DB2820C8130AA9172CE930D1E2D6655D8F55387E2"
+      },
+      "independent_source_hashes": {
+        "queue": "d5684ee93533631934423a3d31ae794c326410891429efa1c38e3031517c5faf",
+        "result": "99ff969e5f4675b28608f12bcf211c51fa97bdd047df481756eab2948e07ee52",
+        "before": "54d885ef3e75205c5863c518a368b1f15ce023ebf07dc093ed272d4f6d14fb13",
+        "after": "cbd41c123a07235e36e011d9280f686fdf0e3523349cb321c17c1f01868925d7",
+        "journal": "cf552b67147189547f8f8e2afed28d924527a628aa100767d4598c397d0cd4ad",
+        "request_gzip": "c80101955eb5158c1b5c6c553d670835964b9a9b0dd412e362d11355cc6b7570"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "route:IslandSouthEast:-1,28:warp:to=IslandSouth:arrival=43,29",
+          "kind": "route_connector_tile",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 79,
+          "candidate_energy_cost": 0,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "50e2385fa18f7e3ca561fc1abfec195cee8a90e22e1968205fd6a925ee3ef24e",
+      "after_state_hash": "2b75e84fc52d607cda66fa945be2dfef7644f0744f1178a2607d4450eb6c22d9",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 620,
+        "after_time": 620
+      },
+      "from": "IslandSouthEast",
+      "to": "IslandSouth",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": []
+    },
+    {
+      "case_path": "cove-to-west/action-03",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\plan.json",
+        "sha256": "D31DB3F6901A5CEDF4A044E0D58A67E13CC7CCBE831CA40AB7E5ECC48D31C010"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "6C947083226E3F03B54B01B3AF2E47D9C6992DA7308DC22B104E71105AE0398A"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "80FA8B68D37FCDF541A86D58D6DB15CA38EAD4762812700619F63045390B0960"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "BA05CBD5FB9DCA2B764527FEBDF107460438701F72F63DAE6F09EE42D2EEB5A9"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "6BE1487C8D39C445C6E409D07AE81CBA2B31DA69E1E5C50B1FFB688AC088BAEA"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "9F0FDA0A614C33AA96D9464B751A75691CFB3D3D9E83704A6F46C3065A538BD9"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "1EF07B940EAD2B13C15C8D3FD747FFCEDC90C26136B7F8211BB7EC0F0D8B2C76"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\cove-to-west\\action-03\\independent-original-replay.json",
+        "sha256": "8C737776315F100A487984425CA42EABB44F36790B7CFFE4C4D2CC9865CDFEF7"
+      },
+      "independent_source_hashes": {
+        "queue": "6c947083226e3f03b54b01b3af2e47d9c6992da7308dc22b104e71105ae0398a",
+        "result": "80fa8b68d37fcdf541a86d58d6db15ca38ead4762812700619f63045390b0960",
+        "before": "9f0fda0a614c33aa96d9464b751a75691cfb3d3d9e83704a6f46c3065a538bd9",
+        "after": "1ef07b940ead2b13c15c8d3fd747ffcedc90c26136b7f8211bb7ec0f0d8b2c76",
+        "journal": "ba05cbd5fb9dca2b764527febdf107460438701f72f63dae6f09ee42d2eeb5a9",
+        "request_gzip": "6be1487c8d39c445c6e409d07ae81cba2b31da69e1e5c50b1ffb688ac088baea"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "route:IslandSouth:-1,10:warp:to=IslandWest:arrival=105,41",
+          "kind": "route_connector_tile",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 110,
+          "candidate_energy_cost": 0,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "2b75e84fc52d607cda66fa945be2dfef7644f0744f1178a2607d4450eb6c22d9",
+      "after_state_hash": "d3673a0c8c734acb597d137b169b8b29b7487852b6c2e65d507aaa0b5310b428",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 620,
+        "after_time": 630
+      },
+      "from": "IslandSouth",
+      "to": "IslandWest",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": []
+    },
+    {
+      "case_path": "west-to-cove-native/action-01",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\plan.json",
+        "sha256": "380C4606D12EAAA712E1E2FD252E594AB2F5A7AAB887BE3518250FAE1AD60468"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "7A5BC92FC5A8EE29C464C278D5FD8726C5AF29A71AD715E1982312DD0705D1CC"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "CFBA8E1940A0343E988E05569BA18FCD718BB65D30E399F29A7F0C516AAB4702"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "7092C833071DEE19696C1BEB27F5C89A8C2223E7D5E4BD34A14D4D932819867E"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "A8D2C0BC68B36D77230D6278C5071218FCD51004648AB9D0EB04EF2D544122F8"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "15F9727831E8E66499436D566B84177D91670BF2A81F1CA98C1581A91E8ECB39"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "7DAA038E4453BB8786D268E2E28888949F092AFA97EE24EDB926B59821FD5400"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-01\\independent-original-replay.json",
+        "sha256": "9A1C62ABD25B8F42689A1AAB94C0F25594D5AE6A5D5370260C7085DB98CDF5AD"
+      },
+      "independent_source_hashes": {
+        "queue": "7a5bc92fc5a8ee29c464c278d5fd8726c5af29a71ad715e1982312dd0705d1cc",
+        "result": "cfba8e1940a0343e988e05569ba18fcd718bb65d30e399f29a7f0c516aab4702",
+        "before": "15f9727831e8e66499436d566b84177d91670bf2a81f1ca98c1581a91e8ecb39",
+        "after": "7daa038e4453bb8786d268e2e28888949f092afa97ee24edb926b59821fd5400",
+        "journal": "7092c833071dee19696c1beb27f5c89a8c2223e7d5e4bd34a14d4d932819867e",
+        "request_gzip": "a8d2c0bc68b36d77230d6278c5071218fcd51004648ab9d0eb04ef2d544122f8"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "route:IslandWest:106,39:warp:to=IslandSouth:arrival=0,10",
+          "kind": "route_connector_tile",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 26,
+          "candidate_energy_cost": 0,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "d3673a0c8c734acb597d137b169b8b29b7487852b6c2e65d507aaa0b5310b428",
+      "after_state_hash": "cf86729f7ba2d4ceb53083b1279a920e277de442e00d949a71733c2d4d15e675",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 630,
+        "after_time": 630
+      },
+      "from": "IslandWest",
+      "to": "IslandSouth",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": []
+    },
+    {
+      "case_path": "west-to-cove-native/action-02",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\plan.json",
+        "sha256": "AC6FEB43CD9BC1E286437D8BAE5AE5CC68FC854715E8B0B96BE67F47F87385D6"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "F4D411536B316351B1B3BBDF0DC763D5EF9C6CEBB6C1A470693B7BAF442883FE"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "640265D8A10A4A863801D806F53F30EFF8211F078CE881A2EF0E39DE075F7925"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "D495298AAFF31739539F9B803B04D2BDC556EE520AE5FD3B47BAC2A0C4415E6D"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "BF63D6E1795BAA6E5EFA22B672A4F70098647EC114DB94E7EE4DE8B13382407F"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "1E577E48C14855B46C0F644E3BEDD23BABBA6AD814830B2061E8965986358ECA"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "84349848F0627569351AE23FA1D4546E78818D9063024A195B6CE83ACD5F0AFC"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-02\\independent-original-replay.json",
+        "sha256": "71F6E2EAA7CE98F32D6A5978B9EB68E9F2A8E8EE8D32D8DD26A8712044B11BDC"
+      },
+      "independent_source_hashes": {
+        "queue": "f4d411536b316351b1b3bbdf0dc763d5ef9c6cebb6c1a470693b7baf442883fe",
+        "result": "640265d8a10a4a863801d806f53f30eff8211f078ce881a2ef0e39de075f7925",
+        "before": "1e577e48c14855b46c0f644e3bedd23babba6ad814830b2061e8965986358eca",
+        "after": "84349848f0627569351ae23fa1d4546e78818d9063024a195b6ce83acd5f0afc",
+        "journal": "d495298aaff31739539f9b803b04d2bdc556ee520ae5fd3b47bac2a0c4415e6d",
+        "request_gzip": "bf63d6e1795baa6e5efa22b672a4f70098647ec114db94e7ee4de8b13382407f"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "route:IslandSouth:43,28:warp:to=IslandSouthEast:arrival=0,29",
+          "kind": "route_connector_tile",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 109,
+          "candidate_energy_cost": 0,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "cf86729f7ba2d4ceb53083b1279a920e277de442e00d949a71733c2d4d15e675",
+      "after_state_hash": "0a1893cbac55681b00925a48ae0e0832fc98fb8211fff7314d8186002755cea2",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 630,
+        "after_time": 640
+      },
+      "from": "IslandSouth",
+      "to": "IslandSouthEast",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": []
+    },
+    {
+      "case_path": "west-to-cove-native/action-03",
+      "original_plan": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\plan.json",
+        "sha256": "F00AC4ABB452C9CABCA4EF2077BE75021D6E2C7885600E164A52D3C5BEC1BFA4"
+      },
+      "original_compiled_queue": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\compiled-queue-0001.json",
+        "sha256": "2618F53E26D3290307479B6CCB75C3969804D3EC8F77D77052FFB24B72C2DA98"
+      },
+      "native_receipt": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-0001-item-0001.json",
+        "sha256": "9F1AA570554D82E0E6215F8A32AB8EB8E6EA8C3FB254FB060022B3260785DE5A"
+      },
+      "original_request_journal": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json",
+        "sha256": "22A2B7D5DB5BB2A966C8CBF33A65458AB30C3B64D11268551A532372BC01E49F"
+      },
+      "original_request_gzip": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\execution-request-0001-item-0001.json.gz",
+        "sha256": "6C5EB6767F51D85B30AB6884DAF40BBCB2225BB6F53F760784D323550DF3C147"
+      },
+      "original_before": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\before-snapshot-0001.json",
+        "sha256": "75AEE301CA177F75ABC05353A4F221A14153F5EAC6828DF1A3CE899A8E1B8985"
+      },
+      "original_after": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\training\\runs\\island-suffix-20261124-native\\live-snapshots\\after-snapshot-0001-item-0001.json",
+        "sha256": "17710E1EA39FE9A471858B3A3070F07632FB9A8F30323F446ED761164BE78334"
+      },
+      "independent_replay": {
+        "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\west-to-cove-native\\action-03\\independent-original-replay.json",
+        "sha256": "E9AC45873C613F00ECACF3F97CE0A417575D0FCE9BFC95CEDC2111A6C1722BC6"
+      },
+      "independent_source_hashes": {
+        "queue": "2618f53e26d3290307479b6ccb75c3969804d3ec8f77d77052ffb24b72c2da98",
+        "result": "9f1aa570554d82e0e6215f8a32ab8eb8e6ea8c3fb254fb060022b3260785de5a",
+        "before": "75aee301ca177f75abc05353a4f221a14153f5eac6828df1a3ce899a8e1b8985",
+        "after": "17710e1ea39fe9a471858b3a3070f07632fb9a8f30323f446ed761164be78334",
+        "journal": "22a2b7d5db5bb2a966c8cbf33a65458ab30c3b64d11268551a532372bc01e49f",
+        "request_gzip": "6c5eb6767f51d85b30ab6884daf40bbcb2225bb6f53f760784d323550df3c147"
+      },
+      "candidate_audit": [
+        {
+          "candidate_id": "route:IslandSouthEast:31,18:warp:to=IslandSouthEastCave:arrival=1,8",
+          "kind": "route_connector_tile",
+          "decision": "accepted",
+          "reasons": [
+            "fits_aggregate_budget"
+          ],
+          "candidate_minutes": 82,
+          "candidate_energy_cost": 0,
+          "remaining_minutes_before": null,
+          "remaining_minutes_after": null,
+          "remaining_energy_before": null,
+          "remaining_energy_after": null
+        }
+      ],
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "0a1893cbac55681b00925a48ae0e0832fc98fb8211fff7314d8186002755cea2",
+      "after_state_hash": "91eba83e3a4cd3df5095c747e0b746204425e6352c8fea34a367abd99acf31cd",
+      "date": {
+        "year": 5,
+        "season": "spring",
+        "day": 25,
+        "total_day": 472,
+        "after_total_day": 472,
+        "before_time": 640,
+        "after_time": 650
+      },
+      "from": "IslandSouthEast",
+      "to": "IslandSouthEastCave",
+      "walnuts_before": 12,
+      "walnuts_after": 12,
+      "observed_catch": []
+    }
+  ],
+  "causal_boundary": "Catch cases and the six cross-map connector cases are separate local cases on the same fixture. The successful new-species catch preceded the forward island traversal; they are not relabeled as a single acquire-access/travel/new-catch chain.",
+  "setup": {
+    "entry": "debug.setup_location_fishing",
+    "original_fishing_level": 3,
+    "tested_fishing_level": 10,
+    "original_cash": 3946,
+    "tested_cash": 0,
+    "original_walnuts_found": 103,
+    "tested_walnuts_found": 103,
+    "injected_tutorial_catch": false,
+    "scope": "Existing fixture positions actor, equips existing rod, raises fishing level/XP and sets cash to zero. Setup is excluded from native route/catch evidence; not unmodified level-3 gameplay, resource acquisition, or payment proof."
+  },
+  "native_stingray": {
+    "qualified_item_id": "(O)836",
+    "caught_before": false,
+    "count_before": 0,
+    "caught_after": true,
+    "count_after": 1,
+    "native_inventory_increment": 1,
+    "receipt": "cove-catch-03/action-01/training/runs/island-suffix-20261124-native/live-snapshots/execution-0001-item-0001.json",
+    "independent_original_reader_verified": true,
+    "native_inventory_before": 0,
+    "native_inventory_after": 1
+  },
+  "durability": "Native receipts and snapshots sealed; isolated disk save remains original. New catch is an unsaved local-test tail; no save/cold-readback claim.",
+  "inherited_results": "Lionfish and BlueDiscus already caught; Gourmand already 3/3. Not counted as new catches or new order transitions.",
+  "retained_failures": [
+    "cove-route-v2: native movement encountered Sleep dialogue; no route pass",
+    "decline-sleep: original close-menu candidate unavailable; no action dispatched",
+    "west-to-cove: generic fixture chose disconnected IslandWest 0,0; no route pass",
+    "cove-catch-01: catch applied, but original independent reader rejected second item frame binding; excluded from independent replay passes"
+  ],
+  "consumer_handoff": {
+    "target_issue": 570,
+    "latest_development_commit": "08f1b80002078c45fb1d9307c0d95d603ab1cbcd",
+    "current_formal_consumer": "Source replay is wired but successful replay unconditionally returns selected_route_reconciliation_pending; its current reference requires a GoldenWalnutNativeEvidenceBinding for full source schedule",
+    "next": "Use this scoped local package as actual post-unlock evidence and keep global-source acquisition reconciliation in its own contract. Do not reopen community-center or local fishing acceptance.",
+    "formal_native_gate_claim": false,
+    "training_label_eligible": false,
+    "formal_training_authorized": false
+  },
+  "current_development_replay": {
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\route-handoff\\development-source-replay\\summary.json",
+    "sha256": "EB5E76EE8579243D80CBC940F92A6EB48637780C88643648F063F6BECE1CA3DC"
+  }
+}

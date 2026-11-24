@@ -1,0 +1,20 @@
+{
+  "source_commit": "08f1b80002078c45fb1d9307c0d95d603ab1cbcd",
+  "source_root": "D:\\StardewValleyAICompanion-r2-native-admission-replay-20261124",
+  "source_modified": false,
+  "build_command": "dotnet publish experiments/StardewAI.GoalConditionedBootstrap/StardewAI.GoalConditionedBootstrap.csproj -c Release -o <bootstrap> --verbosity quiet",
+  "files": [
+    {
+      "name": "StardewAI.Contracts.dll",
+      "sha256": "0D319C740DD8A6763524119F1AADC91AC077B2C97A756745B9F2AC53CBEDE57A"
+    },
+    {
+      "name": "StardewAI.Core.dll",
+      "sha256": "808D852326C981A7C49DE4393771EF84191C8893C2C03FC9B04C33C7C9015A38"
+    },
+    {
+      "name": "StardewAI.GoalConditionedBootstrap.dll",
+      "sha256": "375347354356AC1A64EB4C194841494EB5B4A504A1ACABC81A243570BC60A4D0"
+    }
+  ]
+}

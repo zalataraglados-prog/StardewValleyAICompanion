@@ -1,0 +1,348 @@
+﻿{
+  "schema_version": "action_queue.v1",
+  "queue_id": "queue.a57cf31ab06d453b91d33e79c72e7f73",
+  "source_model_output_id": "daily_plan.ef90d5445b3e436a931ef4d9693df6d4",
+  "source_model": "StardewAI.Core.Training.DailyPlanCompiler",
+  "state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+  "goal_id": "goal.fishing.complete_master_angler",
+  "execution_mode": "training_singleplayer",
+  "actor": {
+    "actor_id": "training_farmer.main",
+    "actor_type": "training_farmer",
+    "control_surface": "training_sandbox"
+  },
+  "status": "pending",
+  "items": [
+    {
+      "queue_item_id": "queue_item.f797c5016da5486eb5f6eb8e6b4d3697",
+      "source_action_id": "fishing_attempt_IslandSouthEastCave_3_20_25_27_25_1_7.catch_fish.0",
+      "option_id": "executor.catch_fish",
+      "status": "pending",
+      "permission_required": "executor",
+      "behavior_category": "mechanical",
+      "compiler_responsibility": "full_action_expansion",
+      "training_role": "executor_calibration",
+      "required_state_factors": [
+        "player.location_id",
+        "player.tile_x",
+        "player.tile_y",
+        "player.energy",
+        "player.inventory",
+        "menus.active_menu",
+        "current_location.map",
+        "locations.collision_grid",
+        "fishing.location_context",
+        "fishing.fishable_tiles",
+        "fishing.rod_inventory",
+        "fishing.rod_contexts",
+        "fishing.active_cast_state"
+      ],
+      "missing_state_factors": [],
+      "precondition_results": [
+        {
+          "state_factor": "player.location_id",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "player.tile_x",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "player.tile_y",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "player.energy",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "player.inventory",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "menus.active_menu",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "current_location.map",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "locations.collision_grid",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "fishing.location_context",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "fishing.fishable_tiles",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "fishing.rod_inventory",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "fishing.rod_contexts",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "fishing.active_cast_state",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        }
+      ],
+      "blocking_reasons": [],
+      "normalized_command": {
+        "command_type": "compiled_action_steps",
+        "option_id": "executor.catch_fish",
+        "behavior_category": "mechanical",
+        "compiler_responsibility": "full_action_expansion",
+        "training_role": "executor_calibration",
+        "state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+        "execution_mode": "training_singleplayer",
+        "actor": {
+          "actor_id": "training_farmer.main",
+          "actor_type": "training_farmer",
+          "control_surface": "training_sandbox"
+        },
+        "parameters": [
+          {
+            "name": "plan_step_kind",
+            "value": "catch_fish"
+          },
+          {
+            "name": "target_location",
+            "value": "IslandSouthEastCave"
+          },
+          {
+            "name": "compiler_context.plan_step_index",
+            "value": "0"
+          },
+          {
+            "name": "compiler_context.plan_step_count",
+            "value": "1"
+          },
+          {
+            "name": "compiler_context.is_terminal_step",
+            "value": "true"
+          },
+          {
+            "name": "compiler_context.active_menu_open_before_step",
+            "value": "false"
+          },
+          {
+            "name": "compiler_context.active_menu_type_before_step",
+            "value": ""
+          },
+          {
+            "name": "compiler_context.player_location_before_step",
+            "value": "IslandSouthEastCave"
+          },
+          {
+            "name": "compiler_context.player_tile_x_before_step",
+            "value": "20"
+          },
+          {
+            "name": "compiler_context.player_tile_y_before_step",
+            "value": "25"
+          },
+          {
+            "name": "target_tile_x",
+            "value": "20"
+          },
+          {
+            "name": "target_tile_y",
+            "value": "25"
+          },
+          {
+            "name": "estimated_minutes",
+            "value": "43"
+          },
+          {
+            "name": "precondition",
+            "value": "candidate_id:fishing:attempt:IslandSouthEastCave|3|20|25|27|25|1|7"
+          },
+          {
+            "name": "precondition",
+            "value": "player_at_fishing_stand=true"
+          },
+          {
+            "name": "precondition",
+            "value": "fishing_context_revalidated=true"
+          },
+          {
+            "name": "expected_effect",
+            "value": "legal_fishing_attempt_completed;catch_result_observed;outcome_distribution_count=12;result_is_stochastic=true"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "legal_player_equivalent_fishing_inputs_only"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "no_forced_catch_result"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "success_requires_observed_post_state"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "daily_plan_aggregate_budget_checked"
+          },
+          {
+            "name": "failure_policy",
+            "value": "cancel_safely_refresh_snapshot_and_replan"
+          },
+          {
+            "name": "location_id",
+            "value": "IslandSouthEastCave"
+          },
+          {
+            "name": "stand_tile_x",
+            "value": "20"
+          },
+          {
+            "name": "stand_tile_y",
+            "value": "25"
+          },
+          {
+            "name": "bobber_tile_x",
+            "value": "27"
+          },
+          {
+            "name": "bobber_tile_y",
+            "value": "25"
+          },
+          {
+            "name": "rod_slot_index",
+            "value": "3"
+          },
+          {
+            "name": "rod_qualified_item_id",
+            "value": "(T)IridiumRod"
+          },
+          {
+            "name": "rule_key",
+            "value": "distribution:IslandSouthEastCave|3|20|25|27|25|1|7"
+          },
+          {
+            "name": "expected_qualified_item_id",
+            "value": ""
+          },
+          {
+            "name": "result_is_stochastic",
+            "value": "True"
+          },
+          {
+            "name": "cast_direction",
+            "value": "1"
+          },
+          {
+            "name": "cast_distance_tiles",
+            "value": "7"
+          },
+          {
+            "name": "target_casting_power",
+            "value": "1"
+          },
+          {
+            "name": "max_cast_requested",
+            "value": "True"
+          },
+          {
+            "name": "route_distance_tiles",
+            "value": "0"
+          },
+          {
+            "name": "water_depth",
+            "value": "5"
+          },
+          {
+            "name": "outcome_distribution_complete",
+            "value": "True"
+          },
+          {
+            "name": "outcome_distribution_json",
+            "value": "[{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:Default#1:SECRET_NOTE_OR_ITEM\u0022,\u0022outcome_index\u0022:0,\u0022item_id\u0022:\u0022842\u0022,\u0022qualified_item_id\u0022:\u0022(O)842\u0022,\u0022context_tags\u0022:[],\u0022context_tags_projection_status\u0022:\u0022\u0022,\u0022chance_preview\u0022:0.01504,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\u0022,\u0022outcome_index\u0022:0,\u0022item_id\u0022:\u0022167\u0022,\u0022qualified_item_id\u0022:\u0022(O)167\u0022,\u0022context_tags\u0022:[\u0022category_junk\u0022,\u0022color_blue\u0022,\u0022drink_item\u0022,\u0022id_(o)167\u0022,\u0022id_o_167\u0022,\u0022item_joja_cola\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:1,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\u0022,\u0022outcome_index\u0022:1,\u0022item_id\u0022:\u0022168\u0022,\u0022qualified_item_id\u0022:\u0022(O)168\u0022,\u0022context_tags\u0022:[\u0022category_junk\u0022,\u0022color_black\u0022,\u0022id_(o)168\u0022,\u0022id_o_168\u0022,\u0022item_trash\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022trash_item\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:1,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\u0022,\u0022outcome_index\u0022:2,\u0022item_id\u0022:\u0022169\u0022,\u0022qualified_item_id\u0022:\u0022(O)169\u0022,\u0022context_tags\u0022:[\u0022category_junk\u0022,\u0022color_brown\u0022,\u0022id_(o)169\u0022,\u0022id_o_169\u0022,\u0022item_driftwood\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022trash_item\u0022,\u0022wood_item\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:1,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\u0022,\u0022outcome_index\u0022:3,\u0022item_id\u0022:\u0022170\u0022,\u0022qualified_item_id\u0022:\u0022(O)170\u0022,\u0022context_tags\u0022:[\u0022category_junk\u0022,\u0022color_cyan\u0022,\u0022id_(o)170\u0022,\u0022id_o_170\u0022,\u0022item_broken_glasses\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022trash_item\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:1,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\u0022,\u0022outcome_index\u0022:4,\u0022item_id\u0022:\u0022171\u0022,\u0022qualified_item_id\u0022:\u0022(O)171\u0022,\u0022context_tags\u0022:[\u0022category_junk\u0022,\u0022color_cyan\u0022,\u0022id_(o)171\u0022,\u0022id_o_171\u0022,\u0022item_broken_cd\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022trash_item\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:1,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\u0022,\u0022outcome_index\u0022:5,\u0022item_id\u0022:\u0022172\u0022,\u0022qualified_item_id\u0022:\u0022(O)172\u0022,\u0022context_tags\u0022:[\u0022category_junk\u0022,\u0022color_gray\u0022,\u0022id_(o)172\u0022,\u0022id_o_172\u0022,\u0022item_soggy_newspaper\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022trash_item\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:1,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:IslandSouthEastCave#0:(F)2332\u0022,\u0022outcome_index\u0022:0,\u0022item_id\u0022:\u00222332\u0022,\u0022qualified_item_id\u0022:\u0022(F)2332\u0022,\u0022context_tags\u0022:[\u0022category_furniture\u0022,\u0022id_(f)2332\u0022,\u0022id_f_2332\u0022,\u0022item_gourmand_statue\u0022,\u0022quality_none\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:0.05,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:IslandSouthEastCave#2:(O)130\u0022,\u0022outcome_index\u0022:0,\u0022item_id\u0022:\u0022130\u0022,\u0022qualified_item_id\u0022:\u0022(O)130\u0022,\u0022context_tags\u0022:[\u0022category_fish\u0022,\u0022color_blue\u0022,\u0022fish_difficulty_hard\u0022,\u0022fish_favor_weather_both\u0022,\u0022fish_has_roe\u0022,\u0022fish_motion_smooth\u0022,\u0022fish_ocean\u0022,\u0022id_(o)130\u0022,\u0022id_o_130\u0022,\u0022item_tuna\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022season_summer\u0022,\u0022season_winter\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:0.35000002,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:70,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:2},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:IslandSouthEastCave#4:(O)267\u0022,\u0022outcome_index\u0022:0,\u0022item_id\u0022:\u0022267\u0022,\u0022qualified_item_id\u0022:\u0022(O)267\u0022,\u0022context_tags\u0022:[\u0022category_fish\u0022,\u0022color_brown\u0022,\u0022fish_difficulty_medium\u0022,\u0022fish_favor_weather_both\u0022,\u0022fish_has_roe\u0022,\u0022fish_motion_sinker\u0022,\u0022fish_ocean\u0022,\u0022id_(o)267\u0022,\u0022id_o_267\u0022,\u0022item_flounder\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022season_spring\u0022,\u0022season_summer\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:0.35000002,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:50,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:2},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:IslandSouthEastCave#5:(O)836\u0022,\u0022outcome_index\u0022:0,\u0022item_id\u0022:\u0022836\u0022,\u0022qualified_item_id\u0022:\u0022(O)836\u0022,\u0022context_tags\u0022:[\u0022category_fish\u0022,\u0022color_brown\u0022,\u0022fish_difficulty_hard\u0022,\u0022fish_favor_weather_both\u0022,\u0022fish_has_roe\u0022,\u0022fish_motion_sinker\u0022,\u0022fish_ocean\u0022,\u0022fish_talk_stiff\u0022,\u0022id_(o)836\u0022,\u0022id_o_836\u0022,\u0022item_stingray\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022season_all\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:0.4,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:80,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:2},{\u0022source_kind\u0022:\u0022rule\u0022,\u0022source_key\u0022:\u0022Data/Locations:IslandSouthEastCave#6:(O)SeaJelly\u0022,\u0022outcome_index\u0022:0,\u0022item_id\u0022:\u0022SeaJelly\u0022,\u0022qualified_item_id\u0022:\u0022(O)SeaJelly\u0022,\u0022context_tags\u0022:[\u0022color_cyan\u0022,\u0022counts_as_fish_catch\u0022,\u0022fish_nonfish\u0022,\u0022id_(o)seajelly\u0022,\u0022id_o_seajelly\u0022,\u0022item_sea_jelly\u0022,\u0022item_type_fish\u0022,\u0022quality_none\u0022,\u0022use_reverse_name_for_sorting\u0022],\u0022context_tags_projection_status\u0022:\u0022exact_item_get_context_tags\u0022,\u0022chance_preview\u0022:0.1,\u0022probability_status\u0022:\u0022rule_local_preview\u0022,\u0022effective_fish_difficulty\u0022:null,\u0022is_boss_fish\u0022:false,\u0022maximum_raw_fish_quality\u0022:null}]"
+          },
+          {
+            "name": "possible_qualified_item_ids_json",
+            "value": "[\u0022(F)2332\u0022,\u0022(O)130\u0022,\u0022(O)167\u0022,\u0022(O)168\u0022,\u0022(O)169\u0022,\u0022(O)170\u0022,\u0022(O)171\u0022,\u0022(O)172\u0022,\u0022(O)267\u0022,\u0022(O)836\u0022,\u0022(O)842\u0022,\u0022(O)SeaJelly\u0022]"
+          },
+          {
+            "name": "outcome_local_chance_preview_sum",
+            "value": "7.26504004"
+          },
+          {
+            "name": "outcome_probability_status",
+            "value": "all_local_previews_known"
+          },
+          {
+            "name": "skill_experience_projection_status",
+            "value": "incomplete_outcome_fish_difficulty"
+          },
+          {
+            "name": "budget.accepted_candidate_index",
+            "value": "0"
+          },
+          {
+            "name": "budget.candidate_minutes",
+            "value": "43"
+          },
+          {
+            "name": "budget.candidate_energy_cost",
+            "value": "7"
+          }
+        ],
+        "steps": [
+          {
+            "step_id": "step.28fc592608f440de9784409361c5e7bf",
+            "step_type": "catch_fish",
+            "target": "IslandSouthEastCave:stand(20,25):bobber(27,25):rod_slot=3",
+            "expected_effect": "fishing_attempt_completed_with_observed_catch_or_precise_block_reason",
+            "estimated_ticks": 2580
+          }
+        ],
+        "strategy_plan": [],
+        "social_plan": null,
+        "quest_plan": null
+      }
+    }
+  ],
+  "compiler_diagnostics": [],
+  "candidate_audit": [
+    {
+      "candidate_id": "fishing:attempt:IslandSouthEastCave|3|20|25|27|25|1|7",
+      "kind": "catch_fish",
+      "decision": "accepted",
+      "reasons": [
+        "fits_aggregate_budget"
+      ],
+      "candidate_minutes": 43,
+      "candidate_energy_cost": 7,
+      "remaining_minutes_before": null,
+      "remaining_minutes_after": null,
+      "remaining_energy_before": null,
+      "remaining_energy_after": null
+    }
+  ],
+  "audit": {
+    "compiler": "StardewAI.Core.Execution.ActionQueueCompiler",
+    "policy": "Small-model output must compile to registered options before any executor can consume it."
+  }
+}

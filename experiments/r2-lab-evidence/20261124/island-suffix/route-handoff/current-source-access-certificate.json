@@ -1,0 +1,29 @@
+{
+  "capability_id": "ginger_island_access",
+  "consumer_direction_id": "complete_master_angler",
+  "game_version": "1.6.15",
+  "run_id": "island-suffix-20261124-native",
+  "save_id": "\u81EA\u52A8\u5316",
+  "player_id": "-8577884337094229036",
+  "source_snapshot_path": "D:\\StardewValleyAICompanion\u524D\u77BB\u5B9E\u9A8C\u5BA4\\\u51C6\u5907\\R2\u9694\u79BB\u8FD0\u884C\\GingerIsland\u540E\u534A\u6BB5\u9A8C\u8BC1\\island-suffix-20261124-native\\initial-readback.json",
+  "source_snapshot_sha256": "f02980db78cf6d79b2453f4483adaf4d02f65dce0bf1f90fa28584cf2def2fa1",
+  "source_state_hash": "a1e0da5a6f1200b2163e0878b30306fb1cf93d734b01e029259f9e913608eaaf",
+  "source_game_tick": 124,
+  "selected_route_id": "current_native_access_state",
+  "verified_preconditions": [
+    "snapshot_identity_readable",
+    "snapshot_state_hash_verified",
+    "ginger_island_access_projection_locked_base_1.6.15"
+  ],
+  "verified_results": [
+    "IslandSouth",
+    "IslandNorth",
+    "IslandWest",
+    "IslandSouthEast",
+    "IslandSouthEastCave"
+  ],
+  "blocking_reasons": [],
+  "schema_version": "master_angler_shared_capability_certificate.v1",
+  "ready": true,
+  "training_label_eligible": false
+}

@@ -1,0 +1,286 @@
+﻿{
+  "schema_version": "action_queue.v1",
+  "queue_id": "queue.efc74d7826dc4854afec070dd3448988",
+  "source_model_output_id": "daily_plan.e52c0564ee6c4cecb76d7946e724dcce",
+  "source_model": "StardewAI.Core.Training.DailyPlanCompiler",
+  "state_hash": "0a1893cbac55681b00925a48ae0e0832fc98fb8211fff7314d8186002755cea2",
+  "goal_id": "goal.fishing.complete_master_angler",
+  "execution_mode": "training_singleplayer",
+  "actor": {
+    "actor_id": "training_farmer.main",
+    "actor_type": "training_farmer",
+    "control_surface": "training_sandbox"
+  },
+  "status": "pending",
+  "items": [
+    {
+      "queue_item_id": "queue_item.713d8a8e5ea14c969689a6008af4b8c0",
+      "source_action_id": "route_IslandSouthEast_31_18_warp_to_IslandSouthEastCave_arrival_1_8.traverse_connector.0",
+      "option_id": "executor.traverse_connector",
+      "status": "pending",
+      "permission_required": "executor",
+      "behavior_category": "mechanical",
+      "compiler_responsibility": "full_action_expansion",
+      "training_role": "executor_calibration",
+      "required_state_factors": [
+        "player.location_id",
+        "player.tile_x",
+        "player.tile_y",
+        "locations.collision_grid",
+        "locations.route_action_branch_coverage",
+        "locations.route_connectors"
+      ],
+      "missing_state_factors": [],
+      "precondition_results": [
+        {
+          "state_factor": "player.location_id",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "player.tile_x",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "player.tile_y",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "locations.collision_grid",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "locations.route_action_branch_coverage",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        },
+        {
+          "state_factor": "locations.route_connectors",
+          "status": "passed",
+          "message": "required_fact_gate_passed"
+        }
+      ],
+      "blocking_reasons": [],
+      "normalized_command": {
+        "command_type": "compiled_action_steps",
+        "option_id": "executor.traverse_connector",
+        "behavior_category": "mechanical",
+        "compiler_responsibility": "full_action_expansion",
+        "training_role": "executor_calibration",
+        "state_hash": "0a1893cbac55681b00925a48ae0e0832fc98fb8211fff7314d8186002755cea2",
+        "execution_mode": "training_singleplayer",
+        "actor": {
+          "actor_id": "training_farmer.main",
+          "actor_type": "training_farmer",
+          "control_surface": "training_sandbox"
+        },
+        "parameters": [
+          {
+            "name": "plan_step_kind",
+            "value": "traverse_connector"
+          },
+          {
+            "name": "target_location",
+            "value": "IslandSouthEast"
+          },
+          {
+            "name": "compiler_context.plan_step_index",
+            "value": "0"
+          },
+          {
+            "name": "compiler_context.plan_step_count",
+            "value": "1"
+          },
+          {
+            "name": "compiler_context.is_terminal_step",
+            "value": "true"
+          },
+          {
+            "name": "compiler_context.active_menu_open_before_step",
+            "value": "false"
+          },
+          {
+            "name": "compiler_context.active_menu_type_before_step",
+            "value": ""
+          },
+          {
+            "name": "compiler_context.player_location_before_step",
+            "value": "IslandSouthEast"
+          },
+          {
+            "name": "compiler_context.player_tile_x_before_step",
+            "value": "0"
+          },
+          {
+            "name": "compiler_context.player_tile_y_before_step",
+            "value": "29"
+          },
+          {
+            "name": "target_tile_x",
+            "value": "31"
+          },
+          {
+            "name": "target_tile_y",
+            "value": "18"
+          },
+          {
+            "name": "precondition",
+            "value": "candidate_id:route:IslandSouthEast:31,18:warp:to=IslandSouthEastCave:arrival=1,8"
+          },
+          {
+            "name": "precondition",
+            "value": "current_location=IslandSouthEast"
+          },
+          {
+            "name": "precondition",
+            "value": "transparent_connector_still_matches_snapshot=true"
+          },
+          {
+            "name": "expected_effect",
+            "value": "player.location_id=IslandSouthEastCave"
+          },
+          {
+            "name": "expected_effect",
+            "value": "fresh_snapshot_replan_required=true"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "connector_target_from_transparent_current_map_index"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "connector_gate_checked_upstream"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "no_direct_coordinate_teleport"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "one_connector_per_replan"
+          },
+          {
+            "name": "safety_constraint",
+            "value": "daily_plan_aggregate_budget_checked"
+          },
+          {
+            "name": "failure_policy",
+            "value": "refresh_snapshot_and_replan"
+          },
+          {
+            "name": "connector_kind",
+            "value": "warp"
+          },
+          {
+            "name": "expected_target_location",
+            "value": "IslandSouthEastCave"
+          },
+          {
+            "name": "expected_arrival_tile_x",
+            "value": "1"
+          },
+          {
+            "name": "expected_arrival_tile_y",
+            "value": "8"
+          },
+          {
+            "name": "route.source_location_id",
+            "value": "IslandSouthEast"
+          },
+          {
+            "name": "route.target_location_id",
+            "value": "IslandSouthEastCave"
+          },
+          {
+            "name": "route.connector_resolved",
+            "value": "true"
+          },
+          {
+            "name": "route.snapshot_policy",
+            "value": "one_connector_then_fresh_snapshot"
+          },
+          {
+            "name": "route.training_scope",
+            "value": "exact_current_cross_location_connector"
+          },
+          {
+            "name": "budget.accepted_candidate_index",
+            "value": "0"
+          },
+          {
+            "name": "budget.candidate_minutes",
+            "value": "82"
+          },
+          {
+            "name": "budget.candidate_energy_cost",
+            "value": "0"
+          },
+          {
+            "name": "compiler_context.route_shortest_path_tiles",
+            "value": "41"
+          },
+          {
+            "name": "max_movement_tiles",
+            "value": "57"
+          },
+          {
+            "name": "estimated_ticks",
+            "value": "3420"
+          },
+          {
+            "name": "estimated_minutes",
+            "value": "82"
+          },
+          {
+            "name": "compiler_context.route_connector_source",
+            "value": "locations.route_connectors"
+          },
+          {
+            "name": "compiler_context.current_map_collision_source",
+            "value": "locations.collision_grid"
+          },
+          {
+            "name": "compiler_context.fresh_snapshot_replan_required",
+            "value": "true"
+          }
+        ],
+        "steps": [
+          {
+            "step_id": "step.721685494e414fc5acb47aee79a03bf2",
+            "step_type": "traverse_connector",
+            "target": "current_location(31,18)",
+            "expected_effect": "location=IslandSouthEastCave;player.tile=1,8",
+            "estimated_ticks": 4920
+          }
+        ],
+        "strategy_plan": [],
+        "social_plan": null,
+        "quest_plan": null
+      }
+    }
+  ],
+  "compiler_diagnostics": [],
+  "candidate_audit": [
+    {
+      "candidate_id": "route:IslandSouthEast:31,18:warp:to=IslandSouthEastCave:arrival=1,8",
+      "kind": "route_connector_tile",
+      "decision": "accepted",
+      "reasons": [
+        "fits_aggregate_budget"
+      ],
+      "candidate_minutes": 82,
+      "candidate_energy_cost": 0,
+      "remaining_minutes_before": null,
+      "remaining_minutes_after": null,
+      "remaining_energy_before": null,
+      "remaining_energy_after": null
+    }
+  ],
+  "audit": {
+    "compiler": "StardewAI.Core.Execution.ActionQueueCompiler",
+    "policy": "Small-model output must compile to registered options before any executor can consume it."
+  }
+}

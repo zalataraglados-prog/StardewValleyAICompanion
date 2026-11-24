@@ -1,0 +1,123 @@
+{
+  "schema_version": "small_model_plan.v1",
+  "plan_id": "daily_plan.0a1f16be38764d3a94b59a2c4b68ee18",
+  "source_model": "StardewAI.Core.Training.DailyPlanCompiler",
+  "state_hash": "d3673a0c8c734acb597d137b169b8b29b7487852b6c2e65d507aaa0b5310b428",
+  "goal_id": "goal.fishing.complete_master_angler",
+  "execution_mode": "training_singleplayer",
+  "actor": {
+    "actor_id": "training_farmer.main",
+    "actor_type": "training_farmer",
+    "control_surface": "training_sandbox"
+  },
+  "plan_type": "daily_candidate_plan",
+  "steps": [
+    {
+      "step_id": "route_IslandWest_106_39_warp_to_IslandSouth_arrival_0_10.traverse_connector.0",
+      "kind": "traverse_connector",
+      "target_location": "IslandWest",
+      "target_tile_x": 106,
+      "target_tile_y": 39,
+      "direction": null,
+      "wait_ticks": null,
+      "estimated_minutes": 26,
+      "preconditions": [
+        "candidate_id:route:IslandWest:106,39:warp:to=IslandSouth:arrival=0,10",
+        "current_location=IslandWest",
+        "transparent_connector_still_matches_snapshot=true"
+      ],
+      "expected_effects": [
+        "player.location_id=IslandSouth",
+        "fresh_snapshot_replan_required=true"
+      ],
+      "safety_constraints": [
+        "connector_target_from_transparent_current_map_index",
+        "connector_gate_checked_upstream",
+        "no_direct_coordinate_teleport",
+        "one_connector_per_replan",
+        "daily_plan_aggregate_budget_checked"
+      ],
+      "failure_policy": [
+        "refresh_snapshot_and_replan"
+      ],
+      "parameters": [
+        {
+          "name": "connector_kind",
+          "value": "warp"
+        },
+        {
+          "name": "expected_target_location",
+          "value": "IslandSouth"
+        },
+        {
+          "name": "expected_arrival_tile_x",
+          "value": "0"
+        },
+        {
+          "name": "expected_arrival_tile_y",
+          "value": "10"
+        },
+        {
+          "name": "max_movement_tiles",
+          "value": "18"
+        },
+        {
+          "name": "estimated_ticks",
+          "value": "1080"
+        },
+        {
+          "name": "estimated_minutes",
+          "value": "26"
+        },
+        {
+          "name": "route.source_location_id",
+          "value": "IslandWest"
+        },
+        {
+          "name": "route.target_location_id",
+          "value": "IslandSouth"
+        },
+        {
+          "name": "route.connector_resolved",
+          "value": "true"
+        },
+        {
+          "name": "route.snapshot_policy",
+          "value": "one_connector_then_fresh_snapshot"
+        },
+        {
+          "name": "route.training_scope",
+          "value": "exact_current_cross_location_connector"
+        },
+        {
+          "name": "budget.accepted_candidate_index",
+          "value": "0"
+        },
+        {
+          "name": "budget.candidate_minutes",
+          "value": "26"
+        },
+        {
+          "name": "budget.candidate_energy_cost",
+          "value": "0"
+        }
+      ]
+    }
+  ],
+  "candidate_audit": [
+    {
+      "candidate_id": "route:IslandWest:106,39:warp:to=IslandSouth:arrival=0,10",
+      "kind": "route_connector_tile",
+      "decision": "accepted",
+      "reasons": [
+        "fits_aggregate_budget"
+      ],
+      "candidate_minutes": 26,
+      "candidate_energy_cost": 0,
+      "remaining_minutes_before": null,
+      "remaining_minutes_after": null,
+      "remaining_energy_before": null,
+      "remaining_energy_after": null
+    }
+  ]
+}

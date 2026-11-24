@@ -507,6 +507,16 @@
       "path": "experiments/r2-lab-controller/island-suffix/Start-IslandSuffix.ps1",
       "sha256": "BF0D0F234D4DE79E86A83F1ED805456CB90AD51C11F1A1B1378085287E8DF091",
       "git_blob_oid": "bd18b56c4a1524d85986b639d147201806fb625c"
+    },
+    {
+      "path": "experiments/r2-lab-controller/island-suffix/Export-IslandSuffixHandoff.ps1",
+      "sha256": "84A0FEC1FD3B9F1A32AD8356D6E6827EB44E9BE5BA522F3AEA685F58A783CA25",
+      "git_blob_oid": "32237c401d2b3f5a9535c0a525596bdfba4f00c0"
+    },
+    {
+      "path": "experiments/r2-lab-controller/island-suffix/Replay-IslandSuffixWithDevelopmentSource.ps1",
+      "sha256": "0D32FCCBCCA1709FDE38CF9426ED07B3F4B2AB90B6AC19B4F02648E14BEE2F48",
+      "git_blob_oid": "019f45f275e8fc8c86d72cc6e0cb2bc2be8bda09"
     }
   ],
   "execution_layout": "Controllers depend on the retained D-drive lab layout, pinned published binaries, authority dictionaries, and original receipts; these are not bundled.",
@@ -515,7 +525,7 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T18:04:55.2512361+08:00",
+  "updated_at": "2026-11-24T18:21:03.0487473+08:00",
   "controller_revision_note": "Scope correction: manual three-fish diagnostic renamed explicitly; original selector correctly excludes island and still offers69 other actions. Do not infer global blockage or repeat frozen CC capability. Original measured reports retained.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
@@ -1194,5 +1204,14 @@
     "original_fishing_level": 3,
     "save_persistence_verified": false,
     "all_recorded_services_stopped": true
+  },
+  "latest_local_route_handoff": {
+    "path": "experiments/r2-lab-evidence/20261124/island-suffix/route-handoff/selected-local-route-and-ledger.json",
+    "sha256": "26AC167AB082ED79EEF74A82E9DA5BBD247A8010AFED0FF561BF0DFFD10C5F5E",
+    "current_development_source": "08f1b80002078c45fb1d9307c0d95d603ab1cbcd",
+    "original_current_development_replay_count": 8,
+    "walnuts_current": 12,
+    "new_payments": 0,
+    "formal_training_authorized": false
   }
 }

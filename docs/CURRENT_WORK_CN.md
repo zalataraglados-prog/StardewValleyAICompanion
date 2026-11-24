@@ -10,6 +10,10 @@
 - 完整原生工件及独立重放已封存，测试进程全部停止；新鱼获是未保存测试尾部，磁盘仍为原始档，不宣称保存／冷读回。无正式训练、Day-0、新档截止日或核桃付款证明；#570 的正式消费者接线与全局证明仍按各自范围判断，不反向阻塞本次局部验证。
 - **本次局部测试结束，不再扩展重跑。** 后续消费者取上述包对接，不能把年5／10级局部结果冒充第224日前全局证明，也不能据此给局部捕鱼重新增加社区中心任务。
 
+**2026-11-24 后续同源交付补充：** [选线、钱包、日期与八组原计划索引](../experiments/r2-lab-evidence/20261124/island-suffix/route-handoff/selected-local-route-and-ledger.json)已补齐。原 `MasterAnglerSharedCapabilityCertificateBuilder.ReadAndReplay` 对本次实际初始读回再次核准五区，非改写旧证书。原存档 XML 与八组前后原生快照均为12枚核桃；已有鹦鹉升级完成，局部新来源／新付款／付款顺序为空，不反推历史付款。实际黄貂鱼来源 `Data/Locations:IslandSouthEastCave#5:(O)836`，年5春25、06:10→06:20。原计划与机械队列已原字节公开；捕鱼与跨地图移动分为各自真实发生的局部用例，不改写成单条取得前置的全局轨迹。开发新头 `08f1b800` 已接同一正式来源消费者，但成功重放后仍固定返回 `selected_route_reconciliation_pending`，尚未完成实际选线消费；本包交 #570 对接，不把该占位拒绝解释成岛鱼局部失败或新增社区中心任务。
+
+**开发头复现：** 新读取接口与实验室封存版不同，已从干净 `08f1b800` 单独构建 Bootstrap，未改源码；直接调用原严格 Product-aware `ReadFrameCore` 对八个单项队列重放，**8/8通过**，共享访问证书亦经同构建原 `ReadAndReplay` 通过。见[原开发头重放](../experiments/r2-lab-evidence/20261124/island-suffix/route-handoff/development-source-replay/summary.json)及构建身份。此检查未启动游戏，未生成新采集样本或 Teacher 标签。
+
 ## 2026-11-17 同授权运行的后继owner标记修复（248）
 
 - #581以同测试树38e2ef85合并main `cc698b49`，自身44055301026及合并44058623398成功；Core2810/Backend3906，零失败/跳过。原Backend已匹配升级，原游戏/Product不动；同一新鲜源1b543660与E盘原账本读回/物理hash均一致，没有建立空账本。
