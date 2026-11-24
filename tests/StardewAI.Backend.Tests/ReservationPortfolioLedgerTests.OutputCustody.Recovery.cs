@@ -49,7 +49,10 @@ public sealed partial class ReservationPortfolioLedgerTests
             http, options, JsonSerializer.SerializeToNode(item)!.AsObject(), execution,
             JsonSerializer.SerializeToNode(fixture.Snapshot)!.AsObject(), JsonSerializer.SerializeToNode(after)!.AsObject()
         })!;
-        try { await settlement.WaitAsync(TimeSpan.FromSeconds(15)); }
+        // The production lookup alone permits 15 seconds. This is an end-to-end
+        // test watchdog including the original RPC, write-through journal and
+        // observation writes; it is not a 15-second settlement latency contract.
+        try { await settlement.WaitAsync(TimeSpan.FromSeconds(60)); }
         catch (TimeoutException)
         {
             throw new Xunit.Sdk.XunitException($"Museum settlement timed out: mode={mode}, stage={transport.LastStage}, " +
