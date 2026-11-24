@@ -1,0 +1,32 @@
+{
+  "schema_version": "r2_lab_original_exact_donation_replay.v1",
+  "reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "verifier": "ExactCommunityCenterDonationReceiptVerifier.Verify",
+  "reader_and_verifier_assembly": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\full-native-replay-20261124\\live-training-loop\\StardewAI.GoalConditionedBootstrap.dll",
+  "assembly_sha256": "C9AC0991683380F030DB99FF1938A2BEA6DE52D3689F9E3ACC96DFE414F90E4A",
+  "original_native_source_replay_verified": true,
+  "exact_donation_transition_verified": true,
+  "blocking_reasons": [],
+  "requirement_id": "community_center:bundle:Fish Tank/8",
+  "bundle_id": 8,
+  "ingredient_index": 2,
+  "qualified_item_id": "(O)150",
+  "required_quantity": 1,
+  "before_summary": "ingredient=False;inventory=1;all_areas=False",
+  "after_summary": "ingredient=True;inventory=0;all_areas=False;new_notes=[]",
+  "run_id": "r2-global-daily-20261117-171253",
+  "before_state_hash": "c544e5f3e852d4629a61a97f69d75b5e373213b715b0cde04f09a6bcd11081b5",
+  "after_state_hash": "724f2a01b6a06f4d8161241975f1b1ac356dd5f70982946dac0a40f08605d3f4",
+  "before_game_tick": 3041,
+  "after_game_tick": 3046,
+  "source_sha256": {
+    "queue": "84523c7ee209c755bf37e30d4a843e5eb1147cf4febe58330742ad1f5e05931f",
+    "result": "d4b95ec6d259b9d9a9a53fa85186c049c3666ce2a39f53c1c9c5b6846e0d96b0",
+    "before": "3e945944297f41e28a39c5e44b3e2ba1fbf40bec38b79fc03aefb3161cefa765",
+    "after": "dfdbaf040054c011d05d42e970187b83bb5e83aedcab0f60dc8d1d73ab34a5d7",
+    "journal": "2e58089951daa8f303e26665121ea0ed2ee4ba881763f5e0d6f3ca41a1285963",
+    "request_gzip": "6bbeca721a8bf884792ec5a9df22044448dd71bf6edff8148e488159bf1f1fdb",
+    "product_after": "dfdbaf040054c011d05d42e970187b83bb5e83aedcab0f60dc8d1d73ab34a5d7"
+  },
+  "formal_training_authorized": false
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": "r2_lab_current_cc_source_and_window_summary.v1",
+  "created_at": "2026-11-24T14:49:57.5600476+08:00",
+  "run_id": "r2-global-daily-20261117-171253",
+  "save_id": "ProofFarm",
+  "player_id": "319842636613009663",
+  "source_snapshot_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-after-donations-global-plan-20261124\\before.json",
+  "source_snapshot_sha256": "A5050CABA735F94CB396BD81B705ED6E604B43F91799CAADB1BE500B16D024DB",
+  "source_state_hash": "41fab4a4a77c2323c6c8158b32059b01accba13a8382fa213808a532cfb16177",
+  "source_total_day": 35,
+  "community_center_denominator": {
+    "completed_active_bundle_count": 3,
+    "sha256": "C07357EDB653E64BA68020FA818D263639989968CFD4ECBE2B649CA0116E20E8",
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-after-donations-global-plan-20261124\\community-center-denominator.json",
+    "status": "ready",
+    "active_bundle_count": 30
+  },
+  "community_center_frontier": {
+    "missing_group_count": 27,
+    "completed_group_count": 3,
+    "matched_missing_group_count": 0,
+    "status": "no_current_matching_candidate",
+    "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-after-donations-global-plan-20261124\\collection-frontier.json",
+    "sha256": "AAD6BDDF13BECEE5549B8C365C51AFB34067C3B6466951133078FE412FA83635",
+    "required_group_count": 30
+  },
+  "ocean_bundle8": {
+    "completed_ingredients": 3,
+    "required_ingredients": 4,
+    "missing_item": "(O)131",
+    "held_or_actor_authorized_storage_missing_item_quantity": 0
+  },
+  "summer_crop_bundle1": {
+    "completed_ingredients": 1,
+    "required_ingredients": 4,
+    "native_pepper_donation_verified": true
+  },
+  "correction": {
+    "disposition": "invalidated",
+    "prior_claim": "The four Ocean Fish bundle items were all ready.",
+    "window_authority_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2第5步离线校验\\52e681b1\\local-master-angler-windows.json",
+    "next_ordinary_rod_window": {
+      "source_kind": "location_rule",
+      "source_key": "Beach:4",
+      "location_id": "Beach",
+      "rule_id": "(O)131",
+      "mine_area": null,
+      "water_type": "",
+      "year": 1,
+      "season": "fall",
+      "first_total_day": 56,
+      "last_total_day": 83,
+      "time_windows": [
+        {
+          "start_time": 600,
+          "end_time": 1900
+        }
+      ],
+      "weather_modes": [
+        "green_rain",
+        "rain",
+        "storm",
+        "sun"
+      ],
+      "dynamic_conditions": [],
+      "minimum_fishing_level": 0,
+      "require_magic_bait": false,
+      "training_rod_allowed": null,
+      "requires_trap_infrastructure": false,
+      "requires_location_access_evidence": true,
+      "requires_route_and_fishable_tile_evidence": true,
+      "requires_existing_live_candidate_match": true,
+      "stochastic_outcome": true
+    },
+    "window_authority_sha256": "681F9CD9E02FAF7EEDD216DECF4CB09463357AD2169D8AF0E9942B9FA4CBD731",
+    "reason": "Native held/chest stock had no Sardine. Tuna, Red Snapper and Tilapia only were present; all three have now been consumed by native donation.",
+    "scope": "Ordinary native rod windows only; does not rule out separately verified alternative sources such as shop stock."
+  },
+  "root_goal_resolution": {
+    "effective_goal": "goal.social.raise_friendships",
+    "status": "resolved",
+    "scope": "The original broad Grandpa root currently selects friendship. This is not a selected executable island route."
+  },
+  "native_donation_reader_and_exact_verifier_pass_count": 4,
+  "selected_island_l3_route_verified": false,
+  "formal_training_authorized": false
+}

@@ -30,7 +30,8 @@ foreach ($leg in 1..$MaximumConnectors) {
     $url = $settings.ASPNETCORE_URLS
     $null = Invoke-RestMethod -Uri ($url + '/api/v1/snapshots') -Method Post `
         -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body)) -TimeoutSec 40
-    $goal = 'goal.exploration.visit_location'
+    $queue = Get-Content -LiteralPath $selection.queue -Raw | ConvertFrom-Json
+    $goal = $queue.goal_id
     $request = @{
         goal_id = $goal
         execution_mode = 'training_singleplayer'
@@ -42,9 +43,14 @@ foreach ($leg in 1..$MaximumConnectors) {
         -ContentType 'application/json' -Body ($request | ConvertTo-Json -Compress) -TimeoutSec 40
     $rankPath = Join-Path $folder.FullName ('rank-' + $leg + '.json')
     $rank | ConvertTo-Json -Depth 32 | Set-Content -LiteralPath $rankPath -Encoding utf8
-    & (Join-Path $PSScriptRoot 'Invoke-IsolatedRankedQueue.ps1') -RunDirectory $RunDirectory -RuntimeAttempt $RuntimeAttempt `
-        -RankPath $rankPath -CandidateId $selection.candidate -ExpectedStateHash $fresh.state_hash -GoalId $goal -Attempt ($Attempt + '-' + $leg)
-    if ($LASTEXITCODE -ne 0) { throw 'The verified native connector failed.' }
+    if ($queue.state_hash -cne $fresh.state_hash -or $queue.status -cne 'pending' -or
+        @($rank.ranked_event_candidates | Where-Object { $_.available -and $_.candidate_id -ceq $selection.candidate }).Count -ne 1) {
+        throw 'The original resolved route no longer binds one available native connector.'
+    }
+    # Execute the exact route compiler output. Recompiling the same selection
+    # through a daily-plan slice introduced its unrelated default 30-minute cap.
+    & (Join-Path $PSScriptRoot 'Invoke-IsolatedCompiledQueue.ps1') -RunDirectory $RunDirectory -RuntimeAttempt $RuntimeAttempt `
+        -QueuePath $selection.queue -Attempt ($Attempt + '-' + $leg)
 }
 $after = Invoke-RestMethod -Uri $settings.STARDEWAI_BRIDGE_SNAPSHOT_URL -TimeoutSec 15
 if ($after.state.player.location_id.value -ne $Destination) { throw 'The selected map has not been reached within the planned connector count.' }

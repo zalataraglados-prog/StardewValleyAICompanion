@@ -72,7 +72,7 @@ $queue | ConvertTo-Json -Depth 44 | Set-Content -LiteralPath $queuePath -Encodin
 $nativeArgs = Get-Content -LiteralPath (Join-Path $RunDirectory 'spring27-chest-adapter-replay\execution-arguments.json') -Raw | ConvertFrom-Json
 $nativeArgs[[array]::IndexOf($nativeArgs,'--precompiled-queue') + 1] = $queuePath
 $nativeArgs[[array]::IndexOf($nativeArgs,'--max-queue-item-attempts') + 1] = '12'
-$nativeArgs[[array]::IndexOf($nativeArgs,'--max-persisted-iterations') + 1] = '400'
+$nativeArgs[[array]::IndexOf($nativeArgs,'--max-persisted-iterations') + 1] = '600'
 foreach ($key in $settings.Keys) { [Environment]::SetEnvironmentVariable($key,$settings[$key],'Process') }
 & 'D:\StardewAI-TestLab\dotnet\dotnet.exe' @nativeArgs *> (Join-Path $proof.FullName 'native.log')
 $code = $LASTEXITCODE

@@ -404,11 +404,6 @@
       "git_blob_oid": "c266760cd6b3211a7febc2b490b62cb904bc9b09"
     },
     {
-      "path": "experiments/r2-lab-controller/Invoke-IsolatedMapApproach.ps1",
-      "sha256": "EA7D938F5732318B306312460B5C33C270427FE4BC5CFB61F5D4B4C556A61F78",
-      "git_blob_oid": "ced9a75a910d3ba7e955f1aec2857c5398722c91"
-    },
-    {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedFishingWindow.ps1",
       "sha256": "8F2833F930AA60DD4F48A9E72C41A6A20975C97EF5774270BE20A7F752918B51",
       "git_blob_oid": "56a99d5c881b23c2e453fd88a5b74a85a5c54107"
@@ -422,16 +417,6 @@
       "path": "experiments/r2-lab-controller/Invoke-IsolatedChestBootstrap.ps1",
       "sha256": "54F60D26525089003BA5CD2A0F39F06605A5D599DDDFCC07DFC0E2D383F3F037",
       "git_blob_oid": "b180bc78341f7fdc5105ade30e4593fdcc2d7842"
-    },
-    {
-      "path": "experiments/r2-lab-controller/Invoke-IsolatedChestWithdrawal.ps1",
-      "sha256": "9682ADC8CEDC45F62A8DD35AAE751BB0D822E0673D18105CF475D317E9A2363B",
-      "git_blob_oid": "d96e149dd45c7e0928579d6b8c065bee6b7f87e0"
-    },
-    {
-      "path": "experiments/r2-lab-controller/Invoke-IsolatedLakeFishDonation.ps1",
-      "sha256": "30BFF414C1DC249406757C7FD8D81DD57EABE688759FBCBCD39422B409969DBF",
-      "git_blob_oid": "129b21143f874a65097827c192b66722957f35cf"
     },
     {
       "path": "experiments/r2-lab-controller/Invoke-IsolatedOrdinaryMineCheckpoint.ps1",
@@ -462,6 +447,31 @@
       "path": "experiments/r2-lab-controller/Replay-IsolatedNativeActionSource.ps1",
       "sha256": "94C82E6129BB6F4770C8D4E8359BB55317DDE562B0C1116E730CBBE9D5424DA0",
       "git_blob_oid": "19db479b18756a66e350496fa7a765db91c33034"
+    },
+    {
+      "path": "experiments/r2-lab-controller/Invoke-IsolatedCompiledQueue.ps1",
+      "sha256": "B5705C6DD62FAF576DC31464DAF686F97BC07FD3BCE6A977C0C26B7DD096EE63",
+      "git_blob_oid": "8ec4711eda133f89e12a1de0336d5c69fee4bb02"
+    },
+    {
+      "path": "experiments/r2-lab-controller/Invoke-IsolatedMapApproach.ps1",
+      "sha256": "C1672F21C97173D93D15235BE79703431E6F3345707A0BD8EEE6536CC70C93A1",
+      "git_blob_oid": "e87b112826c764b9cf3ca0f132225c00f4602da9"
+    },
+    {
+      "path": "experiments/r2-lab-controller/Invoke-IsolatedChestWithdrawal.ps1",
+      "sha256": "F329F5B9890B0E35150A8F8CCA35B8A9AF97159F1503450E391DD9370C6FEF17",
+      "git_blob_oid": "ff6654630502514d24664521b765c5f5a1baeb57"
+    },
+    {
+      "path": "experiments/r2-lab-controller/Invoke-IsolatedLakeFishDonation.ps1",
+      "sha256": "55B46F307159BF01AB64E939109E3A795D948C72A10DAAF0D6FDF59B09706068",
+      "git_blob_oid": "f72d8e0425debd7d82fdd00a8df97052b45b2830"
+    },
+    {
+      "path": "experiments/r2-lab-controller/Replay-IsolatedCommunityDonation.ps1",
+      "sha256": "6FA39D7D721A83F8DEF2436844939AACC8FAC95F1CEFFE26BA7435FCDBF7E6E6",
+      "git_blob_oid": "113e9346121a96be791e5c7893135f79fe2e25d2"
     }
   ],
   "execution_layout": "Controllers depend on the retained D-drive lab layout, pinned published binaries, authority dictionaries, and original receipts; these are not bundled.",
@@ -470,7 +480,7 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T14:23:54.9830917+08:00",
+  "updated_at": "2026-11-24T14:51:14.0311641+08:00",
   "controller_revision_note": "Added a distinct saved-shutdown resume entry: validates actual four-file hashes, accepted checkpoint path/date/money, original stopped-service inventory and free endpoints. Wrong-hash fixture rejects before runtime mutation; real Summer7 save cold-read back. Standalone full snapshot retention is opt-in for subsequent replay; no Day-0 claim and no guard relaxation.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
@@ -672,6 +682,72 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-shutdown-save-20261124\\verified.json",
       "sha256": "528D21A8380822538879D51439BBE630BFE123845BF0B9E60BE9023D6A192FCC",
       "git_blob_oid": "05df2b53a62c6c477fe564a6abb2d42c9954dc79"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-native-catch-701-strict-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-second-batch-strict-replay-20261124\\701\\independent-replay.json",
+      "sha256": "08FEAC6702BCBB06E08DBAD08729C665A91223EE67AA14444F2783EF2298DC3A",
+      "git_blob_oid": "2801d9ef292e32b4c52936a79b4f2deb6a7833f6"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-native-catch-267-strict-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-second-batch-strict-replay-20261124\\267\\independent-replay.json",
+      "sha256": "4839934D6ABC8684301CFDF0294D4558F37786320DF8C93D24562DA4EED023D2",
+      "git_blob_oid": "9010475c13b33421e1828a43be562b5b7825c640"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-native-catch-152-strict-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-second-batch-strict-replay-20261124\\152\\independent-replay.json",
+      "sha256": "B173C5FA5804DCA0B18D4E14C96FE56C468C01D6B9645A0A1884099E358F0CBD",
+      "git_blob_oid": "96c3904ff968d8e7b9410755c71c5695948ee3ab"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-native-catch-144-strict-replay.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-second-batch-strict-replay-20261124\\144\\independent-replay.json",
+      "sha256": "3C3ACCAAB633397FD10BA07B977A3FD433AE2148919B70A04A62A112D2AF78F8",
+      "git_blob_oid": "e15aa4233e2f67b1374457ff26c546a57eedf0bf"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-exact-donation-531.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-exact-donations-replay-20261124\\replay-0531-item-0001.json",
+      "sha256": "D9857D6662C57C608C317259B86105850E66BEF42B84E08572E14A00E8F9981A",
+      "git_blob_oid": "9487862ae4abd8165bba343503a78a7146679d04"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-exact-donation-532.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-exact-donations-replay-20261124\\replay-0532-item-0001.json",
+      "sha256": "BE12DED53B5514DF57FD94319F112F509433DA128D62896713D6D54E7066E58E",
+      "git_blob_oid": "6181a931d70d09f1fdc47d487dfa97739d3e7eb3"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-exact-donation-533.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-exact-donations-replay-20261124\\replay-0533-item-0001.json",
+      "sha256": "7C683259A154031A57524D98622D86558BDA188EEADC084D3FC4DF925D0EAAD3",
+      "git_blob_oid": "e64ecdc36a9f480d26a4fd29501fda74b434c439"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-exact-donation-534.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-exact-donations-replay-20261124\\replay-0534-item-0001.json",
+      "sha256": "FC671BE378104DEAA20C145686BBFCA09F393920ABEE450EAD8911941D2DE58E",
+      "git_blob_oid": "46b931ffed19553843e5806a583ad3985ec33254"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-cold-readback.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-native-resume-20261124\\verified-readback.json",
+      "sha256": "C997CFFB935C3AE0AD4EC289B5F6EA82F6ED2B0716F86F79BF9153C300D18AC6",
+      "git_blob_oid": "b4f07f245229be8383f7065a7fcfcf793c20c3d6"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-cc-stock-window-correction.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-after-donations-global-plan-20261124\\summary.json",
+      "sha256": "5347280A0D77E5D7534225AA4BECAFDD5F8296D8EE100BAD5B0FC3899273A3B0",
+      "git_blob_oid": "3215fe4f37af85b4d8c95d153a7c94d3f916944b"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-native-crop-care.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-native-crop-care-20261124-evidence\\verified.json",
+      "sha256": "4669875C53387F64CB552CECD71E9BAA113CF93A534F2545286000FA00D694E9",
+      "git_blob_oid": "dc5cbaddfaa17990b46b6037c3ca5f0ea96f24df"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -695,9 +771,9 @@
     "lake_fish_completed_ingredients": 4,
     "native_save_control_loop_verified": true,
     "independent_saved_xml_verified": true,
-    "same_actual_main_cold_readback_verified": false,
+    "same_actual_main_cold_readback_verified": true,
     "main_sha256": "458CA35780081BCA65383A9B81503C9750F0079FB9D1A0750373E45B81088292",
-    "runtime_attempt": "summer07-shutdown-cold-readback-20261124",
+    "runtime_attempt": "summer08-native-resume-20261124",
     "checkpoint_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-save-verification.json",
     "shutdown_stop_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-stop.json"
   },
@@ -735,7 +811,11 @@
     "independently_replayed_new_species": [
       "(O)150",
       "(O)706",
-      "(O)704"
+      "(O)704",
+      "(O)701",
+      "(O)267",
+      "(O)152",
+      "(O)144"
     ]
   },
   "latest_full_capture_batch": {
@@ -749,9 +829,9 @@
       "(O)267",
       "(O)701"
     ],
-    "strict_native_catch_replays_for_these_four": "pending",
+    "strict_native_catch_replays_for_these_four": "verified_by_original_native_catch_builder_and_verifier",
     "previous_batch_independent_native_collection_replays": 3,
-    "current_unsaved_progress": false,
+    "current_unsaved_progress": true,
     "latest_actual_sealed_day": 35,
     "selected_island_l3_route_verified": false
   },
@@ -771,12 +851,22 @@
     "runtime_attempt": "summer07-shutdown-cold-readback-20261124"
   },
   "pause_status": {
-    "state": "paused_at_user_request_for_shutdown",
-    "updated_at": "2026-11-24T14:23:54.9811339+08:00",
-    "all_recorded_services_stopped": true,
-    "weekly_usage_used_percent": 31,
-    "weekly_usage_remaining_percent": 69,
-    "resume_requires_user_instruction": true,
-    "next_checkpoint_cold_readback_required": true
+    "state": "active_after_user_resume",
+    "updated_at": "2026-11-24T14:51:14.0297745+08:00",
+    "runtime_attempt": "summer08-native-resume-20261124",
+    "weekly_usage_used_percent": 33,
+    "weekly_usage_remaining_percent": 67
+  },
+  "latest_native_community_progress": {
+    "total_day": 35,
+    "complete_bundles": 3,
+    "active_bundles": 30,
+    "ocean_bundle_8_completed_ingredients": 3,
+    "summer_crop_bundle_1_completed_ingredients": 1,
+    "exact_native_donation_replays": 4,
+    "sardine_quantity": 0,
+    "next_ordinary_sardine_rod_window_total_day": 56,
+    "prior_four_fish_ready_claim": "invalidated_by_native_stock",
+    "donations_saved_to_disk": false
   }
 }

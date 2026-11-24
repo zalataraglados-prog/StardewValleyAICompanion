@@ -53,7 +53,7 @@ if ($fresh.state.player.tile_x.value -ne $stand.stand_x -or $fresh.state.player.
     if (!$queueArg) { throw 'The retained native controller argument is missing.' }
     $nativeArgs[$queueArg] = $path
     $retentionArg = [array]::IndexOf($nativeArgs, '--max-persisted-iterations') + 1
-    if ($retentionArg) { $nativeArgs[$retentionArg] = '400' }
+    if ($retentionArg) { $nativeArgs[$retentionArg] = '600' }
     foreach ($key in $settings.Keys) { [Environment]::SetEnvironmentVariable($key, $settings[$key], 'Process') }
     & 'D:\StardewAI-TestLab\dotnet\dotnet.exe' @nativeArgs *> (Join-Path $proof.FullName 'approach-native.log')
     if ($LASTEXITCODE -ne 0) { throw 'The exact chest approach did not verify.' }

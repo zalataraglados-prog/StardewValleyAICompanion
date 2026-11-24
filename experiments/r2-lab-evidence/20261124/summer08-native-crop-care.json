@@ -1,0 +1,37 @@
+{
+  "save": "ProofFarm",
+  "player": "319842636613009663",
+  "day": 35,
+  "after": "039210821999297a5466ab9350c53aea3fd86a66b02a33ad88ee275e7315d17a",
+  "water": 6,
+  "crops": [
+    {
+      "tile_x": 71,
+      "tile_y": 16,
+      "harvest_item_qualified_id": "(O)258",
+      "watered": true,
+      "days_until_next_harvest_if_watered": 7
+    },
+    {
+      "tile_x": 70,
+      "tile_y": 17,
+      "harvest_item_qualified_id": "(O)254",
+      "watered": true,
+      "days_until_next_harvest_if_watered": 6
+    },
+    {
+      "tile_x": 71,
+      "tile_y": 17,
+      "harvest_item_qualified_id": "(O)256",
+      "watered": true,
+      "days_until_next_harvest_if_watered": 5
+    },
+    {
+      "tile_x": 72,
+      "tile_y": 18,
+      "harvest_item_qualified_id": "(O)260",
+      "watered": true,
+      "days_until_next_harvest_if_watered": 0
+    }
+  ]
+}
