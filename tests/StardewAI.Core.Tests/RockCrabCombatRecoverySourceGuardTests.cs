@@ -26,6 +26,9 @@ public sealed class RockCrabCombatRecoverySourceGuardTests
         Assert.Contains("case NativeToolActionCommand.Release:", source, StringComparison.Ordinal);
         Assert.Contains("if (crab.shellHealth.Value >= before)", source, StringComparison.Ordinal);
         Assert.Contains("rock_crab_shell_native_change_not_observed", source, StringComparison.Ordinal);
+        Assert.Contains("if (active.RockCrabShellHealthBefore.HasValue &&", source, StringComparison.Ordinal);
+        Assert.Contains("TryApplySmapiButtonOverride(SButton.C, pressed: false, out _))", source, StringComparison.Ordinal);
+        Assert.Contains("active.RockCrabShellLifecycle.NotifyInputReleased();", source, StringComparison.Ordinal);
         Assert.DoesNotContain("crab.hitWithTool(", source, StringComparison.Ordinal);
         Assert.DoesNotContain("crab.takeDamage(", source, StringComparison.Ordinal);
         Assert.DoesNotContain("crab.shellGone.Value =", source, StringComparison.Ordinal);

@@ -1,0 +1,43 @@
+{
+  "schema_version": "rock_crab_interrupted_input_control_replay.v1",
+  "recorded_at": "2026-11-25T00:23:35+08:00",
+  "base_commit": "c3f764fab8dbcb990cd363fbef0971db61f4dce0",
+  "review_comment": "https://github.com/zalataraglados-prog/StardewValleyAICompanion/pull/594#discussion_r4668805547",
+  "control_only": true,
+  "native_emergency_food_validation_claim": false,
+  "formal_training_authorized": false,
+  "replay": {
+    "before": {
+      "release_hook_notifies": false,
+      "command": "Block",
+      "source_sha256": "b71d133a287a8704d27dfbfb067840ccd70ee5389e18b12eabc44070b828217f",
+      "reason": "native_tool_action_did_not_start",
+      "phase": "Blocked"
+    },
+    "production_default_native_start_timeout_ticks": 30,
+    "native_start_timeout_ticks": 2,
+    "after": {
+      "release_hook_notifies": true,
+      "command": "CycleCompleted",
+      "source_sha256": "94f841086842ec6d16184b57038ad6a2a6984806469477a1ed4982b25ef405b9",
+      "phase": "Completed"
+    },
+    "sequence": [
+      "original lifecycle Press from Idle",
+      "successful physical release follows actual harness release-hook notification behavior",
+      "no lifecycle samples while native swing and emergency food run",
+      "resume with native idle"
+    ]
+  },
+  "verification": {
+    "related_cases_passed": 20,
+    "new_boundary_cases": 8,
+    "no_notification": "original missing-start refusal unchanged",
+    "harness_release_build_errors": 0,
+    "harness_release_build_warnings": 0,
+    "effect_guard": "actual same-target shell-health decrease remains required",
+    "native_normal_shell_proof": "existing 5->4 / kill proof reused within its original uninterrupted scope",
+    "repeat_notification": "does not reset native completion deadline"
+  },
+  "local_artifact_directory": "D:\\StardewValleyAICompanion前瞻实验室\\验证测评\\20261125\\rock-crab-interruption"
+}

@@ -115,6 +115,76 @@ public sealed class ExecutorInputLifecycleTests
         Assert.Equal(new long[] { 2, 3 }, buffer.Snapshot().Select(row => row.Tick));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EmergencyReleaseCanSettleAfterTheNativeSwingWasUnobserved(bool startObserved)
+    {
+        var lifecycle = new NativeToolActionLifecycle(nativeStartTimeoutTicks: 1);
+        Assert.Equal(NativeToolActionCommand.Press, lifecycle.Advance(Idle()).Command);
+        if (startObserved) lifecycle.Advance(Using(canRelease: false));
+
+        // Native updates and eating run while the combat observer is skipped.
+        lifecycle.NotifyInputReleased();
+
+        Assert.Equal(NativeToolActionCommand.CycleCompleted, lifecycle.Advance(Idle()).Command);
+        Assert.Equal(NativeToolActionCommand.None, lifecycle.Advance(Idle()).Command);
+    }
+
+    [Fact]
+    public void EmergencyReleaseStillWaitsForToolAndAnimationToFinish()
+    {
+        var lifecycle = new NativeToolActionLifecycle();
+        lifecycle.Advance(Idle());
+        lifecycle.NotifyInputReleased();
+
+        Assert.Equal(NativeToolActionCommand.None, lifecycle.Advance(Using(canRelease: false)).Command);
+        Assert.Equal(NativeToolActionCommand.None,
+            lifecycle.Advance(new NativeToolActionObservation(false, false, false, true)).Command);
+        Assert.Equal(NativeToolActionCommand.None,
+            lifecycle.Advance(new NativeToolActionObservation(false, true, false, true)).Command);
+        Assert.Equal(NativeToolActionCommand.CycleCompleted, lifecycle.Advance(Idle()).Command);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void RepeatedEmergencyReleaseDoesNotExtendNativeCompletionDeadline(bool startObserved, bool releaseRequested)
+    {
+        var lifecycle = new NativeToolActionLifecycle(nativeCompletionTimeoutTicks: 1);
+        lifecycle.Advance(Idle());
+        if (startObserved) lifecycle.Advance(Using(canRelease: releaseRequested));
+        lifecycle.NotifyInputReleased();
+        Assert.Equal(NativeToolActionCommand.None, lifecycle.Advance(Using(canRelease: false)).Command);
+
+        lifecycle.NotifyInputReleased();
+        var blocked = lifecycle.Advance(Using(canRelease: false));
+
+        Assert.Equal(NativeToolActionCommand.Block, blocked.Command);
+        Assert.Equal("native_tool_action_completion_timeout", blocked.Reason);
+    }
+
+    [Fact]
+    public void ExternalReleaseWithoutAnAttemptDoesNotInventACompletedCycle()
+    {
+        var lifecycle = new NativeToolActionLifecycle();
+        lifecycle.NotifyInputReleased();
+        Assert.Equal(NativeToolActionPhase.Ready, lifecycle.Phase);
+        Assert.Equal(NativeToolActionCommand.Press, lifecycle.Advance(Idle()).Command);
+    }
+
+    [Fact]
+    public void ExternalReleaseDoesNotReviveAnAlreadyBlockedAttempt()
+    {
+        var lifecycle = new NativeToolActionLifecycle(nativeStartTimeoutTicks: 0);
+        lifecycle.Advance(Idle());
+        Assert.Equal(NativeToolActionCommand.Block, lifecycle.Advance(Idle()).Command);
+        lifecycle.NotifyInputReleased();
+        Assert.Equal(NativeToolActionPhase.Blocked, lifecycle.Phase);
+        Assert.Equal(NativeToolActionCommand.Block, lifecycle.Advance(Idle()).Command);
+    }
+
     private static NativeToolActionObservation Idle() =>
         new(
             usingTool: false,
