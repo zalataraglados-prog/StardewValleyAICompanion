@@ -1,0 +1,48 @@
+{
+  "schema_version": "r2_lab_bounded_collection_shutdown_summary.v1",
+  "created_at": "2026-11-24T14:22:15.5855636+08:00",
+  "run_id": "r2-global-daily-20261117-171253",
+  "save_id": "ProofFarm",
+  "player_id": "319842636613009663",
+  "status": "ok",
+  "attempts_started": 22,
+  "verified_actions": 12,
+  "reported_objective_completed": true,
+  "completion_scope": "Bounded local fishing collection only; not community-center, island, Day-0 source schedule or teacher comparison completion.",
+  "after_state_hash": "ab6691cd592940f2331106f4b4c2d2bcb81d862a524636de7afd39cac0a8d12f",
+  "total_day": 34,
+  "season": "summer",
+  "day_of_month": 7,
+  "time": 1830,
+  "location": "Town",
+  "cash": 3101,
+  "health": 100,
+  "new_observed_collection_items": [
+    "(O)144",
+    "(O)152",
+    "(O)267",
+    "(O)701"
+  ],
+  "strict_native_catch_replay_for_these_four": "pending",
+  "source_artifacts": [
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-prepared-full-collection-controller-20261124\\before.json",
+      "sha256": "4930FD9ADAB45442A668D5EC275A3A950D64DAADA15FA8AA58B1C09D9873DE71"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-prepared-full-collection-controller-20261124\\after.json",
+      "sha256": "74F878F1DA69548A11223218344CCC9E4B5130D52359CAEEC614392F4C66DBC3"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-prepared-full-collection-controller-20261124\\arguments.json",
+      "sha256": "40CA810C19041D4A3198A2E75C2CAB869ABF6A4C3470BFDBA55174E3CDEAB35C"
+    },
+    {
+      "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-prepared-full-collection-controller-20261124\\controller.log",
+      "sha256": "0663BFE4C587E9C6795EDE4B57645BAE771F94E5CE0313DBCA8E39ADFC835C11"
+    }
+  ],
+  "next_task": "Verify exact held/chest quantities for Ocean Fish bundle 8, withdraw needed held stock and use the original donation planner. Preserve the four new per-item catch sources for strict original replay.",
+  "selected_island_l3_route_verified": false,
+  "formal_training_authorized": false
+}

@@ -1,0 +1,110 @@
+{
+  "schema_version": "r2_lab_native_storage_conservation.v1",
+  "scope": "Physical actor-authorized player/chest nodes in the retained native bridge graphs; original transfer verifier also checked each destination and source slot.",
+  "before_snapshot_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-retain-mining-supplies-20261124-evidence\\cache-pickaxe-before.json",
+  "before_snapshot_sha256": "322D841800CEB34CD8B5DAB07EFA7BBBCF2457334A4FB2868263E4A69E1303A0",
+  "after_snapshot_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-prepared-full-collection-controller-20261124\\before.json",
+  "after_snapshot_sha256": "4930FD9ADAB45442A668D5EC275A3A950D64DAADA15FA8AA58B1C09D9873DE71",
+  "save_id": "ProofFarm",
+  "player_id": "319842636613009663",
+  "total_day": 34,
+  "before_empty_slots": 0,
+  "after_empty_slots": 10,
+  "before_cash": 3101,
+  "after_cash": 3101,
+  "rows": [
+    {
+      "qualified_item_id": "(T)Pickaxe",
+      "before_total": 1,
+      "before_player": 1,
+      "before_chest": 0,
+      "after_total": 1,
+      "after_player": 0,
+      "after_chest": 1
+    },
+    {
+      "qualified_item_id": "(W)0",
+      "before_total": 1,
+      "before_player": 1,
+      "before_chest": 0,
+      "after_total": 1,
+      "after_player": 0,
+      "after_chest": 1
+    },
+    {
+      "qualified_item_id": "(T)Hoe",
+      "before_total": 1,
+      "before_player": 1,
+      "before_chest": 0,
+      "after_total": 1,
+      "after_player": 0,
+      "after_chest": 1
+    },
+    {
+      "qualified_item_id": "(O)378",
+      "before_total": 4,
+      "before_player": 4,
+      "before_chest": 0,
+      "after_total": 4,
+      "after_player": 0,
+      "after_chest": 4
+    },
+    {
+      "qualified_item_id": "(O)382",
+      "before_total": 1,
+      "before_player": 1,
+      "before_chest": 0,
+      "after_total": 1,
+      "after_player": 0,
+      "after_chest": 1
+    },
+    {
+      "qualified_item_id": "(O)390",
+      "before_total": 24,
+      "before_player": 22,
+      "before_chest": 2,
+      "after_total": 24,
+      "after_player": 0,
+      "after_chest": 24
+    },
+    {
+      "qualified_item_id": "(O)535",
+      "before_total": 2,
+      "before_player": 2,
+      "before_chest": 0,
+      "after_total": 2,
+      "after_player": 0,
+      "after_chest": 2
+    },
+    {
+      "qualified_item_id": "(O)771",
+      "before_total": 1,
+      "before_player": 1,
+      "before_chest": 0,
+      "after_total": 1,
+      "after_player": 0,
+      "after_chest": 1
+    },
+    {
+      "qualified_item_id": "(O)130",
+      "before_total": 1,
+      "before_player": 1,
+      "before_chest": 0,
+      "after_total": 1,
+      "after_player": 0,
+      "after_chest": 1
+    },
+    {
+      "qualified_item_id": "(O)704",
+      "before_total": 1,
+      "before_player": 1,
+      "before_chest": 0,
+      "after_total": 1,
+      "after_player": 0,
+      "after_chest": 1
+    }
+  ],
+  "physical_quantity_conserved": true,
+  "strategy_reservation_ledger_mutated": false,
+  "formal_training_authorized": false
+}

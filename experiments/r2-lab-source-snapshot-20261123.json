@@ -470,7 +470,7 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T13:58:14.6807136+08:00",
+  "updated_at": "2026-11-24T14:23:54.9830917+08:00",
   "controller_revision_note": "Added a distinct saved-shutdown resume entry: validates actual four-file hashes, accepted checkpoint path/date/money, original stopped-service inventory and free endpoints. Wrong-hash fixture rejects before runtime mutation; real Summer7 save cold-read back. Standalone full snapshot retention is opt-in for subsequent replay; no Day-0 claim and no guard relaxation.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
@@ -642,6 +642,36 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-full-ocean-native-replay-20261124\\execution-0474-item-0003\\independent-replay.json",
       "sha256": "7E73F88371CD95A2B056FEFB71874E1D55D8C94650F296325B97689E31140A17",
       "git_blob_oid": "99186e6d88a6ff4bf8d05513b75a905f4c04f2ff"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-prepared-collection-summary.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-prepared-full-collection-controller-20261124\\shutdown-summary.json",
+      "sha256": "2D0C1AFD5333F9B7FACDE6D58E3CD8D7FE5B429D71619E91A83A02F66C6BBAB4",
+      "git_blob_oid": "17af87583ce17eee52ed6661a90da265e41822be"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-shutdown-stop.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-shutdown-save-20261124\\shutdown-stop.json",
+      "sha256": "9814F534D5F1B40202391CEB30B5614DCC620C10F3CA54A49BC74BD2D5E170F5",
+      "git_blob_oid": "e9c94198abf49eea7a7c4c56d5108facfc0c2af3"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-native-storage-conservation.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-retain-mining-supplies-20261124-evidence\\conservation-summary.json",
+      "sha256": "90E611FF6E837FB75BD4B7B4CC6074DC5E7451EB741D7E0689F0A0580139AA06",
+      "git_blob_oid": "218c2466942065cb5641851c32412cd24912dea8"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer07-prepared-collection-arguments.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer07-prepared-full-collection-controller-20261124\\arguments.json",
+      "sha256": "40CA810C19041D4A3198A2E75C2CAB869ABF6A4C3470BFDBA55174E3CDEAB35C",
+      "git_blob_oid": "9e62044f114ac0a2152f643e3e9cc4603430828c"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer08-shutdown-save-verification.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer08-shutdown-save-20261124\\verified.json",
+      "sha256": "528D21A8380822538879D51439BBE630BFE123845BF0B9E60BE9023D6A192FCC",
+      "git_blob_oid": "05df2b53a62c6c477fe564a6abb2d42c9954dc79"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -655,19 +685,21 @@
     "scope": "Combined isolated lab Bridge; actual Summer5 ordinary-mine floor6, tile21,36. The original reader separately accepted native hoe and walk sources."
   },
   "latest_saved_checkpoint": {
-    "total_day": 34,
+    "total_day": 35,
     "season": "summer",
-    "day_of_month": 7,
+    "day_of_month": 8,
     "time": 600,
-    "cash": 3101,
+    "cash": 4106,
     "health": 100,
     "deepest_mine": 6,
     "lake_fish_completed_ingredients": 4,
     "native_save_control_loop_verified": true,
     "independent_saved_xml_verified": true,
-    "same_actual_main_cold_readback_verified": true,
-    "main_sha256": "5B1DE469631DC6BF88F3FA2C40A579F44A61195D75634786E785FB00E94BA941",
-    "runtime_attempt": "summer07-shutdown-cold-readback-20261124"
+    "same_actual_main_cold_readback_verified": false,
+    "main_sha256": "458CA35780081BCA65383A9B81503C9750F0079FB9D1A0750373E45B81088292",
+    "runtime_attempt": "summer07-shutdown-cold-readback-20261124",
+    "checkpoint_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-save-verification.json",
+    "shutdown_stop_report": "experiments/r2-lab-evidence/20261124/summer08-shutdown-stop.json"
   },
   "latest_offline_island_selection": {
     "source_total_day": 26,
@@ -689,8 +721,8 @@
       "(O)130",
       "(O)146"
     ],
-    "current_unsaved_progress": true,
-    "latest_actual_sealed_day": 33,
+    "current_unsaved_progress": false,
+    "latest_actual_sealed_day": 35,
     "selected_island_l3_route_verified": false
   },
   "latest_full_capture_controller": {
@@ -707,12 +739,44 @@
     ]
   },
   "latest_full_capture_batch": {
-    "attempts_started": 19,
-    "verified_actions": 10,
+    "attempts_started": 22,
+    "verified_actions": 12,
     "reported_objective_completed": true,
-    "completion_scope": "Local Dorado catch only; not community-center or island completion.",
-    "independent_native_collection_replays": 3,
-    "current_unsaved_progress": true,
+    "completion_scope": "Bounded local fishing collection only; not community-center or island completion.",
+    "new_observed_collection_items": [
+      "(O)144",
+      "(O)152",
+      "(O)267",
+      "(O)701"
+    ],
+    "strict_native_catch_replays_for_these_four": "pending",
+    "previous_batch_independent_native_collection_replays": 3,
+    "current_unsaved_progress": false,
+    "latest_actual_sealed_day": 35,
     "selected_island_l3_route_verified": false
+  },
+  "previous_saved_checkpoint_before_shutdown": {
+    "total_day": 34,
+    "season": "summer",
+    "day_of_month": 7,
+    "time": 600,
+    "cash": 3101,
+    "health": 100,
+    "deepest_mine": 6,
+    "lake_fish_completed_ingredients": 4,
+    "native_save_control_loop_verified": true,
+    "independent_saved_xml_verified": true,
+    "same_actual_main_cold_readback_verified": true,
+    "main_sha256": "5B1DE469631DC6BF88F3FA2C40A579F44A61195D75634786E785FB00E94BA941",
+    "runtime_attempt": "summer07-shutdown-cold-readback-20261124"
+  },
+  "pause_status": {
+    "state": "paused_at_user_request_for_shutdown",
+    "updated_at": "2026-11-24T14:23:54.9811339+08:00",
+    "all_recorded_services_stopped": true,
+    "weekly_usage_used_percent": 31,
+    "weekly_usage_remaining_percent": 69,
+    "resume_requires_user_instruction": true,
+    "next_checkpoint_cold_readback_required": true
   }
 }
