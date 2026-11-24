@@ -1,0 +1,143 @@
+{
+  "schema_version": "r2_local_island_suffix_verification.v1",
+  "recorded_at": "2026-11-24T18:01:02.8697907+08:00",
+  "run_id": "island-suffix-20261124-native",
+  "save_id": "自动化",
+  "player_id": "-8577884337094229036",
+  "game_version": "1.6.15",
+  "total_day": 472,
+  "initial_location": "IslandFarmHouse",
+  "final_location": "IslandSouthEastCave",
+  "local_suffix_verified": true,
+  "formal_training_authorized": false,
+  "day_zero_claim": false,
+  "stage_one_deadline_claim": false,
+  "original_sources": [
+    {
+      "name": "CrabPotAudit_442159967",
+      "sha256": "7F34A5731208788F37EF2D1F76B64B890466293878F876ABCA6FE4A05A052CB0",
+      "original_unchanged": true,
+      "isolated_disk_unchanged": true
+    },
+    {
+      "name": "SaveGameInfo",
+      "sha256": "0F2716DE726B87A8EC9AAE6B89E1713C6207BD24EA119E8DC188DFDF2C0620FC",
+      "original_unchanged": true,
+      "isolated_disk_unchanged": true
+    }
+  ],
+  "reused_island_capability": "GingerIsland局部基线/local-ginger-island-certificate-replay.json; existing access evidence, no new community-center or boat acquisition claim",
+  "setup": {
+    "entry": "debug.setup_location_fishing",
+    "original_fishing_level": 3,
+    "tested_fishing_level": 10,
+    "original_cash": 3946,
+    "tested_cash": 0,
+    "original_walnuts_found": 103,
+    "tested_walnuts_found": 103,
+    "injected_tutorial_catch": false,
+    "scope": "Existing fixture positions actor, equips existing rod, raises fishing level/XP and sets cash to zero. Setup is excluded from native route/catch evidence; not unmodified level-3 gameplay, resource acquisition, or payment proof."
+  },
+  "native_stingray": {
+    "qualified_item_id": "(O)836",
+    "caught_before": false,
+    "count_before": 0,
+    "caught_after": true,
+    "count_after": 1,
+    "native_inventory_increment": 1,
+    "receipt": "cove-catch-03/action-01/training/runs/island-suffix-20261124-native/live-snapshots/execution-0001-item-0001.json",
+    "independent_original_reader_verified": true,
+    "native_inventory_before": 0,
+    "native_inventory_after": 1
+  },
+  "routes": {
+    "forward": [
+      "IslandWest",
+      "IslandSouth",
+      "IslandSouthEast",
+      "IslandSouthEastCave"
+    ],
+    "reverse": [
+      "IslandSouthEastCave",
+      "IslandSouthEast",
+      "IslandSouth",
+      "IslandWest"
+    ],
+    "verified_connector_count": 6,
+    "new_walnut_payments": 0
+  },
+  "independent_original_replays": [
+    {
+      "path": "cove-catch-02/independent-original-replay.json",
+      "sha256": "E1083BA514E635A8E28363ABEE3068CF43D572B9415D812A4EDDBB851AFF9932",
+      "option_id": "executor.catch_fish",
+      "before_state_hash": "2957a9e836bc2a1bb6a6195f9a6b9839d5351cd0711272e6f5022b1445fa1f4e",
+      "after_state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+      "source_file_count": 6
+    },
+    {
+      "path": "cove-catch-03/independent-original-replay.json",
+      "sha256": "2DD63932A83DE848BBDAC66533DBB20B0F825FBFF33D562BEA745BB38CC355E4",
+      "option_id": "executor.catch_fish",
+      "before_state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+      "after_state_hash": "626790c51c6b797281b1457e239eb4f468eb9ea568131af7f5776c160906e95f",
+      "source_file_count": 6
+    },
+    {
+      "path": "cove-to-west/action-01/independent-original-replay.json",
+      "sha256": "4B5DF34FADCD9798ADE0198D1A927755435ECE04C26B2AF04017BE99AF60FCAA",
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "626790c51c6b797281b1457e239eb4f468eb9ea568131af7f5776c160906e95f",
+      "after_state_hash": "50e2385fa18f7e3ca561fc1abfec195cee8a90e22e1968205fd6a925ee3ef24e",
+      "source_file_count": 6
+    },
+    {
+      "path": "cove-to-west/action-02/independent-original-replay.json",
+      "sha256": "CD7C5EC5A5A3F41BDBB1FD6DB2820C8130AA9172CE930D1E2D6655D8F55387E2",
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "50e2385fa18f7e3ca561fc1abfec195cee8a90e22e1968205fd6a925ee3ef24e",
+      "after_state_hash": "2b75e84fc52d607cda66fa945be2dfef7644f0744f1178a2607d4450eb6c22d9",
+      "source_file_count": 6
+    },
+    {
+      "path": "cove-to-west/action-03/independent-original-replay.json",
+      "sha256": "8C737776315F100A487984425CA42EABB44F36790B7CFFE4C4D2CC9865CDFEF7",
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "2b75e84fc52d607cda66fa945be2dfef7644f0744f1178a2607d4450eb6c22d9",
+      "after_state_hash": "d3673a0c8c734acb597d137b169b8b29b7487852b6c2e65d507aaa0b5310b428",
+      "source_file_count": 6
+    },
+    {
+      "path": "west-to-cove-native/action-01/independent-original-replay.json",
+      "sha256": "9A1C62ABD25B8F42689A1AAB94C0F25594D5AE6A5D5370260C7085DB98CDF5AD",
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "d3673a0c8c734acb597d137b169b8b29b7487852b6c2e65d507aaa0b5310b428",
+      "after_state_hash": "cf86729f7ba2d4ceb53083b1279a920e277de442e00d949a71733c2d4d15e675",
+      "source_file_count": 6
+    },
+    {
+      "path": "west-to-cove-native/action-02/independent-original-replay.json",
+      "sha256": "71F6E2EAA7CE98F32D6A5978B9EB68E9F2A8E8EE8D32D8DD26A8712044B11BDC",
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "cf86729f7ba2d4ceb53083b1279a920e277de442e00d949a71733c2d4d15e675",
+      "after_state_hash": "0a1893cbac55681b00925a48ae0e0832fc98fb8211fff7314d8186002755cea2",
+      "source_file_count": 6
+    },
+    {
+      "path": "west-to-cove-native/action-03/independent-original-replay.json",
+      "sha256": "E9AC45873C613F00ECACF3F97CE0A417575D0FCE9BFC95CEDC2111A6C1722BC6",
+      "option_id": "executor.traverse_connector",
+      "before_state_hash": "0a1893cbac55681b00925a48ae0e0832fc98fb8211fff7314d8186002755cea2",
+      "after_state_hash": "91eba83e3a4cd3df5095c747e0b746204425e6352c8fea34a367abd99acf31cd",
+      "source_file_count": 6
+    }
+  ],
+  "retained_failures": [
+    "cove-route-v2: native movement encountered Sleep dialogue; no route pass",
+    "decline-sleep: original close-menu candidate unavailable; no action dispatched",
+    "west-to-cove: generic fixture chose disconnected IslandWest 0,0; no route pass",
+    "cove-catch-01: catch applied, but original independent reader rejected second item frame binding; excluded from independent replay passes"
+  ],
+  "durability": "Native receipts and snapshots sealed; isolated disk save remains original. New catch is an unsaved local-test tail; no save/cold-readback claim.",
+  "inherited_results": "Lionfish and BlueDiscus already caught; Gourmand already 3/3. Not counted as new catches or new order transitions."
+}

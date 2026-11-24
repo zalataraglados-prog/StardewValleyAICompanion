@@ -1,0 +1,46 @@
+{
+  "reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "reader_assembly": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\full-native-replay-20261124\\live-training-loop\\StardewAI.GoalConditionedBootstrap.dll",
+  "reader_assembly_sha256": "C9AC0991683380F030DB99FF1938A2BEA6DE52D3689F9E3ACC96DFE414F90E4A",
+  "original_native_source_replay_verified": true,
+  "run_id": "island-suffix-20261124-native",
+  "queue_id": "queue.efc74d7826dc4854afec070dd3448988",
+  "queue_item_id": "queue_item.713d8a8e5ea14c969689a6008af4b8c0",
+  "option_id": "executor.traverse_connector",
+  "native_status": "applied",
+  "before_state_hash": "0a1893cbac55681b00925a48ae0e0832fc98fb8211fff7314d8186002755cea2",
+  "after_state_hash": "91eba83e3a4cd3df5095c747e0b746204425e6352c8fea34a367abd99acf31cd",
+  "before_game_tick": 15516,
+  "after_game_tick": 16046,
+  "combat_target_runtime_identity": "",
+  "combat_target_defeated": null,
+  "combat_attack_count": null,
+  "combat_hit_count": null,
+  "combat_damage_taken": null,
+  "native_changed_facts": [
+    {
+      "Path": "player.location_id",
+      "Before": "IslandSouthEast",
+      "After": "IslandSouthEastCave"
+    },
+    {
+      "Path": "player.tile",
+      "Before": "0,29",
+      "After": "1,8"
+    },
+    {
+      "Path": "player.money",
+      "Before": "0",
+      "After": "0"
+    }
+  ],
+  "source_sha256": {
+    "queue": "2618f53e26d3290307479b6ccb75c3969804d3ec8f77d77052ffb24b72c2da98",
+    "result": "9f1aa570554d82e0e6215f8a32ab8eb8e6ea8c3fb254fb060022b3260785de5a",
+    "before": "75aee301ca177f75abc05353a4f221a14153f5eac6828df1a3ce899a8e1b8985",
+    "after": "17710e1ea39fe9a471858b3a3070f07632fb9a8f30323f446ed761164be78334",
+    "journal": "22a2b7d5db5bb2a966c8cbf33a65458ab30c3b64d11268551a532372bc01e49f",
+    "request_gzip": "6c5eb6767f51d85b30ab6884daf40bbcb2225bb6f53f760784d323550df3c147"
+  },
+  "formal_training_authorized": false
+}

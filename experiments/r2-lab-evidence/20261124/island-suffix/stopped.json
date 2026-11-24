@@ -1,0 +1,29 @@
+{
+  "recorded_at": "2026-11-24T18:01:02.9163686+08:00",
+  "run_id": "island-suffix-20261124-native",
+  "all_recorded_services_stopped": true,
+  "services": [
+    {
+      "role": "product",
+      "id": 12152,
+      "started": "2026-11-24T09:46:47.5844817Z",
+      "exe": "D:\\StardewAI-TestLab\\dotnet\\dotnet.exe",
+      "stopped": true
+    },
+    {
+      "role": "backend",
+      "id": 18004,
+      "started": "2026-11-24T09:46:47.5596459Z",
+      "exe": "D:\\StardewAI-TestLab\\dotnet\\dotnet.exe",
+      "stopped": true
+    },
+    {
+      "role": "game",
+      "id": 38872,
+      "started": "2026-11-24T09:46:47.5935677Z",
+      "exe": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runtime\\Stardew Valley\\StardewModdingAPI.exe",
+      "stopped": true
+    }
+  ],
+  "unsaved_test_tail_retained_in_receipts": true
+}

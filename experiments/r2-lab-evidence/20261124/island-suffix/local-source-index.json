@@ -1,0 +1,9 @@
+{
+  "recorded_at": "2026-11-24T18:02:10.5129160+08:00",
+  "local_evidence_root": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native",
+  "summary_sha256": "26AFE5A89B8501E156975E373308BA652DD7FCBEF99538C9AFA6AAA1346EF3AC",
+  "native_source_reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "replay_command": "Replay-IsolatedNativeActionSource.ps1 -ExecutionReceiptPath <original item receipt> -BinaryRoot <full-native-replay-20261124/live-training-loop> -OutputPath <new output>",
+  "public_scope": "Summaries, original independent replay results and lab orchestration scripts; no game/save bodies or full snapshots uploaded.",
+  "formal_training_authorized": false
+}

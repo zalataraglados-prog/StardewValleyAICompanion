@@ -1,0 +1,16 @@
+{
+  "run_id": "island-suffix-20261124-native",
+  "save_root": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\saves",
+  "slot": "CrabPotAudit_442159967",
+  "expected_save_id": "自动化",
+  "expected_player_id": "-8577884337094229036",
+  "expected_total_day": 472,
+  "original_source": "D:\\Recovered-From-OldPC\\I\\StardewAITraining\\golden-walnut-source-schedule-v102\\validation-saves\\ginger-island-unlocked-baseline-20261103\\CrabPotAudit_442159967",
+  "original_hashes": {
+    "CrabPotAudit_442159967": "7F34A5731208788F37EF2D1F76B64B890466293878F876ABCA6FE4A05A052CB0",
+    "SaveGameInfo": "0F2716DE726B87A8EC9AAE6B89E1713C6207BD24EA119E8DC188DFDF2C0620FC"
+  },
+  "scope": "Local post-unlock native fishing validation; existing island capability evidence reused.",
+  "formal_training_authorized": false,
+  "day_zero_claim": false
+}

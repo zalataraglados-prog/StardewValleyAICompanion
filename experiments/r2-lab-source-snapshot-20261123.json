@@ -487,6 +487,26 @@
       "path": "experiments/r2-lab-controller/Invoke-IsolatedIslandScopeDiagnostic.ps1",
       "sha256": "6FB6084103BFBECAA9F68A5B8D8568A4DBFF722D09A4197D251A522143671DBE",
       "git_blob_oid": "ef94c5dc01b1b99a23993e33bf2cb6643dfc527e"
+    },
+    {
+      "path": "experiments/r2-lab-controller/island-suffix/Invoke-IslandSuffixAction.ps1",
+      "sha256": "4593123F529CBF89CBDB4CA50E98523A63593227B47D8D146B54A1C52B1F3562",
+      "git_blob_oid": "50aa721305129d1087ca1223718bc71042500d07"
+    },
+    {
+      "path": "experiments/r2-lab-controller/island-suffix/Prepare-IslandSuffix.ps1",
+      "sha256": "D7446D4FE5BCC5200A3B91AB19C93A9C47B81DB6F9ADD0FC07AF0E36E3CACDBA",
+      "git_blob_oid": "591eccb9218ac45707bf4c710260c85fac20570e"
+    },
+    {
+      "path": "experiments/r2-lab-controller/island-suffix/Seal-IslandSuffix.ps1",
+      "sha256": "0F48F134182A5C0696CCBDC5F189EC61DCB7F9E83B4DE9375F40535BDE62A621",
+      "git_blob_oid": "8034e17bffc226281a93f069f2588b31d60d43a8"
+    },
+    {
+      "path": "experiments/r2-lab-controller/island-suffix/Start-IslandSuffix.ps1",
+      "sha256": "BF0D0F234D4DE79E86A83F1ED805456CB90AD51C11F1A1B1378085287E8DF091",
+      "git_blob_oid": "bd18b56c4a1524d85986b639d147201806fb625c"
     }
   ],
   "execution_layout": "Controllers depend on the retained D-drive lab layout, pinned published binaries, authority dictionaries, and original receipts; these are not bundled.",
@@ -495,7 +515,7 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T16:39:24.1589057+08:00",
+  "updated_at": "2026-11-24T18:04:55.2512361+08:00",
   "controller_revision_note": "Scope correction: manual three-fish diagnostic renamed explicitly; original selector correctly excludes island and still offers69 other actions. Do not infer global blockage or repeat frozen CC capability. Original measured reports retained.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
@@ -1160,5 +1180,19 @@
     "replay_community_center_not_added_as_new_requirement": true,
     "next_work": "Locate the original selected global plan and its real handoff source; do not force a blocked island scope or replay Community Center from this test save.",
     "formal_training_authorized": false
+  },
+  "latest_local_island_suffix": {
+    "local_native_suffix_verified": true,
+    "global_selected_route_verified": false,
+    "formal_training_authorized": false,
+    "summary": "experiments/r2-lab-evidence/20261124/island-suffix/verified-local-suffix.json",
+    "sha256": "26AFE5A89B8501E156975E373308BA652DD7FCBEF99538C9AFA6AAA1346EF3AC",
+    "independent_original_replays": 8,
+    "native_connectors": 6,
+    "new_species": "(O)836",
+    "tested_fishing_level": 10,
+    "original_fishing_level": 3,
+    "save_persistence_verified": false,
+    "all_recorded_services_stopped": true
   }
 }

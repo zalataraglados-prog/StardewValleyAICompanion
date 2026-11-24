@@ -1,0 +1,126 @@
+{
+  "reader": "NativeExecutionActionSourceReader.ReadVerifiedProduct",
+  "reader_assembly": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\full-native-replay-20261124\\live-training-loop\\StardewAI.GoalConditionedBootstrap.dll",
+  "reader_assembly_sha256": "C9AC0991683380F030DB99FF1938A2BEA6DE52D3689F9E3ACC96DFE414F90E4A",
+  "original_native_source_replay_verified": true,
+  "run_id": "island-suffix-20261124-native",
+  "queue_id": "queue.ed5cf761c55940d5b5efbe396a2178eb",
+  "queue_item_id": "queue_item.3866192418d747629909fc6e70749b27",
+  "option_id": "executor.catch_fish",
+  "native_status": "applied",
+  "before_state_hash": "2957a9e836bc2a1bb6a6195f9a6b9839d5351cd0711272e6f5022b1445fa1f4e",
+  "after_state_hash": "a6231d17b90b354b7d5d367b4987089126ad63fa6296c03e19706063b397fb81",
+  "before_game_tick": 10767,
+  "after_game_tick": 11846,
+  "combat_target_runtime_identity": "",
+  "combat_target_defeated": null,
+  "combat_attack_count": null,
+  "combat_hit_count": null,
+  "combat_damage_taken": null,
+  "native_changed_facts": [
+    {
+      "Path": "player.inventory.stack_signature",
+      "Before": "0:(T)IridiumPickaxe:1|1:(T)IridiumWateringCan:1|2:(W)4:1|3:(T)IridiumRod:1|4:(T)IridiumHoe:1|5:(T)IridiumAxe:1|6:(W)53:1|7:(T)ReturnScepter:1|8:(W)33:1|9:(T)IridiumPan:1|10:(O)267:1|13:(O)201:1|24:(O)685:203",
+      "After": "0:(T)IridiumPickaxe:1|1:(T)IridiumWateringCan:1|2:(W)4:1|3:(T)IridiumRod:1|4:(T)IridiumHoe:1|5:(T)IridiumAxe:1|6:(W)53:1|7:(T)ReturnScepter:1|8:(W)33:1|9:(T)IridiumPan:1|10:(O)267:2|13:(O)201:1|24:(O)685:203"
+    },
+    {
+      "Path": "player.stamina",
+      "Before": "433",
+      "After": "426"
+    },
+    {
+      "Path": "player.skills.fishing.experience",
+      "Before": "15060",
+      "After": "15120"
+    },
+    {
+      "Path": "player.skills.luck.experience",
+      "Before": "0",
+      "After": "0"
+    },
+    {
+      "Path": "fishing.rule_key",
+      "Before": "distribution:IslandSouthEastCave|3|20|25|27|25|1|7",
+      "After": "distribution:IslandSouthEastCave|3|20|25|27|25|1|7"
+    },
+    {
+      "Path": "fishing.planned_outcome_distribution_json",
+      "Before": "[{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#1:SECRET_NOTE_OR_ITEM\",\"outcome_index\":0,\"item_id\":\"842\",\"qualified_item_id\":\"(O)842\",\"context_tags\":[],\"context_tags_projection_status\":\"\",\"chance_preview\":0.01504,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":0,\"item_id\":\"167\",\"qualified_item_id\":\"(O)167\",\"context_tags\":[\"category_junk\",\"color_blue\",\"drink_item\",\"id_(o)167\",\"id_o_167\",\"item_joja_cola\",\"item_type_fish\",\"quality_none\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":1,\"item_id\":\"168\",\"qualified_item_id\":\"(O)168\",\"context_tags\":[\"category_junk\",\"color_black\",\"id_(o)168\",\"id_o_168\",\"item_trash\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":2,\"item_id\":\"169\",\"qualified_item_id\":\"(O)169\",\"context_tags\":[\"category_junk\",\"color_brown\",\"id_(o)169\",\"id_o_169\",\"item_driftwood\",\"item_type_fish\",\"quality_none\",\"trash_item\",\"wood_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":3,\"item_id\":\"170\",\"qualified_item_id\":\"(O)170\",\"context_tags\":[\"category_junk\",\"color_cyan\",\"id_(o)170\",\"id_o_170\",\"item_broken_glasses\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":4,\"item_id\":\"171\",\"qualified_item_id\":\"(O)171\",\"context_tags\":[\"category_junk\",\"color_cyan\",\"id_(o)171\",\"id_o_171\",\"item_broken_cd\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":5,\"item_id\":\"172\",\"qualified_item_id\":\"(O)172\",\"context_tags\":[\"category_junk\",\"color_gray\",\"id_(o)172\",\"id_o_172\",\"item_soggy_newspaper\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#0:(F)2332\",\"outcome_index\":0,\"item_id\":\"2332\",\"qualified_item_id\":\"(F)2332\",\"context_tags\":[\"category_furniture\",\"id_(f)2332\",\"id_f_2332\",\"item_gourmand_statue\",\"quality_none\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.05,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#2:(O)130\",\"outcome_index\":0,\"item_id\":\"130\",\"qualified_item_id\":\"(O)130\",\"context_tags\":[\"category_fish\",\"color_blue\",\"fish_difficulty_hard\",\"fish_favor_weather_both\",\"fish_has_roe\",\"fish_motion_smooth\",\"fish_ocean\",\"id_(o)130\",\"id_o_130\",\"item_tuna\",\"item_type_fish\",\"quality_none\",\"season_summer\",\"season_winter\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.35000002,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":70,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":2},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#4:(O)267\",\"outcome_index\":0,\"item_id\":\"267\",\"qualified_item_id\":\"(O)267\",\"context_tags\":[\"category_fish\",\"color_brown\",\"fish_difficulty_medium\",\"fish_favor_weather_both\",\"fish_has_roe\",\"fish_motion_sinker\",\"fish_ocean\",\"id_(o)267\",\"id_o_267\",\"item_flounder\",\"item_type_fish\",\"quality_none\",\"season_spring\",\"season_summer\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.35000002,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":50,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":2},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#5:(O)836\",\"outcome_index\":0,\"item_id\":\"836\",\"qualified_item_id\":\"(O)836\",\"context_tags\":[\"category_fish\",\"color_brown\",\"fish_difficulty_hard\",\"fish_favor_weather_both\",\"fish_has_roe\",\"fish_motion_sinker\",\"fish_ocean\",\"fish_talk_stiff\",\"id_(o)836\",\"id_o_836\",\"item_stingray\",\"item_type_fish\",\"quality_none\",\"season_all\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.4,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":80,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":2},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#6:(O)SeaJelly\",\"outcome_index\":0,\"item_id\":\"SeaJelly\",\"qualified_item_id\":\"(O)SeaJelly\",\"context_tags\":[\"color_cyan\",\"counts_as_fish_catch\",\"fish_nonfish\",\"id_(o)seajelly\",\"id_o_seajelly\",\"item_sea_jelly\",\"item_type_fish\",\"quality_none\",\"use_reverse_name_for_sorting\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null}]",
+      "After": "[{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#1:SECRET_NOTE_OR_ITEM\",\"outcome_index\":0,\"item_id\":\"842\",\"qualified_item_id\":\"(O)842\",\"context_tags\":[],\"context_tags_projection_status\":\"\",\"chance_preview\":0.01504,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":0,\"item_id\":\"167\",\"qualified_item_id\":\"(O)167\",\"context_tags\":[\"category_junk\",\"color_blue\",\"drink_item\",\"id_(o)167\",\"id_o_167\",\"item_joja_cola\",\"item_type_fish\",\"quality_none\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":1,\"item_id\":\"168\",\"qualified_item_id\":\"(O)168\",\"context_tags\":[\"category_junk\",\"color_black\",\"id_(o)168\",\"id_o_168\",\"item_trash\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":2,\"item_id\":\"169\",\"qualified_item_id\":\"(O)169\",\"context_tags\":[\"category_junk\",\"color_brown\",\"id_(o)169\",\"id_o_169\",\"item_driftwood\",\"item_type_fish\",\"quality_none\",\"trash_item\",\"wood_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":3,\"item_id\":\"170\",\"qualified_item_id\":\"(O)170\",\"context_tags\":[\"category_junk\",\"color_cyan\",\"id_(o)170\",\"id_o_170\",\"item_broken_glasses\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":4,\"item_id\":\"171\",\"qualified_item_id\":\"(O)171\",\"context_tags\":[\"category_junk\",\"color_cyan\",\"id_(o)171\",\"id_o_171\",\"item_broken_cd\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:Default#2:(O)167|(O)168|(O)169|(O)170|(O)171|(O)172\",\"outcome_index\":5,\"item_id\":\"172\",\"qualified_item_id\":\"(O)172\",\"context_tags\":[\"category_junk\",\"color_gray\",\"id_(o)172\",\"id_o_172\",\"item_soggy_newspaper\",\"item_type_fish\",\"quality_none\",\"trash_item\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#0:(F)2332\",\"outcome_index\":0,\"item_id\":\"2332\",\"qualified_item_id\":\"(F)2332\",\"context_tags\":[\"category_furniture\",\"id_(f)2332\",\"id_f_2332\",\"item_gourmand_statue\",\"quality_none\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.05,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#2:(O)130\",\"outcome_index\":0,\"item_id\":\"130\",\"qualified_item_id\":\"(O)130\",\"context_tags\":[\"category_fish\",\"color_blue\",\"fish_difficulty_hard\",\"fish_favor_weather_both\",\"fish_has_roe\",\"fish_motion_smooth\",\"fish_ocean\",\"id_(o)130\",\"id_o_130\",\"item_tuna\",\"item_type_fish\",\"quality_none\",\"season_summer\",\"season_winter\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.35000002,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":70,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":2},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#4:(O)267\",\"outcome_index\":0,\"item_id\":\"267\",\"qualified_item_id\":\"(O)267\",\"context_tags\":[\"category_fish\",\"color_brown\",\"fish_difficulty_medium\",\"fish_favor_weather_both\",\"fish_has_roe\",\"fish_motion_sinker\",\"fish_ocean\",\"id_(o)267\",\"id_o_267\",\"item_flounder\",\"item_type_fish\",\"quality_none\",\"season_spring\",\"season_summer\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.35000002,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":50,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":2},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#5:(O)836\",\"outcome_index\":0,\"item_id\":\"836\",\"qualified_item_id\":\"(O)836\",\"context_tags\":[\"category_fish\",\"color_brown\",\"fish_difficulty_hard\",\"fish_favor_weather_both\",\"fish_has_roe\",\"fish_motion_sinker\",\"fish_ocean\",\"fish_talk_stiff\",\"id_(o)836\",\"id_o_836\",\"item_stingray\",\"item_type_fish\",\"quality_none\",\"season_all\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.4,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":80,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":2},{\"source_kind\":\"rule\",\"source_key\":\"Data/Locations:IslandSouthEastCave#6:(O)SeaJelly\",\"outcome_index\":0,\"item_id\":\"SeaJelly\",\"qualified_item_id\":\"(O)SeaJelly\",\"context_tags\":[\"color_cyan\",\"counts_as_fish_catch\",\"fish_nonfish\",\"id_(o)seajelly\",\"id_o_seajelly\",\"item_sea_jelly\",\"item_type_fish\",\"quality_none\",\"use_reverse_name_for_sorting\"],\"context_tags_projection_status\":\"exact_item_get_context_tags\",\"chance_preview\":0.1,\"probability_status\":\"rule_local_preview\",\"effective_fish_difficulty\":null,\"is_boss_fish\":false,\"maximum_raw_fish_quality\":null}]"
+    },
+    {
+      "Path": "fishing.outcome_probability_status",
+      "Before": "all_local_previews_known",
+      "After": "all_local_previews_known"
+    },
+    {
+      "Path": "fishing.caught_qualified_item_id",
+      "Before": "",
+      "After": "(O)267"
+    },
+    {
+      "Path": "fishing.target_casting_power",
+      "Before": "",
+      "After": "1"
+    },
+    {
+      "Path": "fishing.observed_peak_casting_power",
+      "Before": "",
+      "After": "1"
+    },
+    {
+      "Path": "fishing.observed_release_casting_power",
+      "Before": "",
+      "After": "1"
+    },
+    {
+      "Path": "fishing.max_cast_requested",
+      "Before": "",
+      "After": "true"
+    },
+    {
+      "Path": "fishing.max_cast_observed",
+      "Before": "",
+      "After": "true"
+    },
+    {
+      "Path": "fishing.hook_attempt_count",
+      "Before": "",
+      "After": "1"
+    },
+    {
+      "Path": "fishing.bobber_bar_tick_count",
+      "Before": "",
+      "After": "484"
+    },
+    {
+      "Path": "fishing.bobber_bar_in_bar_ratio",
+      "Before": "",
+      "After": "0.957"
+    },
+    {
+      "Path": "fishing.terminal_progress",
+      "Before": "",
+      "After": "1"
+    },
+    {
+      "Path": "fishing.terminal_result",
+      "Before": "",
+      "After": "normal_fish_bobber_bar_success"
+    },
+    {
+      "Path": "fishing.action_idle_cleanup_complete",
+      "Before": "",
+      "After": "true"
+    }
+  ],
+  "source_sha256": {
+    "queue": "b5ca36bc1b612b871d18ffab8d8a4e05d319920a77cb2b7aa0133c3e438b6320",
+    "result": "131aefd2cb5ca4d03e75d1b0486e346ad12726f2c8b65e8bc54c24c0964354ff",
+    "before": "cd37528377de514ccf385c9a581dc51d5abce4ce730a94fe6df04e27d358c3be",
+    "after": "3ee6c17dd8378e9d86c926df02cb61a7225f4f8f4ea9c42f2d5edd8701105b35",
+    "journal": "d29adfcb9c334223b49162c21ca11fc1f02d095525b27f8fad5837fa744ccdaa",
+    "request_gzip": "5ae71e97cd5c1d2ce1f463ddd82b0e0b62052d3f06ed079d3dab10ee4251a443"
+  },
+  "formal_training_authorized": false
+}

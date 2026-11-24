@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-24 姜岛后半段局部验证，复用已解锁档
+
+<!-- audit_invalidation: 2026-11-24; scope=lab-local-island-suffix; supersedes=requiring-global-plan-or-replaying-community-center-before-local-fishing; reason=user-authorized-unlocked-save-suffix-test -->
+
+- 按用户本次纠正，直接复用 #389 已解锁档及 11 月 17 日已核 L2 证书；此前把原全局计划缺失当成不能做岛鱼局部验证的前置要求失效。L1 19/19、Root 11/11 不重采，不从 ProofFarm 重做社区中心。
+- 原计划器／编译器／Product／原生执行器完成岛西—码头—东南海滩—海盗湾双向六段移动；黄貂鱼收藏及背包均 0→1。六个连接回执、两个单项捕鱼回执，共八份通过原 `NativeExecutionActionSourceReader.ReadVerifiedProduct`。见[结果、来源与失败保留](../experiments/r2-lab-evidence/20261124/island-suffix/verified-local-suffix.json)和[D 盘原件索引](../experiments/r2-lab-evidence/20261124/island-suffix/local-source-index.json)。
+- **测试范围：** 年5春25，总日472，玩家为原完成档“自动化”；现成 `debug.setup_location_fishing` 夹具提高钓鱼3→10级并清零现金，设置起点不计为原生路线或资源取得证明。黄貂鱼是新捕获；狮子鱼、蓝铁饼和 Gourmand 3/3 是继承结果。最初床边菜单、岛西0,0夹具落点及首笔多项队列来源读取失败均保留，不计通过。
+- 完整原生工件及独立重放已封存，测试进程全部停止；新鱼获是未保存测试尾部，磁盘仍为原始档，不宣称保存／冷读回。无正式训练、Day-0、新档截止日或核桃付款证明；#570 的正式消费者接线与全局证明仍按各自范围判断，不反向阻塞本次局部验证。
+- **本次局部测试结束，不再扩展重跑。** 后续消费者取上述包对接，不能把年5／10级局部结果冒充第224日前全局证明，也不能据此给局部捕鱼重新增加社区中心任务。
+
 ## 2026-11-17 同授权运行的后继owner标记修复（248）
 
 - #581以同测试树38e2ef85合并main `cc698b49`，自身44055301026及合并44058623398成功；Core2810/Backend3906，零失败/跳过。原Backend已匹配升级，原游戏/Product不动；同一新鲜源1b543660与E盘原账本读回/物理hash均一致，没有建立空账本。

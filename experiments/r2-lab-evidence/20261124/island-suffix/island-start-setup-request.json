@@ -1,0 +1,14 @@
+{
+  "schema_version": "training_execution_request.v1",
+  "run_id": "island-suffix-20261124-native",
+  "queue_id": "local-island-start-fixture",
+  "queue_item_id": "local-island-start-fixture.location",
+  "before_state_hash": "5fb244557fd259a0a304a42454bad3db56f56c2f9f6370a1ec1c2e63ae8caa9e",
+  "option_id": "debug.setup_location_fishing",
+  "execution_mode": "training_singleplayer",
+  "actor": "training_farmer.main",
+  "save_isolation_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\GingerIsland后半段验证\\island-suffix-20261124-native\\saves",
+  "location_id": "IslandWest",
+  "request_nonce": "55f531200fcd41449f1c0a962e491ce4",
+  "created_at": "2026-11-24T09:51:42.5004261+00:00"
+}

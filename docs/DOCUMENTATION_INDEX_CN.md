@@ -18,6 +18,8 @@
 
 ## 关键时间关系
 
+- **2026-11-24（实验室分支）。** 直接复用已解锁姜岛证书／完成档验证后半段；原全局计划缺失不再倒挂为这项局部测试的前置。双向六段原生移动与黄貂鱼0→1、八份独立来源重放已取得；10级夹具、未保存尾部和正式准入分别标注，不改 R2 全局证明合同。[接续及边界](CURRENT_WORK_CN.md#2026-11-24-姜岛后半段局部验证复用已解锁档)
+
 - **2026-07。** 透明读取、任务／社交／矿井基础与权威字典逐步成形。早期审计和交接记录可用于回溯字段来源及各动作当时的验证范围。 [7 月架构审计](FULL_SYSTEM_AUDIT_20260719_CN.md) · [7 月权威字典交接](stardewai-full-handoff/SHORT_HANDOFF_20260723_AUTHORITATIVE_DICTIONARY_CN.md)
 - **2026-08 至 09。** Product Executor、策略轨迹和原生跨日事务接续到 r35。旧文档治理页和 EVD326 交接记录的是当时的训练和数据状态。 [Product Executor 交接](SHORT_HANDOFF_20260901_PRODUCT_EXECUTOR_EVD325_CN.md) · [训练交接](SHORT_HANDOFF_20260901_FORMAL_TRAINING_EVD326_CN.md) · [r35 历史治理页](DOCUMENTATION_STATUS_20260901_CN.md)
 - **2026-10。** Full Shipment 补采记录与运行边界按专题归档。姜岛核桃来源日程及独立重放也在这个阶段形成专门的证明合同。 [Full Shipment 交接](stardewai-full-handoff/SHORT_HANDOFF_20261005_FULL_SHIPMENT_SAMPLES_CN.md) · [核桃日程证明](GOLDEN_WALNUT_SOURCE_SCHEDULE_VERIFICATION.md)
@@ -29,12 +31,15 @@
 
 覆盖 Git 中 `docs/` 下的全部文件和仓库其余位置的 Markdown／纯文本文档。日期依次取首个一级标题中明确写出的日期、文件名日期、该路径在 Git 历史中的首次入库日期。Git 日期换算为北京时间。索引和编辑规范用本次编制日期。按月分组，由近到远，同日按路径排序。日期只用于定位，后续正文编辑不会改变该文档的目录时点。
 
-编制于 2026-11-11T01:06:05+08:00（Asia/Shanghai），本版共 318 项。
+编制于 2026-11-11T01:06:05+08:00（Asia/Shanghai），2026-11-24 补入此前漏登的三项，按原 Git 首录日期登记，本版共 321 项。
 
 ### 2026-11
 
 | 日期 | 文档 | 日期依据 |
 | --- | --- | --- |
+| 2026-11-17 | [docs/GLOBAL_DAILY_PLAN_CONTINUATION_CN.md](GLOBAL_DAILY_PLAN_CONTINUATION_CN.md) | Git 首录 |
+| 2026-11-16 | [docs/JOINT_CONSUMER_COMPATIBILITY_MATRIX_CN.md](JOINT_CONSUMER_COMPATIBILITY_MATRIX_CN.md) | Git 首录 |
+| 2026-11-16 | [docs/JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md](JOINT_CONSUMER_STATIC_CONTRACT_AUDIT_CN.md) | Git 首录 |
 | 2026-11-11 | [docs/DOCUMENTATION_INDEX_CN.md](DOCUMENTATION_INDEX_CN.md) | 编制 |
 | 2026-11-11 | [docs/DOCUMENTATION_MAINTENANCE_CN.md](DOCUMENTATION_MAINTENANCE_CN.md) | 编制 |
 | 2026-11-09 | [docs/native-debris-state-observation.md](native-debris-state-observation.md) | Git 首录 |
