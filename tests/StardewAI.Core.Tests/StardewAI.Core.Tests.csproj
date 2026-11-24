@@ -206,6 +206,7 @@
     <Compile Include="GoalConditionedBootstrapDebugExceptionSourceGuardTests.cs" />
     <Compile Include="ExecutorInputLifecycleTests.cs" />
     <Compile Include="ExecutorInputLifecycleSourceGuardTests.cs" />
+    <Compile Include="RockCrabCombatRecoverySourceGuardTests.cs" />
     <Compile Include="MovementTimingEvidenceSourceGuardTests.cs" />
     <Compile Include="NativeControlSettleRecoveryTests.cs" />
     <Compile Include="StageOneMandatoryMenuRecoveryTests.cs" />
