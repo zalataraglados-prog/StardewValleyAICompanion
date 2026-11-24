@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
-using StardewAI.GoalConditionedBootstrap;
+using StardewAI.Core.Infrastructure;
 using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Backend.Tests;
@@ -63,7 +63,7 @@ public sealed class NativeWireOptionalParameterTests
     }
 
     private static void Verify(JsonObject wire, NormalizedCommand command) =>
-        typeof(CropTeacherRefillApproachNativeTrace).Assembly.GetType("StardewAI.GoalConditionedBootstrap.NativeExecutionActionSourceReader")!
+        typeof(NativeExecutionFrameReader)
             .GetMethod("ValidateWireParameters", BindingFlags.NonPublic | BindingFlags.Static)!
             .Invoke(null, new object[] { JsonSerializer.SerializeToElement(wire), command });
 }
