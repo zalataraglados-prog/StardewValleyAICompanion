@@ -1,5 +1,16 @@
 # 原全局日计划续行与集合控制模式
 
+## 实验室交付接收：姜岛后半段（297）
+
+接收 [74741ed0 的选线、账本和证据索引](https://github.com/zalataraglados-prog/StardewValleyAICompanion/blob/74741ed0235a2a967431a020cc5416fa17681c49/experiments/r2-lab-evidence/20261124/island-suffix/route-handoff/selected-local-route-and-ledger.json)。
+对照 [#570 交付记录](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/570#issuecomment-7128708739)，以 Git blob 重建源 CRLF 字节后，索引、共享访问证书、重放摘要、构建身份及八对原计划/单动作队列共 20 份文件均匹配源 SHA-256；没有放宽原件哈希校验。八份记录按用例、动作、前后状态哈希及 `applied/verified` 对齐 `08f1b800` 的实验室离线重放。这是对公开文件的静态对账；D 盘原请求、回执及快照不在此主线主机，没有在本机再次声称严格原件重放。
+
+可直接复用的是**已解锁档姜岛后半段的局部证据**：同一 `island-suffix-20261124-native` 运行/存档/玩家有已重放的 L2 访问证书，六段正反连接和两次单项捕鱼。年5春25（总日472）06:10→06:20 捕获 `(O)836`，原生收藏和库存 `0→1`；本段核桃 `12→12`，没有新来源或付款。既有解锁、已有 Gourmand 3/3、钓鱼 10 级测试设置及未保存的鱼获不产生原生取得、全局日期、正式训练或 Teacher 比较信用；独立用例不拼成一条旅程。无需重跑这段捕鱼、社区中心或已冻结 L1。
+
+**尚未交付的正式输入：** 本包没有经过全局编译器/选择租约固定的 L3 选线、同谱系的共享资源和日历及所选路径的实际期限。它既不是新档姜岛来源链，也不证明 Gourmand 替代来源已足量按时付款。后续拿全局工件沿本文件既有第5步对账；本机已完成的作物局部结算与春季共享证据仍按原范围复用，不拼接不同存档。原生准入消费者收到对应全局选线前继续 fail-closed，`formal=false`。
+
+**复核与交付入口：** 原件仍由实验室留在 D 盘；[原重放入口](https://github.com/zalataraglados-prog/StardewValleyAICompanion/blob/74741ed0235a2a967431a020cc5416fa17681c49/experiments/r2-lab-controller/island-suffix/Replay-IslandSuffixWithDevelopmentSource.ps1)只读复用原 Product-aware 读取器。主线构建用现有 Bootstrap、Backend 和 LiveTrainingLoop 项目；总报告命令 `build-goal-method-formal-training-admission-reconciliation` 与 `/api/v1/training/session/prepare`、`/api/v1/training/session/launch` 不换入口。[Provider 和数据责任](STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md#6-开训前-provider-与模型验收)留给 [#569](https://github.com/zalataraglados-prog/StardewValleyAICompanion/issues/569) 按原合同接收，不生成正式 manifest。
+
 ## 第5步本机收口（296）
 
 273 的自然选线仍是夏1八格蓝莓，确认为8包、640金。296只验证独立夏14晨档的首收结算修复：
