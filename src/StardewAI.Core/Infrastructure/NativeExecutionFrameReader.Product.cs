@@ -1,14 +1,16 @@
+using System;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Infrastructure;
-using static StardewAI.GoalConditionedBootstrap.NativeExecutionSourceSupport;
+using static StardewAI.Core.Infrastructure.NativeExecutionSourceSupport;
 
-namespace StardewAI.GoalConditionedBootstrap;
+namespace StardewAI.Core.Infrastructure;
 
-internal static partial class NativeExecutionActionSourceReader
+public static partial class NativeExecutionFrameReader
 {
     private static void VerifySelectedProduct(Uri endpoint, VerifiedExecutionRequestJournal journal,
         JsonElement result, TrainingExecutionResult nativeResult, SnapshotEnvelope before, SnapshotEnvelope after,
@@ -23,7 +25,7 @@ internal static partial class NativeExecutionActionSourceReader
             return result.TryGetProperty(name, out var field) && field.ValueKind == JsonValueKind.Number && field.TryGetInt64(out tick);
         }
         static bool Hash(string value) => value.Length == 64 && value.All(Uri.IsHexDigit);
-        var receiptId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(request.RunId + "\n" + request.RequestNonce))).ToLowerInvariant();
+        var receiptId = NativeFrameArtifacts.HashText(request.RunId + "\n" + request.RequestNonce);
         var observed = nativeResult.ActionOriginObservation;
         var productBefore = Text(result, "product_before_state_hash");
         var requestStateHashDrift = productBefore != request.BeforeStateHash;

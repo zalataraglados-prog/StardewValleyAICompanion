@@ -6,7 +6,7 @@ public sealed record FormalNativeRouteProofReference(
     [property: JsonPropertyName("schema_version")] string SchemaVersion,
     [property: JsonPropertyName("selected_route_path")] string SelectedRoutePath,
     [property: JsonPropertyName("selected_route_sha256")] string SelectedRouteSha256,
-    [property: JsonPropertyName("native_evidence")] GoldenWalnutNativeEvidenceBinding NativeEvidence);
+    [property: JsonPropertyName("native_evidence")] GoldenWalnutNativeEvidenceBinding? NativeEvidence);
 
 public sealed record FormalNativeRouteGate(
     [property: JsonPropertyName("gate_id")] string GateId,
@@ -20,4 +20,9 @@ public sealed record FormalNativeRouteAssessment(
     [property: JsonPropertyName("route_proof")] FormalNativeRouteProofReference? RouteProof,
     [property: JsonPropertyName("source_replay_verified")] bool SourceReplayVerified,
     [property: JsonPropertyName("detail")] string Detail,
-    [property: JsonPropertyName("gates")] FormalNativeRouteGate[] Gates);
+    [property: JsonPropertyName("gates")] FormalNativeRouteGate[] Gates)
+{
+    [JsonPropertyName("proof_scope")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ProofScope { get; init; }
+}

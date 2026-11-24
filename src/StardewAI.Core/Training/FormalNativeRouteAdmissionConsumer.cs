@@ -11,6 +11,7 @@ namespace StardewAI.Core.Training;
 public static class FormalNativeRouteAdmissionConsumer
 {
     public const string ProofReferenceSchemaVersion = "formal_native_route_proof_reference.v1";
+    public const string FunctionalProofReferenceSchemaVersion = "functional_native_route_proof_reference.v1";
 
     public static IReadOnlyList<string> BlockerIds { get; } = Array.AsReadOnly(new[]
     {
@@ -22,6 +23,8 @@ public static class FormalNativeRouteAdmissionConsumer
     {
         if (proof is null)
             return Blocked(proof, "selected_route_unavailable", "No frozen selected-route proof was supplied.");
+        if (proof.SchemaVersion == FunctionalProofReferenceSchemaVersion)
+            return EvaluateFunctional(proof);
         if (proof.SchemaVersion != ProofReferenceSchemaVersion || proof.NativeEvidence is null ||
             string.IsNullOrWhiteSpace(proof.SelectedRoutePath) || !Path.IsPathFullyQualified(proof.SelectedRoutePath) ||
             proof.SelectedRouteSha256 is not { Length: 64 } || !proof.SelectedRouteSha256.All(Uri.IsHexDigit))
@@ -43,6 +46,27 @@ public static class FormalNativeRouteAdmissionConsumer
         // or prove its wallet, fish access, deadlines or Gourmand branch. Keep both locks closed.
         return Blocked(proof, "selected_route_reconciliation_pending",
             "Native sources replayed; selected-route and resource reconciliation are not accepted.", sourceReplayVerified: true);
+    }
+
+    private static FormalNativeRouteAssessment EvaluateFunctional(FormalNativeRouteProofReference proof)
+    {
+        try
+        {
+            if (proof.NativeEvidence is not null) throw new InvalidDataException("Functional evidence must not masquerade as a fresh-save acquisition binding.");
+            FunctionalRouteReplayer.VerifyArtifact(new(proof.SelectedRoutePath, proof.SelectedRouteSha256));
+            var count = FunctionalRouteReplayer.Verify(proof.SelectedRoutePath);
+            VerifyRouteBytes(proof);
+            return new(proof, true,
+                $"{count} strict native functional frames and the original joint plan replayed. Sample years are retained; this is not a three-year rollout or prerequisite-acquisition claim.",
+                new[] { new FormalNativeRouteGate(BlockerIds[0], "verified", "functional_existing_access_verified"),
+                    new FormalNativeRouteGate(BlockerIds[1], "not_applicable", "selected_existing_access_requires_no_gourmand_acquisition") })
+                { ProofScope = "functional_existing_access" };
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or
+            ArgumentException or InvalidOperationException or KeyNotFoundException or NotSupportedException)
+        {
+            return Blocked(proof, "functional_route_replay_rejected", ex.Message) with { ProofScope = "functional_existing_access" };
+        }
     }
 
     private static void VerifyRouteBytes(FormalNativeRouteProofReference proof)
