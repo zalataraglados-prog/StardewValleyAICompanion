@@ -85,7 +85,7 @@ $changed=$launcher.Launch($request)
 $changedRejected=!$changed.Manifest.NativeRouteAssessment.SourceReplayVerified -and @($changed.Manifest.NativeRouteAssessment.Gates|Where-Object Satisfied).Count -eq 0
 $record=[ordered]@{other_report_gates_are_hermetic_fixture=$true;real_native_gates_match_report_prepare_launch=$parity;native_gates=$report.NativeRouteAssessment.Gates;prepare_blocked=$prepare.Blocked;launch_blocked=$launch.Blocked;launch_attempted=$launch.LaunchAttempted;formal_authorized=$report.FormalProductTrainingAuthorized;changed_nested_artifact_rejected=$changedRejected;changed_launch_attempted=$changed.LaunchAttempted}
 Write-Json (Join-Path $protocol.FullName 'summary.json') $record
-if(!$parity -or $launch.LaunchAttempted -or $changed.LaunchAttempted -or !$changedRejected -or $report.FormalProductTrainingAuthorized -or @($report.NativeRouteAssessment.Gates|Where-Object Satisfied).Count){throw 'Existing consumer parity, target-plan gate or immutable-source guard failed.'}
+if(!$parity -or $launch.LaunchAttempted -or $changed.LaunchAttempted -or !$changedRejected -or $report.FormalProductTrainingAuthorized -or @($report.NativeRouteAssessment.Gates|Where-Object {!$_.Satisfied}).Count){throw 'Existing consumer parity, functional handoff or immutable-source guard failed.'}
 
 # Private protocol copies relocate only receipt/journal artifact references.
 # They are never native evidence or production handoff inputs. Original source
@@ -160,5 +160,5 @@ foreach($role in 'before_snapshot','request_journal','request_gzip'){
 Write-Json (Join-Path $fixture.FullName 'mutation-results.json') $dependencyRows.ToArray()
 Write-Json (Join-Path $output.FullName 'matrix.json') $rows.ToArray()
 $failed=@($rows|Where-Object {!$_.test_passed})
-[pscustomobject]@{cases=$rows.Count;passed=($rows.Count-$failed.Count);three_consumer_parity=$parity;prepared_source_change_rejected=$changedRejected;prepared_other_frame_dependency_rejections=$dependencyRows.Count;formal_gates_remain_closed=$true;game_started=$false}|ConvertTo-Json
+[pscustomobject]@{cases=$rows.Count;passed=($rows.Count-$failed.Count);three_consumer_parity=$parity;prepared_source_change_rejected=$changedRejected;prepared_other_frame_dependency_rejections=$dependencyRows.Count;native_functional_gates_verified=$true;formal_training_authorized=$false;game_started=$false}|ConvertTo-Json
 if($failed.Count){throw 'A functional evidence counterexample was accepted or the retained positive case failed.'}

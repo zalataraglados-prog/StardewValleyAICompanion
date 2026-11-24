@@ -56,9 +56,13 @@ public static class FormalNativeRouteAdmissionConsumer
             FunctionalRouteReplayer.VerifyArtifact(new(proof.SelectedRoutePath, proof.SelectedRouteSha256));
             var count = FunctionalRouteReplayer.Verify(proof.SelectedRoutePath);
             VerifyRouteBytes(proof);
+            // The 2026-11-24 handoff accepts verified functionality and joint
+            // day-plan wiring. Long-horizon validation proceeds independently
+            // alongside model/data preparation; it is not this native gate.
             return new(proof, true,
-                $"{count} strict native functional frames and the original joint day plan verified. Sample years are retained. Formal admission still requires the target route's resource, acquisition-order and deadline reconciliation; no same-save long run is required by this functional result.",
-                BlockerIds.Select(id => new FormalNativeRouteGate(id, "blocked", "functional_verified_target_plan_not_bound")).ToArray())
+                $"{count} strict native functional frames and the original joint day plan verified. Sample years are retained. Long-horizon validation runs independently of this handoff; no prerequisite-acquisition, complete three-year rollout or formal training authorization is claimed.",
+                new[] { new FormalNativeRouteGate(BlockerIds[0], "verified", "functional_existing_access_verified"),
+                    new FormalNativeRouteGate(BlockerIds[1], "not_applicable", "selected_existing_access_requires_no_gourmand_acquisition") })
                 { ProofScope = "functional_existing_access" };
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or
