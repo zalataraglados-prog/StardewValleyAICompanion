@@ -84,6 +84,12 @@ static partial class Program
         else await owner.RunSupportingRouteAsync(operation, http,
             (diagnostic, request) => PostJournaledPortfolioCommitAsync(http, options, diagnostic, request),
             (endpoint, raw) => PostJsonStringAsync(http, endpoint, raw, CancellationToken.None)).ConfigureAwait(false);
+        if (overnight && options.StopAfterManagedCropSavedDay.HasValue)
+        {
+            var archive = owner.RetainAcceptedOriginalOvernightSave(operation);
+            AppendProgress(options, "crop_teacher_managed_native_checkpoint_retained", iteration,
+                ReadString(before, "state_hash"), ReadString(queue, "queue_id"), "archive=" + archive);
+        }
     }
 
     private static void RequireSelectedRefillToolObservation(LiveTrainingOptions options, JsonObject record, JsonObject queue)
