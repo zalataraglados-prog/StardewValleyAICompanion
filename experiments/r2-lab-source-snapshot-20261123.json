@@ -484,9 +484,9 @@
       "git_blob_oid": "bfb1d754930228bc6f4026658a1adf53bc7d1ce2"
     },
     {
-      "path": "experiments/r2-lab-controller/Invoke-IsolatedCurrentIslandSelection.ps1",
-      "sha256": "37A3BB04850720DFB6DB2FCE3A0EDDF70848DCC938732E2F184DD0D827E0D4A4",
-      "git_blob_oid": "22e66dcafaf53aad111afde62ad326b4b886801f"
+      "path": "experiments/r2-lab-controller/Invoke-IsolatedIslandScopeDiagnostic.ps1",
+      "sha256": "6FB6084103BFBECAA9F68A5B8D8568A4DBFF722D09A4197D251A522143671DBE",
+      "git_blob_oid": "ef94c5dc01b1b99a23993e33bf2cb6643dfc527e"
     }
   ],
   "execution_layout": "Controllers depend on the retained D-drive lab layout, pinned published binaries, authority dictionaries, and original receipts; these are not bundled.",
@@ -495,8 +495,8 @@
   "selected_island_route_verified": false,
   "formal_training_authorized": false,
   "sha256_scope": "SHA-256 records original copied lab file bytes; Git may normalize line endings. git_blob_oid identifies the exact committed source content independently of checkout line endings.",
-  "updated_at": "2026-11-24T16:28:55.5033108+08:00",
-  "controller_revision_note": "Summer10 native payout643g and cold readback; source-bound original15-step island selection remains blocked at native location access. Separate shipping approach from a freshly compiled one-item transfer; historical first-reader rejection retained. Finite artifact stop800, no pruning.",
+  "updated_at": "2026-11-24T16:39:24.1589057+08:00",
+  "controller_revision_note": "Scope correction: manual three-fish diagnostic renamed explicitly; original selector correctly excludes island and still offers69 other actions. Do not infer global blockage or repeat frozen CC capability. Original measured reports retained.",
   "latest_isolated_harness": {
     "path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\published\\crab-shell-runtime-20261123\\harness\\StardewAI.RuntimeTestHarness.dll",
     "sha256": "D3F19E0B533D914DCD9570444AB55992082666A5757C1FA2C44BDACB772E6BFF",
@@ -949,6 +949,18 @@
       "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer09-puffer-bounded-window-20261124-plan\\bounded-window-result.json",
       "sha256": "0BD6817C4D7EB75E0931FFEDABCA79C6BCCDCF23F1BF034715CD100DCDCC6B0B",
       "git_blob_oid": "cfd03e74a34ca11114edeeb14e74805efab2fc21"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer10-selector-scope-correction.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-selector-scope-correction-20261124\\verified-selector-correction.json",
+      "sha256": "863203DAD3FCFB5B1917A3D947D4940EF2154F4747FF99E308D395E4D146354C",
+      "git_blob_oid": "9361d0d626f331c6baa6efa20d379145b3d9047e"
+    },
+    {
+      "path": "experiments/r2-lab-evidence/20261124/summer10-scope-correction-service-stop.json",
+      "original_path": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-native-save-20261124\\scope-correction-service-stop.json",
+      "sha256": "A40A39E7363A4D545620B056A880363E91025D9BD927EBD5050EC7043D490C37",
+      "git_blob_oid": "2c4f2bc190621fdbe49e50e73b3f9a5a9db8b4bd"
     }
   ],
   "evidence_scope": "Published files are unchanged verification summaries with original source hashes. Raw native queues/snapshots/journals, saves, pinned binaries and game/decompiled assets remain in the D-drive lab. Remote summaries do not replace replaying those originals. Sturgeon teacher_comparison_verified and original save control-loop boundary remain false; the actual collection/save/XML and crab source replay passed within their stated boundaries.",
@@ -975,14 +987,15 @@
     "same_actual_main_cold_readback_verified": true,
     "main_sha256": "A3FB8392EAF62877C7898ABAFBFE5C7EF41FDC91373A7B922644571123EE3C57",
     "runtime_attempt": "summer10-native-cold-readback-20261124",
-    "checkpoint_report": "experiments/r2-lab-evidence/20261124/summer10-save-verification.json"
+    "checkpoint_report": "experiments/r2-lab-evidence/20261124/summer10-save-verification.json",
+    "service_stop_report": "experiments/r2-lab-evidence/20261124/summer10-scope-correction-service-stop.json"
   },
   "latest_offline_island_selection": {
     "source_total_day": 37,
     "source_state_hash": "4bebddefa777420a3df8160df60b5be9106336050fb9e78c6b48472603c1af42",
     "strategy_ledger_revision": 329,
     "actual_ledger_sha256": "E6F1822B5D919FD27056B24B59378F3730B1C09797E3A1F84A2783B0ECA19295",
-    "scope": "Three island fish requirements, six route occurrences, all1599 original route occurrences retained. Not a complete cross-root L3 selected plan.",
+    "scope": "INVALIDATED AS GLOBAL SELECTION: manually fixed three-island-fish diagnostic only. Preserve its measured refusal, but it does not establish a main-flow blocker or require Community Center replay.",
     "original_command_count": 15,
     "provided_forecast_snapshot_count": 0,
     "status": "blocked_portfolio_teacher_preference",
@@ -992,7 +1005,7 @@
     "active_cc_bundles": 30,
     "completed_active_cc_bundles": 3,
     "first_axis_block": "location_route",
-    "reason": "All six island occurrences lack an admitted native route while the original Community Center access prerequisite remains incomplete; this one upstream condition propagates through later budgets."
+    "reason": "Original live availability excludes the locked island candidate and the rank still has69 available actions. The prior manual scope was not its chosen global plan."
   },
   "latest_bounded_collection_control": {
     "summary": "experiments/r2-lab-evidence/20261124/summer06-original-collection-controller-summary.json",
@@ -1058,10 +1071,10 @@
     "runtime_attempt": "summer07-shutdown-cold-readback-20261124"
   },
   "pause_status": {
-    "state": "summer10_saved_cold_readback_and_original_island_selection_finished",
-    "updated_at": "2026-11-24T16:28:55.5021606+08:00",
+    "state": "lab_runtime_stopped_at_verified_checkpoint_for_scope_correction",
+    "updated_at": "2026-11-24T16:39:24.1579548+08:00",
     "runtime_attempt": "summer10-native-cold-readback-20261124",
-    "weekly_usage_remaining_percent": 64,
+    "weekly_usage_remaining_percent": 63,
     "goal_status": "active"
   },
   "latest_native_community_progress": {
@@ -1133,6 +1146,19 @@
     "historical_first_multi_item_shipping_source_reader_rejected": true,
     "separated_approach_and_shipping_source_readers_passed": 2,
     "finite_stop_retention_limit": 800,
+    "formal_training_authorized": false
+  },
+  "latest_selector_scope_correction": {
+    "created_at": "2026-11-24T16:39:24.1545152+08:00",
+    "historical_manual_diagnostic_preserved": true,
+    "historical_global_blocker_interpretation_invalidated": true,
+    "original_island_candidate_available": false,
+    "blocked_island_candidate_excluded_from_rank": true,
+    "other_available_actions": 69,
+    "original_root_effective_goal": "goal.social.raise_friendships",
+    "frozen_cc_capability_evidence_unchanged": true,
+    "replay_community_center_not_added_as_new_requirement": true,
+    "next_work": "Locate the original selected global plan and its real handoff source; do not force a blocked island scope or replay Community Center from this test save.",
     "formal_training_authorized": false
   }
 }

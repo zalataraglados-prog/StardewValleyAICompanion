@@ -1,0 +1,24 @@
+{
+  "created_at": "2026-11-24T16:38:39.2137614+08:00",
+  "source_state_hash": "4bebddefa777420a3df8160df60b5be9106336050fb9e78c6b48472603c1af42",
+  "project_cc_capability_status": "Previously completed and frozen in R2; not invalidated by a test-save progress count.",
+  "lab_save_cc_complete": false,
+  "lab_save_completed_bundle_count": 3,
+  "manual_scope_diagnostic_is_original_global_selection": false,
+  "manual_scope": [
+    "master_angler:item:836",
+    "master_angler:item:837",
+    "master_angler:item:838"
+  ],
+  "original_island_candidate_available": false,
+  "original_island_candidate_block_reasons": [
+    "master_angler_ginger_island_access_requires_community_center_or_joja_completion"
+  ],
+  "blocked_candidate_appears_in_ranked_actions": false,
+  "other_available_candidates": 69,
+  "original_root_effective_goal": "goal.social.raise_friendships",
+  "native_action_dispatched": false,
+  "invalidated_interpretation": "The main development flow is blocked and must replay Community Center because this manually scoped diagnostic refuses the three island fish.",
+  "correction": "The original selector correctly excludes the locked island candidate and still offers other actions. Keep existing CC capability evidence frozen; resume the original selected plan and correct handoff source, not a manually forced island scope.",
+  "formal_training_authorized": false
+}

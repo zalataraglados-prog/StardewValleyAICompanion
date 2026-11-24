@@ -1,0 +1,35 @@
+{
+  "stopped_at": "2026-11-24T16:38:40.6728868+08:00",
+  "reason": "Scope correction: a manually scoped island diagnostic is not the original chosen plan. Exact saved Summer10 retained; next work is read-only handoff inspection.",
+  "run_id": "r2-global-daily-20261117-171253",
+  "runtime_attempt": "summer10-native-cold-readback-20261124",
+  "services": [
+    {
+      "role": "product",
+      "id": 6840,
+      "stopped": true
+    },
+    {
+      "role": "backend",
+      "id": 7568,
+      "stopped": true
+    },
+    {
+      "role": "game",
+      "id": 38688,
+      "stopped": true
+    }
+  ],
+  "all_recorded_services_stopped": true,
+  "checkpoint_report": "D:\\StardewValleyAICompanion前瞻实验室\\准备\\R2隔离运行\\Spring15本机续跑\\runs\\r2-spring26-harvest-retention\\summer10-native-save-20261124\\verified.json",
+  "actual_main_sha256": "A3FB8392EAF62877C7898ABAFBFE5C7EF41FDC91373A7B922644571123EE3C57",
+  "total_day": 37,
+  "season": "summer",
+  "day_of_month": 10,
+  "time": 600,
+  "cash": 5110,
+  "health": 100,
+  "deepest_mine": 6,
+  "cold_readback_after_this_final_save_verified": true,
+  "formal_training_authorized": false
+}

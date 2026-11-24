@@ -1,3 +1,6 @@
+# 2026-11-24 correction: this manually scoped three-island-fish diagnostic is
+# not the original global selector. Its refusal is not a global-flow blocker
+# and never invalidates previously frozen Community Center capability evidence.
 param(
     [Parameter(Mandatory)][string]$FrozenDirectory,
     [Parameter(Mandatory)][string]$TemplateDirectory,
@@ -89,6 +92,7 @@ $preference = Get-Content -LiteralPath $preferencePath -Raw | ConvertFrom-Json
     candidate_denominator_complete=$preference.candidate_denominator_complete
     selected_proposal_present=($null -ne $preference.selected_proposal)
     blocking_reasons=$preference.blocking_reasons
-    scope='Read-only current-source scoped island selection through original builders; no invented fishing forecasts and no native gate relaxation.'
+    diagnostic_only=$true;actual_global_selector_used=$false
+    scope='Manual three-island-fish scope diagnostic through original builders; not the original selected global plan and not evidence that frozen Community Center capability must be replayed.'
     formal_training_authorized=$false
 } | ConvertTo-Json -Depth 6 | Tee-Object -FilePath (Join-Path $FrozenDirectory 'selection-summary.json')
