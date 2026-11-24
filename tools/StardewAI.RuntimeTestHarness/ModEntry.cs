@@ -633,9 +633,6 @@ public sealed partial class ModEntry : Mod
         TickVolcanoCombat();
         TickVolcanoAutoCombat();
         TickBreakContainer();
-        TickEmergencyCombatFood();
-        TickCombatMonster();
-        TickManualAutoCombat();
         TickConsumeFood();
         TickPickupDebris();
         TickSpawnedObjectPickup();
@@ -650,6 +647,11 @@ public sealed partial class ModEntry : Mod
         TickDescendLadder();
         TickDescendShaft();
         TickExitMine();
+        // Interrupted mine parents release travel before reactive combat sets
+        // the movement input consumed by the next native game update.
+        TickEmergencyCombatFood();
+        TickCombatMonster();
+        TickManualAutoCombat();
         TickShipInventoryToBin();
         TickMaterialTransferSafely();
         TickWorkbenchCraftSafely();
