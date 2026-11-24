@@ -9,6 +9,24 @@ internal static partial class CropSeedResourceBoundary
     internal static void VerifyObservedPickup(SnapshotEnvelope before, SnapshotEnvelope after, NativePickupInventorySummary pickup) =>
         VerifyObservedPickupCore(before, after, pickup, null);
 
+    internal static long VerifyHarvestPickupStock(SnapshotEnvelope before, SnapshotEnvelope after, string itemId)
+    {
+        var stock = VerifyHarvestStock(before, after, itemId, minimumUnits: 1);
+        SameField(before, after, "farm", "crops", required: true);
+        var community = CompareHarvestCommunityCenterProgress(before, after);
+        SnapshotEnvelope? comparison = null;
+        if (community is not null)
+        {
+            var world = JsonNode.Parse(after.State["world_progress"].GetRawText())!.AsObject();
+            world["community_center"] = community;
+            comparison = new SnapshotEnvelope { SaveId = after.SaveId, PlayerId = after.PlayerId, GameVersion = after.GameVersion,
+                State = new Dictionary<string, JsonElement>(after.State, StringComparer.Ordinal)
+                { ["world_progress"] = JsonSerializer.SerializeToElement(world) } };
+        }
+        VerifyPickupPersistentState(before, after, comparison);
+        return stock.Inventory.QuantityIncrease!.Value;
+    }
+
     private static void VerifyObservedPickupCore(SnapshotEnvelope before, SnapshotEnvelope after,
         NativePickupInventorySummary pickup, SnapshotEnvelope? verifiedInvariantView)
     {
@@ -19,6 +37,11 @@ internal static partial class CropSeedResourceBoundary
         VerifyCapacity(before, after, priorPlayer, player);
         foreach (var name in new[] { "money", "shop_currency_balances", "multiplayer_wallet", "seed_inventory" })
             SameField(before, after, "player", name, required: name is "money" or "shop_currency_balances");
+        VerifyPickupPersistentState(before, after, verifiedInvariantView);
+    }
+
+    private static void VerifyPickupPersistentState(SnapshotEnvelope before, SnapshotEnvelope after, SnapshotEnvelope? verifiedInvariantView)
+    {
         var house = VerifyPickupHouseMirror(before, after);
         var comparison = verifiedInvariantView ?? after;
         var view = new SnapshotEnvelope { SaveId = after.SaveId, PlayerId = after.PlayerId, GameVersion = after.GameVersion,

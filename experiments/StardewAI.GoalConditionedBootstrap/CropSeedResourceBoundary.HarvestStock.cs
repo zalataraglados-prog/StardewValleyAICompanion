@@ -44,12 +44,15 @@ internal static partial class CropSeedResourceBoundary
         return new(minimumUnits == 0 ? inventory with { RequiredQuantity = 0, Verified = true } : inventory, changes.Count);
     }
 
-    internal static long CountHarvestDebris(SnapshotEnvelope snapshot, string itemId)
+    internal static long CountHarvestDebris(SnapshotEnvelope snapshot, string itemId) =>
+        ReadHarvestDebris(snapshot, itemId).Sum(row => (long)Int(row["item"]!, "stack"));
+
+    internal static IReadOnlyList<JsonObject> ReadHarvestDebris(SnapshotEnvelope snapshot, string itemId)
     {
         var field = Field(snapshot, "current_location", "debris", required: false);
         if (!Readable(field) || Value(field!) is not JsonArray rows)
             throw new InvalidDataException("Owned harvest matching debris is not readable.");
-        var count = 0L;
+        var matching = new List<JsonObject>();
         foreach (var node in rows)
         {
             if (node is not JsonObject row) throw new InvalidDataException("Owned harvest has a malformed debris row.");
@@ -60,9 +63,9 @@ internal static partial class CropSeedResourceBoundary
             var stack = item is null ? 0 : Int(item, "stack");
             Require(outerId == itemId && innerId == itemId && stack > 0,
                 "Owned harvest matching debris has no exact native item quantity.");
-            count = checked(count + stack);
+            matching.Add(row);
         }
-        return count;
+        return matching;
     }
 
     private static IReadOnlyList<PhysicalStockDelta> VerifyHarvestRawStock(SnapshotEnvelope before, SnapshotEnvelope after, string itemId, int capacity)

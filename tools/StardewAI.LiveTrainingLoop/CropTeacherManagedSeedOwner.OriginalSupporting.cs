@@ -51,7 +51,8 @@ public sealed partial class CropTeacherManagedSeedOwner
         operation.IsWateringMaintenance ? operation.Record["maintenance_transition"]!.Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! : RouteTransition(operation.Record);
 
     private async Task ExecuteOriginalSupportingAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
-        Func<Task<JsonObject>> executeOriginal, CropTeacherSupportingOperationKind kind)
+        Func<Task<JsonObject>> executeOriginal, CropTeacherSupportingOperationKind kind,
+        Func<CropTeacherHarvest.NativeBatch, Task<CropTeacherHarvest>>? settleHarvest = null)
     {
         await gate.WaitAsync().ConfigureAwait(false);
         try
@@ -95,7 +96,8 @@ public sealed partial class CropTeacherManagedSeedOwner
             if (!SamePath(Text(execution, "execution_path"), transition.ExecutionReceiptPath) ||
                 !SamePath(Text(execution, "after_snapshot_path"), transition.AfterSnapshotPath))
                 throw new InvalidDataException(label + " executor returned different receipt/snapshot paths.");
-            await EnsureOriginalSupportingOutcomeAsync(operation).ConfigureAwait(false);
+            var harvest = settleHarvest is null ? null : await settleHarvest(operation.HarvestStart!.ReadNativeBatch(transition)).ConfigureAwait(false);
+            await EnsureOriginalSupportingOutcomeAsync(operation, harvest).ConfigureAwait(false);
         }
         finally { operation.ExecutionActive = false; gate.Release(); }
     }

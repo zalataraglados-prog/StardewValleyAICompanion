@@ -177,7 +177,7 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
             "Money Revenue crop watering-can refill receipt days are duplicated or outside the denominator.");
         var nativeFlows = nativeObserved
             ? ReadObservedRefillFlows(request.NativeDayTransitions ?? throw new InvalidDataException("Native day transitions are missing."),
-                snapshotIndex.ToDictionary(value => value.TotalDay, value => value.Path), ReadDailySnapshot)
+                snapshotIndex.ToDictionary(value => value.TotalDay, value => value.Path), ReadDailySnapshot, planPath)
             : null;
         Require(!nativeObserved || refillRequests.Length == 0, "Native observed capacity cannot mix legacy refill declarations.");
         var refillByDay = nativeFlows is not null

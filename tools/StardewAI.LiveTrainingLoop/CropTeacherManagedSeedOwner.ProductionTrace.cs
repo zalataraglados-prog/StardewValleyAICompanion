@@ -238,6 +238,8 @@ public sealed partial class CropTeacherManagedSeedOwner
                 "overnight_control" => "overnight", "control_recovery" => "control", "terminal_shipping" => "terminal", "seed" => null,
                 _ => throw new InvalidDataException("Accepted crop history contains an unsupported production role.")
             };
+            JsonObject? nativeResult = null;
+            Dictionary<string, string>? nativeInputs = null;
             if (role is not null)
             {
                 if (role == "terminal" && record["terminal_production_manifest_path"] is not null)
@@ -247,12 +249,30 @@ public sealed partial class CropTeacherManagedSeedOwner
                 var resultPath = Path.Combine(runtime, role + "-native-result.json");
                 Reference(role + "_native_result_sha256", resultPath);
                 if (accepted[role + "_native_result_sha256"] is not null)
-                    foreach (var (input, expected) in Read<JsonObject>(resultPath)["input_artifact_hashes"]!
-                                 .Deserialize<Dictionary<string, string>>(JsonOptions)!) Pin(input, expected);
+                {
+                    nativeResult = Read<JsonObject>(resultPath);
+                    nativeInputs = nativeResult["input_artifact_hashes"]!.Deserialize<Dictionary<string, string>>(JsonOptions)!;
+                    foreach (var (input, expected) in nativeInputs) Pin(input, expected);
+                }
             }
             var transition = role is not null ? record[role + "_transition"]!
                 .Deserialize<MoneyRevenueCropNativeLifecycleTransitionRequest>(JsonOptions)! : ReadSeedProductionTransition(runtime, Pin);
-            if (!SamePath(transition.AfterSnapshotPath, StoredPath(accepted, "after_snapshot_path")) ||
+            if (role == "harvest" && nativeResult?["harvest_pickup_settlement_path"] is not null)
+            {
+                var manifest = StoredPath(nativeResult, "harvest_pickup_settlement_path");
+                var settled = StoredPath(nativeResult, "harvest_settled_snapshot_path");
+                if (!SamePath(manifest, Path.Combine(runtime, "harvest-pickup", "settlement.json")) ||
+                    !nativeInputs!.ContainsKey(manifest) || !nativeInputs.ContainsKey(settled) ||
+                    !SamePath(manifest, StoredPath(accepted, "harvest_pickup_settlement_path")) ||
+                    !SamePath(settled, StoredPath(accepted, "harvest_settled_snapshot_path")))
+                    throw new InvalidDataException("Accepted harvest pickup escaped its original native result inputs.");
+                var step = record["harvest_step"]!.Deserialize<CropTeacherRunStep>(JsonOptions)!;
+                transition = transition with { NativeHarvestSettlement = new(options.NativeRunPlanPath,
+                    StoredPath(record, "before_ledger_path"), record["active_commitment_ids"]!.Deserialize<string[]>(JsonOptions)!,
+                    Text(record, "commitment_id"), Text(record, "support_step_id"), step.ActionBatch!.BatchIndex,
+                    StoredPath(record, "original_model_action_path"), manifest, settled) };
+            }
+            if (!SamePath(transition.EffectiveAfterSnapshotPath, StoredPath(accepted, "after_snapshot_path")) ||
                 transition.RunId != options.RunId || transition.ExecutorVersion != options.ExecutorVersion)
                 throw new InvalidDataException("Managed crop production transition differs from its accepted native boundary.");
             foreach (var nativePath in new[] { transition.QueuePath, transition.BeforeSnapshotPath,

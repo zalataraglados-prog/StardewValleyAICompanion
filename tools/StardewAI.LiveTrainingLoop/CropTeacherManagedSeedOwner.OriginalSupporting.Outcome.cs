@@ -8,10 +8,10 @@ public sealed partial class CropTeacherManagedSeedOwner
 {
     private sealed record OriginalSupportingOutcome(ICropTeacherSupportingTransition Scope, JsonObject Result, CropSeedRuntimeArtifacts Artifacts);
 
-    private async Task EnsureOriginalSupportingOutcomeAsync(CropTeacherManagedSeedOperation operation)
+    private async Task EnsureOriginalSupportingOutcomeAsync(CropTeacherManagedSeedOperation operation, CropTeacherHarvest? verifiedHarvest = null)
     {
         if (operation.SupportingTransition is not null) { operation.RuntimeArtifactGuard?.Invoke(); return; }
-        var outcome = ReadOriginalSupportingOutcome(operation, deferOvernightSave: operation.IsOvernight);
+        var outcome = ReadOriginalSupportingOutcome(operation, deferOvernightSave: operation.IsOvernight, verifiedHarvest: verifiedHarvest);
         if (operation.IsOvernight)
         {
             await EnsureOriginalOvernightSaveEvidenceAsync(operation, (CropTeacherOvernight)outcome.Scope).ConfigureAwait(false);
@@ -28,13 +28,14 @@ public sealed partial class CropTeacherManagedSeedOwner
         InstallOriginalSupportingOutcome(operation, ReadOriginalSupportingOutcome(operation));
     }
 
-    private OriginalSupportingOutcome ReadOriginalSupportingOutcome(CropTeacherManagedSeedOperation operation, bool deferOvernightSave = false)
+    private OriginalSupportingOutcome ReadOriginalSupportingOutcome(CropTeacherManagedSeedOperation operation, bool deferOvernightSave = false,
+        CropTeacherHarvest? verifiedHarvest = null)
     {
         var label = operation.IsTerminalShipping ? "Original terminal shipping" : operation.IsControlRecovery ? "Original control recovery" : operation.IsOvernight ? "Original overnight" : operation.IsHarvest ? "Original harvest" : operation.IsWateringMaintenance ? "Original watering" : "Original route";
-        var start = operation.OriginalStart ?? throw new InvalidOperationException(label + " preparation is missing.");
+        if (operation.OriginalStart is null) throw new InvalidOperationException(label + " preparation is missing.");
         var artifacts = ReadOriginalSupportingClaim(operation, label);
         var claimPath = NativeSupportingPath(operation, "claim");
-        var scope = start.VerifyTransition(OriginalSupportingTransition(operation));
+        var scope = (ICropTeacherSupportingTransition?)verifiedHarvest ?? VerifyOriginalSupportingScope(operation);
         foreach (var (path, hash) in scope.InputHashes)
             if (artifacts.Pin(path) != hash) throw new InvalidDataException(label + " outcome changed while binding.");
         var result = new JsonObject

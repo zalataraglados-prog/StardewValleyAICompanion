@@ -119,8 +119,17 @@ public sealed partial class CropTeacherHarvest : ICropTeacherSupportingTransitio
         public StrategyCommitmentLedger BaseLedger => CropTeacherSeedSupportSource.Copy(source.Ledger);
         public IReadOnlyDictionary<string, string> InputHashes => inputs.ReadHashes();
         public void ValidateInputsUnchanged() => inputs.Validate();
-        public CropTeacherHarvest VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition) =>
+        public NativeBatch ReadNativeBatch(MoneyRevenueCropNativeLifecycleTransitionRequest transition) =>
             new(this, source.Snapshot, queue, stepId, transition);
+        public CropTeacherHarvest VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition) =>
+            ReadNativeBatch(transition).Complete();
+        public CropTeacherHarvest VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition, string pickupSettlementPath)
+        {
+            var batch = ReadNativeBatch(transition);
+            foreach (var pickup in NativeBatch.ReadPickupFiles(pickupSettlementPath))
+                batch.ObservePickup(batch.PreparePickup(pickup.BeforeSnapshotPath), pickup);
+            return batch.Complete(pickupSettlementPath);
+        }
         ICropTeacherSupportingTransition ICropTeacherSupportingPreparation.VerifyTransition(MoneyRevenueCropNativeLifecycleTransitionRequest transition) => VerifyTransition(transition);
     }
 }

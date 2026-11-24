@@ -51,7 +51,7 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
 
     private static Dictionary<int, NativeRefillFlow> ReadObservedRefillFlows(
         MoneyRevenueCropNativeLifecycleTransitionRequest[] transitions, IReadOnlyDictionary<int, string> snapshotPaths,
-        Func<string, SnapshotState> readSnapshot)
+        Func<string, SnapshotState> readSnapshot, string planPath)
     {
         Require(transitions.Length > 0 && transitions.All(row => row is not null) &&
                 transitions.Select(row => Path.GetFullPath(row.QueuePath)).Distinct(PathComparer).Count() == transitions.Length &&
@@ -98,12 +98,18 @@ public static partial class MoneyRevenueCropDailyCapacityProofBuilder
                              frame.Result.TargetTileX is { } x && frame.Result.TargetTileY is { } y)
                         cropWork.Add((frame.Item.OptionId, frame.Result.TargetLocation, x, y));
                 }
-                previous = native.After;
-                final = native.After;
+                if (row.NativeHarvestSettlement is not null)
+                {
+                    var settlement = CropTeacherHarvest.ReplaySettlement(row, planPath);
+                    ticks = checked(ticks + settlement.PickupElapsedTicks);
+                    final = settlement.SettledSnapshot;
+                }
+                else final = native.After;
+                previous = final;
             }
             Require(ticks > 0 && final is not null, "Native refill prefix is empty.");
             var receipt = refillRows[0].ExecutionReceiptPath;
-            var afterPath = rows[last].AfterSnapshotPath;
+            var afterPath = rows[last].EffectiveAfterSnapshotPath;
             result.Add(day.TotalDay, new(new(receipt, CurrentTeacherFrontierSupport.HashFile(receipt), ticks),
                 afterPath, CurrentTeacherFrontierSupport.HashFile(afterPath), final!.StateHash, movementTicks, refillTicks, cropWork));
         }

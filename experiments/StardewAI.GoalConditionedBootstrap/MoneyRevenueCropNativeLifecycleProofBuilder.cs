@@ -118,6 +118,15 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
         var nativeFrames = nativeObservedCapacity ? new NativeLifecycleFrameCache() : null;
         var transitions = request.Transitions.Select(value =>
         {
+            if (value.NativeHarvestSettlement is not null)
+            {
+                Require(nativeObservedCapacity, "Harvest pickup settlement requires the original native observed lifecycle.");
+                var scope = CropTeacherHarvest.ReplaySettlement(value, planPath);
+                var started = LoadTransition(value) with { NativeObserved = true, NativeAppliedItemCount = scope.AppliedTileCount,
+                    NativeHarvest = scope, AfterPath = scope.AfterSnapshotPath, After = scope.SettledSnapshot,
+                    SharedInputGuard = scope.ValidateInputsUnchanged };
+                return nativeFrames is null ? started : started.WithNativeFrames(nativeFrames);
+            }
             var loaded = appliedNativeWork ? LoadNativeWorkObservedTransition(value) :
                 inventoryEffects ? LoadSharedInventoryObservedTransition(value) :
                 jointObserved ? transferredStock ? LoadTransferredStockObservedTransition(value) : LoadJointObservedTransition(value) :
@@ -315,6 +324,7 @@ public static partial class MoneyRevenueCropNativeLifecycleProofBuilder
 
         public int? NativeAppliedItemCount { get; init; }
         public CropTeacherWateringMaintenance? NativeWateringMaintenance { get; init; }
+        public CropTeacherHarvest? NativeHarvest { get; init; }
         public bool NativeObserved { get; init; }
         public bool NativeNonProduction { get; init; }
         public bool NativeSharedSource { get; init; }

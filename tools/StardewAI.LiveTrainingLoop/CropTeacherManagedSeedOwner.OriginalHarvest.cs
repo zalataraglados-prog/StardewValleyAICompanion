@@ -55,6 +55,21 @@ public sealed partial class CropTeacherManagedSeedOwner
     public Task ExecuteOriginalHarvestAsync(CropTeacherManagedSeedOperation operation, HttpClient http, Func<Task<JsonObject>> executeOriginal) =>
         ExecuteOriginalSupportingAsync(operation, http, executeOriginal, CropTeacherSupportingOperationKind.Harvest);
 
+    internal Task ExecuteOriginalHarvestSettlingPickupAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
+        Func<Task<JsonObject>> executeOriginal, Func<CropTeacherHarvest.NativeBatch, Task<CropTeacherHarvest>> settle) =>
+        ExecuteOriginalSupportingAsync(operation, http, executeOriginal, CropTeacherSupportingOperationKind.Harvest, settle);
+
+    internal static string HarvestPickupSettlementPath(CropTeacherManagedSeedOperation operation) =>
+        Path.Combine(operation.RuntimeDirectory, "harvest-pickup", "settlement.json");
+
+    internal static ICropTeacherSupportingTransition VerifyOriginalSupportingScope(CropTeacherManagedSeedOperation operation)
+    {
+        var transition = OriginalSupportingTransition(operation);
+        var path = HarvestPickupSettlementPath(operation);
+        return operation.HarvestStart is { } harvest && File.Exists(path) ? harvest.VerifyTransition(transition, path) :
+            operation.OriginalStart!.VerifyTransition(transition);
+    }
+
     public Task RunHarvestAsync(CropTeacherManagedSeedOperation operation, HttpClient http,
         Func<JsonObject, ReservationPortfolioCommitRequest, Task<JsonObject>> commit,
         Func<string, string, Task<JsonObject>> post) => RunSupportingTransitionAsync(operation, http, commit, post, CropTeacherSupportingOperationKind.Harvest);
@@ -129,6 +144,11 @@ public sealed partial class CropTeacherManagedSeedOwner
         document["harvest_wave_index"] = scope.WaveIndex;
         document["output_retention_key"] = scope.OutputRetentionKey;
         document["observed_retained_quantity_increase"] = scope.RetainedQuantityIncrease;
+        if (scope.PickupSettlementPath is { } pickup)
+        {
+            document["harvest_pickup_settlement_path"] = pickup;
+            document["harvest_settled_snapshot_path"] = scope.AfterSnapshotPath;
+        }
         document["whole_wave_output_retention_verified"] = false;
         var saleClaims = scope.RebindRequest.MaterialClaims;
         if (saleClaims.Length > 0)
