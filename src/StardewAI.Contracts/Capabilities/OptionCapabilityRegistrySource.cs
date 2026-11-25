@@ -1139,6 +1139,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("partnership_propose_roommate_current"),
                 SupportedCandidate("volcano_reach_caldera_plan_envelope"),
                 SupportedCandidate("water_crop_tile"), SupportedCandidate("sell_shop_item"),
+                SupportedCandidate("wait_for_shop_sale"),
                 BlockedCandidate("purchase_service_gate", "purchase_service_gate_excluded_upstream"),
                 BlockedCandidate("purchase_stage_blocked", "purchase_stage_not_compilable"),
                 BlockedCandidate("rain_totem_truffle_oil_reserve_wait", "rain_totem_truffle_oil_reserve_waits_for_fresh_native_state"),

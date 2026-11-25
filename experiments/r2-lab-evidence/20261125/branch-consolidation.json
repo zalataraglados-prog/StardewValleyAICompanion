@@ -48,6 +48,8 @@
   "verification": {
     "baseline_targeted": {"passed": 18, "failed": 3, "total": 21},
     "integrated_targeted": {"passed": 32, "failed": 0, "skipped": 0},
+    "initial_ci": {"run_id": 45539109744, "core_passed": 2957, "core_failed": 1, "reason": "The preserved branch omitted wait_for_shop_sale from the unified candidate capability registry."},
+    "registry_correction": {"registered_kind": "wait_for_shop_sale", "adjacent_and_registry_tests_passed": 74, "failed": 0, "skipped": 0},
     "full_game_path_builds": {"bridge": "passed, zero warnings/errors", "harness": "passed, zero warnings/errors"},
     "retained_native_functional_replay": {
       "proof_sha256": "dab4932d7d5ed12aaf585f0ca41fa1c792839c45f6d2286332adf17b9a194ae2",
