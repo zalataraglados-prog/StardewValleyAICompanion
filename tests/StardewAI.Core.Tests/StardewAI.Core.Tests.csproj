@@ -32,6 +32,7 @@
     <Compile Include="..\Shared\MoneyCropTeacherFixture.cs" Link="MoneyCropTeacherFixture.cs" />
     <Compile Include="..\Shared\NativeRandomStateFingerprint.cs" Link="NativeRandomStateFingerprint.cs" />
     <Compile Include="..\..\tools\StardewAI.RuntimeTestHarness\NativeLiveItemTransientCapture.FieldCodec.cs" Link="NativeLiveTransientFieldCodec.cs" />
+    <Compile Include="..\..\tools\StardewAI.RuntimeTestHarness\NativeCurrentWarpStandPolicy.cs" Link="NativeCurrentWarpStandPolicy.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -107,6 +108,7 @@
     <Compile Include="StrategyCommitmentLedgerTests.ReadReconciler.cs" />
     <Compile Include="SequentialPlanProjectionTests.cs" />
     <Compile Include="RouteRepairToolPreconditionTests.cs" />
+    <Compile Include="NativeCurrentWarpStandPolicyTests.cs" />
     <Compile Include="ActionQueueCompilerTests.SnapshotStateCache.cs" />
     <Compile Include="ActionQueueCompilerShopSafetyWaitTests.cs" />
     <Compile Include="MachinePlacementMainlineTests.cs" />

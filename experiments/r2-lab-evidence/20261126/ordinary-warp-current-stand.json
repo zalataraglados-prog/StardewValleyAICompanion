@@ -1,0 +1,52 @@
+{
+  "schema_version": "ordinary_warp_current_stand_fix.v1",
+  "recorded_at": "2026-11-26T01:37:13+08:00",
+  "observed_source": "Teacher year1 summer12, SebastianRoom to ScienceHouse",
+  "last_run_verified_actions": 32,
+  "last_run_attempts": 64,
+  "consecutive_blocked_connector_attempts": 8,
+  "native_ticks_between_first_and_last_failure": 7,
+  "native_player_pixel_position": [
+    64,
+    80
+  ],
+  "native_player_bounds": [
+    72,
+    80,
+    48,
+    32
+  ],
+  "native_character_bounds": [
+    78,
+    112,
+    48,
+    32
+  ],
+  "whole_stand_tile_bounds": [
+    64,
+    64,
+    64,
+    64
+  ],
+  "actual_bounds_intersect": false,
+  "whole_tile_proxy_intersects_character": true,
+  "change": "For an ordinary native warp, recognize the already occupied adjacent hard-walkable stand using actual native player bounds and the cardinal exit sweep. Reuse original native movement, target validation and timeout.",
+  "retained_refusals": [
+    "hard obstacles",
+    "real character or exit occupancy",
+    "unknown bounds",
+    "TouchAction stand",
+    "non-warp and locked/action-door contracts"
+  ],
+  "targeted_tests_passed": 21,
+  "integrated_full_core_passed": 3101,
+  "harness_and_bridge_release_builds": "zero warnings and errors",
+  "last_saved_checkpoint": "ProofFarm year1 summer12 06:00",
+  "failed_1510_scene_saved": false,
+  "patch_native_reverification_complete": false,
+  "complete_three_year_route_verified": false,
+  "artifact_sha256": {
+    "frozen_frame_mapping": "110c61d7edf8d600cede818c3093f48ad5d4e17d366ca6f97a82eacf71c521d5",
+    "targeted_capability": "c9138f310f49f54ac6dc6fdb32e9e1cb32fafaf1033b2210ce6e303bbfe064ac"
+  }
+}
