@@ -1,5 +1,17 @@
 # StardewAI 当前工作
 
+<a id="lab-causal-input-correction-308"></a>
+
+## 2026-11-26T02:15:21+08:00 因果输入与监督链纠正，选型方案待执行（308）
+
+- 确认采集类6条train行／17对比较的`SourceCandidate.Rank`来自Teacher作答后的SelectionOrder，再进入模型输入；原机器收取rank76→1、出货41→1、春18采集5→1的封存原件与代码一致。其余技能／友情／婚姻6条train行／14对的rank是候选ID字典序编号，也不是此前所称原ranker先验。候选ID无显式列不等于没有身份代理。[因果和范围](../experiments/r2-lab-evidence/20261126/rank-input-correction.json)。
+- 307及此前分数／重载算术与原生结果保留，但“rank为独立先验基线”的解释撤回，含Teacher答案输入的旧结果不得作为干净泛化或架构优劣证据。后续保留原Teacher／回执证明，在单独版本化的模型输入中排除作答后信息，真实决策前先验须另从原件证明；不能改写原行伪装新schema。
+- 友情产数有两个连续断点：原启动配置的路线校准未传入实际消费者；对完整封存送礼组仅补同一校准，原消费者可追加1条Product轨迹，但原dataset仍接受0／拒绝1，原因`independent_teacher_preference_required`。必须补齐原认可的独立Teacher比较／重放证明，不能把追加行或送礼成功称为学习闭环通过。
+- 最新已受测提交的Core3101通过，Backend56失败／4127通过，集中项先按共同原因归因，不把测试数当bug数。三年Teacher本批60验证／94尝试后因同一状态的blocked队列8次停止，原件保留，未重启；最后真实保存仍夏12早晨。新方案先收口输入／完整监督与既有回归，再按机制补Product覆盖、做固定因果对照与一次选型；动作排序和目标／路线shadow研究分开，既有交接与正式合同不重开。当前没有启动新的模型或采样实验。
+
+<!-- audit_invalidation: scope=307及此前把SourceCandidate.Rank称独立先验并据含Teacher后排序输入的分数解释干净泛化/模型优劣的部分; invalidated_at=2026-11-26T02:15:21+08:00; superseded_by=lab-causal-input-correction-308; reason=原件与实际producer-trajectory-encoder链证明Teacher答案排序回流输入且其他family为ID排序; historical_only=true -->
+
+
 <a id="lab-neural-tuning-new-day-307"></a>
 
 ## 2026-11-26T01:37:13+08:00 神经网络按日调参与独立新日验证（307，待合入）
