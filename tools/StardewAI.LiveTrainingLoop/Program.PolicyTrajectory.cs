@@ -115,12 +115,6 @@ static partial class Program
                     result.Skip("selected_queue_candidate_incomplete");
                     continue;
                 }
-                if (selectedCandidate is not null &&
-                    admissionFilter.FilterOptionIds(new[] { selectedCandidate.OptionId }).Length != 1)
-                {
-                    result.Skip(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason);
-                    continue;
-                }
                 var beforeSnapshotPath = ReadString(
                     firstStep,
                     "effective_decision_snapshot_path");
@@ -149,6 +143,12 @@ static partial class Program
                 var stateProjector = new PolicyStateFeatureProjector();
                 var worldModel = new WorldModelProjector().Project(snapshotEnvelope, policyGoal, options.TargetExecutionMode);
                 var stateFeatures = museumInputs?.ProjectState(stateProjector.Project(worldModel)) ?? stateProjector.Project(worldModel, snapshotEnvelope);
+                if (selectedCandidate is not null &&
+                    admissionFilter.ForState(stateFeatures).FilterOptionIds(new[] { selectedCandidate.OptionId }).Length != 1)
+                {
+                    result.Skip(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason);
+                    continue;
+                }
                 if (policyGoal == FriendshipPolicyInputProjector.GoalId)
                 {
                     if (string.IsNullOrWhiteSpace(options.RouteTimingCalibrationPath))

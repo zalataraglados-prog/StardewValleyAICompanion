@@ -1,5 +1,15 @@
 # StardewAI 当前工作
 
+## 2026-11-25T16:38:00+08:00 实验室单人过滤纠正与扩展预实验（303，待合入）
+
+- 用户指出单人训练／游玩不应继承无关的确认限制。追溯 `0afa83294` 的全局准入生成和 `8c61d8206` 的确认名单，并以原代码复现：仅将已验证捐赠行标为 `training_singleplayer`，原过滤器仍拒绝。旧规则确实如此，不等于适用于当前场景；下方“捐赠 EvaluationOnly 因而不应改旧名单”的无条件推论局部失效。
+- 从 `main@4daa7cf2` 建独立 `lab/singleplayer-policy-scope`，修候选授权／编译、策略排序、轨迹构建、数据校验、反馈及 Teacher 消费。训练行使用明确模式，运行时使用原生可读联机事实；快照优先于请求模式。仅消除确认项的误挡，未验证动作、命令专用和物品权限不随之放行。旧全局登记保留保守含义，Museum 报告绑定实际名单，旧 intake 按原保守投影完整重建，不改原件。[归属合同与证据边界](museum-policy-input-admission.md#2026-11-25t1638000800-single-player-scope-correction)。
+- D盘 `选型实验/20261125-02` 已闭合963个来源文件，原工具／独立Teacher准入25/25：友谊6、婚姻8、技能6、捕鱼5；train9／validation7（2个存档日）／test9封存。按事前冻结方案完成24次拟合，1393共同特征，22训练对／15验证对，线性和CatBoost均15/15。按平局规则保留线性预实验配置，未宣称产品定型；这些冻结结果仍绑定旧4daa源码，不被本修补覆写。
+- 已用官方CatBoost ONNX-ML导出及C# ONNX Runtime CPU核对选中配置：16个训练／验证决策、505候选、37对，最大分差约4.65e-7、排序无变化。导出形状元数据的修复不改算子／权重；这是评分宿主验证，尚非完整Provider／游戏整机8GiB验收。仍未找到同时满足当前product来源与独立Teacher合同的新增正式行；不把harness改名为product。
+- AGY Opus/Sonnet 5.5先评价后承担协议、来源及本修补只读复核；实际代码和测试由实验室主协作者负责。准确测试／源码身份由本PR和 `experiments/r2-lab-evidence/20261125/singleplayer-scope.json` 记录。#570工程交接保持完成，#569实验与本机测评继续并行，test不提前打开，正式训练未启动。
+
+<!-- audit_invalidation: scope=既有Museum条目把旧确认名单无条件解释为单人训练禁令及下方历史实验未执行状态; invalidated_at=2026-11-25T16:38:00+08:00; superseded_by=303及museum-policy-input-admission作用域纠正; reason=原代码复现模式无关误挡且实验室已完成扩展预实验; historical_only=true -->
+
 ## 2026-11-25T11:17:27+08:00 遗留分支与实验室工作区收口（302，随本次合入生效）
 
 - 2026-11-25T11:26:47+08:00 首轮完整CI45539109744保留2957通过／1失败：能力登记一致性检查发现旧分支遗漏`wait_for_shop_sale`登记。已补入统一`DailyCandidates`；原等待编译、价格／保护检查不变，登记一致性与相邻回归合计74/74通过。最终head重新完整验证，初次失败不记作通过。
@@ -2083,6 +2093,9 @@
 - **唯一下一步：** 独立条件局部方法视图及原证书接续，再真正缺失的validation/test。保留完整原方向/阻塞与95获取、RNG、共享资源和第三年前全局预算义务，不以终局声明前置冒充获取、不重采B或已验根、不用corpus自行晋升method。并集仍`12/19、12/19、12/19、9/11 roots`、formal=false；全新档Teacher21/Student未完成，Money6随后。
 
 ## 2026-11-07 全馆统一输入与原准入（当前唯一接续）
+
+<!-- audit_invalidation: scope=本节旧确认名单作为无条件单人禁令的推断; invalidated_at=2026-11-25T16:38:00+08:00; superseded_by=303及museum-policy-input-admission单人作用域纠正; reason=历史无模式过滤器并不能证明限制适用于当前单人场景; historical_only=true -->
+> **2026-11-25T16:38:00+08:00 局部失效。** 本节记录当时原工具的真实拒绝；确认项不再作为明确单人作用域的排除理由。原生证明、等待参照身份及原分区仍保留，见[303](#2026-11-25t1638000800-实验室单人过滤纠正与扩展预实验303待合入)。
 
 - #478经CI `42294539442`全部38步接受、合入`b4baed10`。本轮仅离线复用B，接95项共享模型输入和公开可重建准入报告；原编译器/执行器/注册权限/训练validator/provider均不改。[合同](museum-policy-input-admission.md)。
 - 原轨迹builder真实拒绝捐赠训练行后，沿旧Collection的evidence-only分支，而不是削弱旧代码：捐赠EvaluationOnly/需确认，600tick等待是参照不是原策略候选。原生save/player/day和policy日期分区各自保留；未提交的无效provider/schema草稿已撤。报告真实1候选/1参照、全95输入、两项阻塞，policy_row_built/formal均false，原始数据仓库外。

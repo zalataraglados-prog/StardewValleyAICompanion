@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.Core.Training
 {
@@ -29,7 +30,8 @@ namespace StardewAI.Core.Training
                 return new BaselineTrainingReport
                 {
                     DatasetPath = fullPath,
-                    TrainingAllowlist = admissionFilter.Allowlist.ToArray()
+                    TrainingAllowlist = admissionFilter.Allowlist.ToArray(),
+                    TrainingAdmissionScopes = new[] { "conservative" }
                 };
             }
 
@@ -80,7 +82,12 @@ namespace StardewAI.Core.Training
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(optionId => optionId, StringComparer.Ordinal)
                     .ToArray(),
-                TrainingAllowlist = admissionFilter.Allowlist.ToArray(),
+                TrainingAllowlist = admissionFilter.Allowlist
+                    .Concat(rows.SelectMany(row => admissionFilter.ForState(row.StateFeatures).Allowlist))
+                    .Distinct(StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+                TrainingAdmissionScopes = rows.Select(row =>
+                        SinglePlayerScope.IsSinglePlayerTraining(row.StateFeatures) ? "training_singleplayer" : "conservative")
+                    .DefaultIfEmpty("conservative").Distinct(StringComparer.Ordinal).OrderBy(scope => scope, StringComparer.Ordinal).ToArray(),
                 ExcludedReasons = evaluatedRows
                     .Where(item => !item.Decision.Included)
                     .SelectMany(item => item.Decision.Reasons)

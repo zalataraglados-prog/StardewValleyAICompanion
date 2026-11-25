@@ -181,6 +181,7 @@ public static partial class CurrentStageOneCollectionTeacherReceiptBuilder
         }
 
         var selectedOptionAdmitted = new PolicyTrainingAdmissionFilter()
+            .ForSnapshot(before)
             .FilterOptionIds(new[] { selectedCandidate.OptionId })
             .Length == 1;
         if (!selectedOptionAdmitted)

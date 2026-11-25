@@ -55,11 +55,12 @@ public sealed class PolicyDecisionTrajectoryBuilder
             throw new InvalidOperationException("Selected candidate is absent from the decision candidate set.");
         if (!selected.Available)
             throw new InvalidOperationException("Selected candidate is not available.");
-        if (admissionFilter.FilterOptionIds(new[] { selected.OptionId }).Length != 1)
+        var effectiveAdmission = admissionFilter.ForState(stateFeatures);
+        if (effectiveAdmission.FilterOptionIds(new[] { selected.OptionId }).Length != 1)
             throw new InvalidOperationException("Selected candidate option is not admitted for policy training.");
 
         var candidates = sourceCandidates
-            .Select(row => BuildCandidate(row, selectedCandidateId))
+            .Select(row => BuildCandidate(row, selectedCandidateId, effectiveAdmission))
             .OrderBy(row => row.Rank)
             .ThenBy(row => row.CandidateId, StringComparer.Ordinal)
             .ToArray();
@@ -115,9 +116,10 @@ public sealed class PolicyDecisionTrajectoryBuilder
 
     private PolicyTrajectoryCandidate BuildCandidate(
         PolicyEventCandidatePrediction source,
-        string selectedCandidateId)
+        string selectedCandidateId,
+        PolicyTrainingAdmissionFilter effectiveAdmission)
     {
-        var admitted = admissionFilter.FilterOptionIds(new[] { source.OptionId }).Length == 1;
+        var admitted = effectiveAdmission.FilterOptionIds(new[] { source.OptionId }).Length == 1;
         var reasons = new List<string>();
         if (!admitted)
             reasons.Add(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason);

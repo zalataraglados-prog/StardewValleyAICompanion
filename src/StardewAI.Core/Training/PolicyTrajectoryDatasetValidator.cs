@@ -54,9 +54,10 @@ internal sealed class PolicyTrajectoryDatasetValidator
         if (row.Candidates.Any(candidate => !SourceCandidateMatches(candidate)))
             return "source_candidate_binding_mismatch";
 
+        var effectiveAdmission = admissionFilter.ForState(row.StateFeatures);
         foreach (var candidate in row.Candidates)
         {
-            var admitted = admissionFilter.FilterOptionIds(new[] { candidate.OptionId }).Length == 1;
+            var admitted = effectiveAdmission.FilterOptionIds(new[] { candidate.OptionId }).Length == 1;
             if (candidate.AdmittedForPolicy != admitted)
                 return "candidate_admission_mismatch";
         }

@@ -26,6 +26,7 @@ namespace StardewAI.Core.OptionRegistry
         private readonly Verifier.Verifier verifier;
         private readonly ActionQueueCompiler compiler;
         private readonly int socialCandidateLimit;
+        private readonly bool useNativeSinglePlayerScope;
         private readonly IReadOnlyDictionary<string, Func<SnapshotEnvelope, SmallModelActionParameter[], EventCandidate[]>> eventCandidateProviders;
         private readonly SnapshotStateCache<EventCandidate[]>
             routeConnectorCandidatesBySnapshot = new();
@@ -53,11 +54,13 @@ namespace StardewAI.Core.OptionRegistry
         }
 
         private CandidateOptionAvailabilityEvaluator(
-            OptionRegistry optionRegistry, Verifier.Verifier verifier, int socialCandidateLimit)
+            OptionRegistry optionRegistry, Verifier.Verifier verifier, int socialCandidateLimit,
+            bool useNativeSinglePlayerScope = true)
         {
             this.optionRegistry = optionRegistry;
             this.verifier = verifier;
             this.socialCandidateLimit = socialCandidateLimit;
+            this.useNativeSinglePlayerScope = useNativeSinglePlayerScope;
             compiler = new ActionQueueCompiler(optionRegistry, verifier);
             eventCandidateProviders = CreateEventCandidateProviders();
         }
@@ -67,6 +70,10 @@ namespace StardewAI.Core.OptionRegistry
         // Offline comparison needs the complete source; runtime constructors keep their bounded interface.
         public static CandidateOptionAvailabilityEvaluator ForCompleteOfflineSocialComparison() =>
             new(new OptionRegistry(), new Verifier.Verifier(), int.MaxValue);
+
+        // Reproduce the stricter historical projection only when verifying frozen evidence.
+        public static CandidateOptionAvailabilityEvaluator ForConservativeEvidenceReplay() =>
+            new(new OptionRegistry(), new Verifier.Verifier(), 64, useNativeSinglePlayerScope: false);
 
         public OptionAvailabilityEnvelope Evaluate(
             SnapshotEnvelope snapshot,
@@ -196,7 +203,7 @@ namespace StardewAI.Core.OptionRegistry
                 ? new CompilerProbeResult()
                 : ProbeCompiler(snapshot, candidate, commitmentLedger);
             var compilerReasons = compilerProbe.BlockingReasons;
-            var safetyPolicy = SafetyPolicyGate.Evaluate(option, candidate);
+            var safetyPolicy = SafetyPolicyGate.Evaluate(option, candidate, useNativeSinglePlayerScope ? snapshot : null);
             var eventCandidates = stockCandidates ?? EventCandidates(snapshot, option.OptionId, safety.MissingStateFactors, candidate.Parameters, commitmentLedger);
             var economicCandidates = EconomicCandidates(
                 snapshot,
@@ -295,6 +302,7 @@ namespace StardewAI.Core.OptionRegistry
                 CompileStatus = compilerProbe.CompileStatus,
                 ExecutionAuthorization = safetyPolicy.ExecutionAuthorization,
                 RuntimeEvidenceStatus = option.RuntimeStatus,
+                // Registry metadata is mode-independent; scoped admission is resolved by the training consumer.
                 TrainingEligibility = option.TrainingEligibility,
                 InvocationPolicy = option.InvocationPolicy,
                 ProductStatus = option.ProductStatus,

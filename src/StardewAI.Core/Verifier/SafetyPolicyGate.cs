@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using StardewAI.Contracts.Options;
+using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.Core.Verifier
 {
@@ -14,7 +16,8 @@ namespace StardewAI.Core.Verifier
     {
         public static SafetyPolicyResult Evaluate(
             OptionSpec option,
-            OptionAvailabilityCandidate candidate)
+            OptionAvailabilityCandidate candidate,
+            SnapshotEnvelope? snapshot = null)
         {
             var reasons = new List<string>();
             if (option.HostPolicy == OptionHostPolicy.HostOnly && !candidate.ActorIsHost)
@@ -54,6 +57,7 @@ namespace StardewAI.Core.Verifier
             }
 
             if (option.ConfirmationPolicy == OptionConfirmationPolicy.ExplicitUserConfirmationRequired &&
+                !SinglePlayerScope.IsKnownSinglePlayer(snapshot) &&
                 !candidate.ExplicitConfirmationGranted)
             {
                 return new SafetyPolicyResult

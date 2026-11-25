@@ -1,10 +1,37 @@
 using System.Text.Json;
 using StardewAI.GoalConditionedBootstrap;
+using StardewAI.Contracts.State;
+using StardewAI.Core.OptionRegistry;
 
 namespace StardewAI.Core.Tests;
 
 public sealed partial class CurrentMuseumCollectionIntakeTests
 {
+    [Fact]
+    public void ReplaysExactLegacyConfirmationProjectionWithoutRewritingItsNativeSources()
+    {
+        var f = Fixture();
+        Edit(f.Snapshot, root => root["state"]!["player"]!["multiplayer_runtime"] =
+            JsonSerializer.SerializeToNode(new { status = "available", value = new { context_is_multiplayer = false } }), snapshot: true);
+        var before = File.ReadAllText(f.Snapshot);
+        var current = Build(f);
+        var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(before, Json)!;
+        var legacy = current with
+        {
+            Availability = CandidateOptionAvailabilityEvaluator.ForConservativeEvidenceReplay()
+                .Evaluate(snapshot, current.ConsideredOptionIds, true)
+        };
+        Assert.Equal("authorized", Assert.Single(current.Availability.Options).ExecutionAuthorization);
+        Assert.Equal("confirmation_required", Assert.Single(legacy.Availability.Options).ExecutionAuthorization);
+        Write(f.Intake, legacy);
+        Assert.Equal(JsonSerializer.Serialize(legacy, Json),
+            JsonSerializer.Serialize(CurrentMuseumCollectionIntakeBuilder.Verify(f.Intake), Json));
+        Assert.Equal(before, File.ReadAllText(f.Snapshot));
+        Assert.Single(legacy.Availability.Options).ReadEligible = !Assert.Single(legacy.Availability.Options).ReadEligible;
+        Write(f.Intake, legacy);
+        Assert.Throws<InvalidDataException>(() => CurrentMuseumCollectionIntakeBuilder.Verify(f.Intake));
+    }
+
     [Fact]
     public void ReusesFullMuseumDenominatorAndOriginalCandidatesWithoutOtherCollectionRoots()
     {

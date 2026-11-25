@@ -11,7 +11,7 @@ namespace StardewAI.Core.Tests;
 public sealed class MuseumPolicyRowAdmissionTests
 {
     [Fact]
-    public void MuseumStillRequiresConfirmationAndCannotEnterTheOriginalPolicyBuilder()
+    public void UnscopedRegistryAndAdmissionRemainConservative()
     {
         var donor = OptionCapabilityRegistrySource.GetRequired("museum.donate_items");
         Assert.True(donor.PlayerConfirmationRequired);
@@ -34,6 +34,16 @@ public sealed class MuseumPolicyRowAdmissionTests
         var reasons = Assert.IsType<string[]>(method.Invoke(null, new object[] { new[] { donor, wait }, "donor", pairs }));
         Assert.Contains("no_strict_pair_between_original_policy_admitted_candidates", reasons);
         Assert.Equal(!selectedAllowed, reasons.Contains(PolicyTrainingAdmissionFilter.OptionNotAdmittedReason + ":museum.donate_items"));
+    }
+
+    [Fact]
+    public void MissingOriginalComparisonDoesNotClaimTheOptionIsForbidden()
+    {
+        var report = new MuseumPolicyRowAdmission("join.json", new string('a', 64), new string('b', 64), "run", "hash", "native", "train",
+            new PolicyTrajectoryContext(), new FeatureVector(), Array.Empty<MuseumPolicyCandidateAdmission>(), "donor",
+            Array.Empty<CurrentCollectionTeacherPairwisePreference>(),
+            new[] { "no_strict_pair_between_original_policy_admitted_candidates" });
+        Assert.Equal("verified_evidence_only_no_trainable_teacher_comparison", report.Status);
     }
 
     [Fact]

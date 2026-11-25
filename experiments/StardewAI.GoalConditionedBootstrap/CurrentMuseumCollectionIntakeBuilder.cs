@@ -15,6 +15,11 @@ public static class CurrentMuseumCollectionIntakeBuilder
 
     public static CurrentMuseumCollectionIntake Build(
         string snapshotPath, string knowledgePath, string requirementInventoryPath, string dependenciesPath)
+        => Build(snapshotPath, knowledgePath, requirementInventoryPath, dependenciesPath, new CandidateOptionAvailabilityEvaluator());
+
+    private static CurrentMuseumCollectionIntake Build(
+        string snapshotPath, string knowledgePath, string requirementInventoryPath, string dependenciesPath,
+        CandidateOptionAvailabilityEvaluator evaluator)
     {
         snapshotPath = RequiredFile(snapshotPath);
         knowledgePath = RequiredFile(knowledgePath);
@@ -72,7 +77,7 @@ public static class CurrentMuseumCollectionIntakeBuilder
         var items = set.Groups.OrderBy(row => row.RequirementId, StringComparer.Ordinal).Select(row =>
             new CurrentMuseumCollectionItem(row.RequirementId, row.Alternatives[0].ItemId,
                 row.Alternatives[0].QualifiedItemId, progress.Requirements[row.RequirementId].Completed)).ToArray();
-        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, options, true);
+        var availability = evaluator.Evaluate(snapshot, options, true);
         return new(snapshotPath, CurrentTeacherFrontierSupport.HashFile(snapshotPath), snapshot.StateHash, snapshot.GameTick,
             knowledgePath, knowledge.Sha256, requirementInventoryPath, CurrentTeacherFrontierSupport.HashFile(requirementInventoryPath),
             dependenciesPath, CurrentTeacherFrontierSupport.HashFile(dependenciesPath), direction, items,
@@ -86,6 +91,13 @@ public static class CurrentMuseumCollectionIntakeBuilder
         var stored = JsonSerializer.Deserialize<CurrentMuseumCollectionIntake>(text, JsonDefaults.Options) ??
             throw new InvalidDataException("Museum intake is null.");
         var rebuilt = Build(stored.SnapshotPath, stored.KnowledgePath, stored.RequirementInventoryPath, stored.DependenciesPath);
+        if (!JsonNode.DeepEquals(JsonNode.Parse(text), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)))
+        {
+            // Preserve old native facts while reproducing their original, unscoped confirmation projection.
+            // Every source, hash and derived field must still match exactly; no normalization of stored evidence.
+            rebuilt = Build(stored.SnapshotPath, stored.KnowledgePath, stored.RequirementInventoryPath, stored.DependenciesPath,
+                CandidateOptionAvailabilityEvaluator.ForConservativeEvidenceReplay());
+        }
         Require(JsonNode.DeepEquals(JsonNode.Parse(text), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)),
             "Museum intake differs from its complete original sources.");
         return rebuilt;

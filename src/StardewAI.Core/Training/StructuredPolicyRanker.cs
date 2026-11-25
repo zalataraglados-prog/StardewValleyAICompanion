@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.Core.Training;
 
@@ -28,12 +29,15 @@ public sealed class StructuredPolicyRanker
     public PolicyEventCandidatePrediction[] Rank(
         StructuredPolicyCheckpointEnvelope checkpoint,
         FeatureVector stateFeatures,
-        IReadOnlyList<PolicyEventCandidatePrediction> candidates)
+        IReadOnlyList<PolicyEventCandidatePrediction> candidates,
+        SnapshotEnvelope? snapshot = null)
     {
         checkpointStore.Validate(checkpoint);
         if (stateFeatures is null)
             throw new ArgumentNullException(nameof(stateFeatures));
-        var admitted = new HashSet<string>(admissionFilter.Allowlist, StringComparer.Ordinal);
+        var effectiveAdmission = snapshot is null
+            ? admissionFilter.ForState(stateFeatures) : admissionFilter.ForSnapshot(snapshot);
+        var admitted = new HashSet<string>(effectiveAdmission.Allowlist, StringComparer.Ordinal);
         var result = candidates.Select(Clone).ToArray();
         foreach (var candidate in result)
         {

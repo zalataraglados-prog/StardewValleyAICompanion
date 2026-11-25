@@ -1,0 +1,128 @@
+{
+  "schema_version": "laboratory.singleplayer_policy_scope_verification.v1",
+  "recorded_at": "2026-11-25T16:49:18.994149+08:00",
+  "base_commit": "4daa7cf25c51e5205c1eb3033d2c36952ec545e1",
+  "branch": "lab/singleplayer-policy-scope",
+  "original_failure": "Explicit training_singleplayer Museum feature row excluded by the old mode-blind filter; co-op/unknown remained excluded",
+  "red_trx_sha256": "f130d44945e7bbb5b1f32745b7a2d1ecd082fc79cc19cba576001bd87ad459b7",
+  "core": {
+    "path": "scope-fix-verification/core-validated/singleplayer-scope-core-validated.trx",
+    "sha256": "84ecd5d93155b595d65ab17b60b81aab59b7d6565069a258dbd28677cd1def0f",
+    "total": 2982,
+    "passed": 2982,
+    "failed": 0
+  },
+  "backend_adjacent": {
+    "path": "scope-fix-verification/backend-focused/singleplayer-scope-backend-focused.trx",
+    "sha256": "f12eb1465dc4b2413f7136892e4194e5afc1071b7dc8c7d8cbc551afe61a3202",
+    "total": 93,
+    "passed": 93,
+    "failed": 0
+  },
+  "retained_initial_failures": [
+    "Core first full run: 2951 pass / 21 child-process failures because PATH selected system .NET 6; project SDK PATH and DOTNET_ROOT_X64 corrected; final full rerun passes.",
+    "Backend first full run: 4181 pass / 2 missing CLI build prerequisites; both CLIs built per existing CI and affected integration/adjacent 93 tests pass. Not a claim of a full Backend rerun on final code.",
+    "Three newly wired builder/validator fixtures initially used an empty categorical value and obsolete harness executor pin; corrected fixtures, final full Core passes.",
+    "Current Museum replay initially rejected the old frozen permission projection; exact conservative-projection rebuild added, with tamper rejection test. Originals retained."
+  ],
+  "native_replay": {
+    "receipt_sha256": "71c7c225943a79515047977e181f8ef20964e4b34b61bb3529491fe44168b7d0",
+    "core_sha256": "87a351aa3efeffc1074781a550fd141f7fe836a7200525289ce739f53bcef736",
+    "old_action_rows_checked": 25,
+    "original_museum_joins": 3,
+    "results": [
+      {
+        "source": "test-a",
+        "join_sha256": "ee0ad3335aa690e6f0cc374e06d6a3a999aa330654402ec679e5ca534faead90",
+        "status": "verified_evidence_only_no_trainable_teacher_comparison",
+        "blocking_reasons": [
+          "no_strict_pair_between_original_policy_admitted_candidates"
+        ],
+        "candidates": [
+          {
+            "option": "museum.donate_items",
+            "original": true,
+            "policy_admitted": true
+          },
+          {
+            "option": "executor.wait_ticks",
+            "original": false,
+            "policy_admitted": false
+          }
+        ]
+      },
+      {
+        "source": "validation-a",
+        "join_sha256": "ff8d027fa9b97236d57612d57001f0126edc17416f66771df4624110072670b6",
+        "status": "verified_evidence_only_no_trainable_teacher_comparison",
+        "blocking_reasons": [
+          "no_strict_pair_between_original_policy_admitted_candidates"
+        ],
+        "candidates": [
+          {
+            "option": "museum.donate_items",
+            "original": true,
+            "policy_admitted": true
+          },
+          {
+            "option": "executor.wait_ticks",
+            "original": false,
+            "policy_admitted": false
+          }
+        ]
+      },
+      {
+        "source": "retained-train-b",
+        "join_sha256": "aa961fc4e259dc381c9ff9fbfe6f953957118e5434c27d4a33be3b2eec691501",
+        "status": "verified_evidence_only_no_trainable_teacher_comparison",
+        "blocking_reasons": [
+          "no_strict_pair_between_original_policy_admitted_candidates"
+        ],
+        "candidates": [
+          {
+            "option": "museum.donate_items",
+            "original": true,
+            "policy_admitted": true
+          },
+          {
+            "option": "executor.wait_ticks",
+            "original": false,
+            "policy_admitted": false
+          }
+        ]
+      }
+    ],
+    "game_launched": false
+  },
+  "runtime_scope": "readable native context_is_multiplayer=false; supplied snapshot overrides request feature mode; unknown/co-op conservative",
+  "training_scope": "explicit world.mode=training_singleplayer; only confirmation-only exclusion removed",
+  "current_registry_metadata": "conservative unscoped declarations retained; effective allowlist hash bound in admission report",
+  "original_policy_alternatives_required": true,
+  "test_model_scores_opened": false,
+  "formal_training_started": false,
+  "external_review": {
+    "models": [
+      "claude-opus-5-5-high",
+      "claude-sonnet-5-5-high"
+    ],
+    "scope": "provided-material source review before final integration; root implemented/tested subsequent fixes, not collaborator execution or final-head signoff"
+  },
+  "expanded_pilot": {
+    "source_commit": "4daa7cf25c51e5205c1eb3033d2c36952ec545e1",
+    "decisions": 25,
+    "train": 9,
+    "validation": 7,
+    "test_sealed": 9,
+    "validation_save_days": 2,
+    "features": 1393,
+    "fits": 24,
+    "validation_pairs": 15,
+    "all_validation_accuracies": 1.0,
+    "provisional_winner": "linear",
+    "product_recommendation": null,
+    "dataset_manifest_sha256": "42a009a5f414aa7ae2b4d5b9692c43bbc2001e3958f13e48e99158425d39b65f",
+    "configuration_lock_sha256": "41fc96f45ddc45a6b42ff5d7842613a986f802f3b0d5aac6c71c116c59bc5de8",
+    "deployment": "Official C# CPU scoring host parity, 505 train/validation candidates, 37 pairs, zero ordering changes; not full Provider/game 8GiB acceptance"
+  },
+  "github_full_ci": "pending after publication; no borrowed final-head CI claim"
+}
