@@ -72,8 +72,9 @@ namespace StardewAI.Core.OptionRegistry
             new(new OptionRegistry(), new Verifier.Verifier(), int.MaxValue);
 
         // Reproduce the stricter historical projection only when verifying frozen evidence.
-        public static CandidateOptionAvailabilityEvaluator ForConservativeEvidenceReplay() =>
-            new(new OptionRegistry(), new Verifier.Verifier(), 64, useNativeSinglePlayerScope: false);
+        public static CandidateOptionAvailabilityEvaluator ForConservativeEvidenceReplay(bool completeSocialComparison = false) =>
+            new(new OptionRegistry(), new Verifier.Verifier(), completeSocialComparison ? int.MaxValue : 64,
+                useNativeSinglePlayerScope: false);
 
         public OptionAvailabilityEnvelope Evaluate(
             SnapshotEnvelope snapshot,

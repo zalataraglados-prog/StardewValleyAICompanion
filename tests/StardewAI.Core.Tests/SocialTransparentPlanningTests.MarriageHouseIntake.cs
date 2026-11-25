@@ -2,11 +2,45 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using StardewAI.Contracts.State;
 using StardewAI.GoalConditionedBootstrap;
+using StardewAI.Core.OptionRegistry;
 
 namespace StardewAI.Core.Tests;
 
 public sealed partial class SocialTransparentPlanningTests
 {
+    [Fact]
+    public void MarriageIntakeReplaysLegacySinglePlayerAuthorizationWithoutTruncatingSocialCandidates()
+    {
+        var social = FriendshipTeacherFiles(targets: 65);
+        var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(File.ReadAllText(social.Snapshot), JsonOptions)!;
+        MergeMarriageCurrentState(snapshot);
+        CurrentMarriageHouseStateTests.Mutate(snapshot, "player", player => player["multiplayer_runtime"] =
+            JsonSerializer.SerializeToNode(new { status = "available", value = new { context_is_multiplayer = false } }));
+        var files = MarriageIntakeFiles(snapshot);
+        var original = File.ReadAllText(files.Snapshot);
+        var current = CurrentMarriageHouseIntakeBuilder.Build(files.Snapshot, files.Knowledge, files.Dependencies);
+        Assert.Equal("authorized", current.Availability.Options.Single(row => row.OptionId == "social.advance_partnership").ExecutionAuthorization);
+        Assert.Equal("denied", current.Availability.Options.Single(row => row.OptionId == "housing.advance_farmhouse").ExecutionAuthorization);
+        File.WriteAllText(files.Intake, JsonSerializer.Serialize(current, JsonOptions));
+        Assert.Equal(JsonSerializer.Serialize(current, JsonOptions),
+            JsonSerializer.Serialize(CurrentMarriageHouseIntakeBuilder.Verify(files.Intake), JsonOptions));
+        var legacy = current with
+        {
+            Availability = CandidateOptionAvailabilityEvaluator.ForConservativeEvidenceReplay(completeSocialComparison: true)
+                .Evaluate(snapshot, current.ConsideredOptionIds, true)
+        };
+        Assert.Equal(65, legacy.Availability.Options.Single(row => row.OptionId == "social.talk_npc").SocialCandidates.Length);
+        Assert.Equal("confirmation_required", legacy.Availability.Options.Single(row => row.OptionId == "social.advance_partnership").ExecutionAuthorization);
+        Assert.Equal("denied", legacy.Availability.Options.Single(row => row.OptionId == "housing.advance_farmhouse").ExecutionAuthorization);
+        File.WriteAllText(files.Intake, JsonSerializer.Serialize(legacy, JsonOptions));
+        var replay = CurrentMarriageHouseIntakeBuilder.Verify(files.Intake);
+        Assert.Equal(JsonSerializer.Serialize(legacy, JsonOptions), JsonSerializer.Serialize(replay, JsonOptions));
+        Assert.Equal(original, File.ReadAllText(files.Snapshot));
+        replay.Availability.Options[0].ReadEligible = !replay.Availability.Options[0].ReadEligible;
+        File.WriteAllText(files.Intake, JsonSerializer.Serialize(replay, JsonOptions));
+        Assert.Throws<InvalidDataException>(() => CurrentMarriageHouseIntakeBuilder.Verify(files.Intake));
+    }
+
     [Fact]
     public void MarriageIntakeReplaysOriginalSourcesAndPreservesMoreThan64SocialRows()
     {

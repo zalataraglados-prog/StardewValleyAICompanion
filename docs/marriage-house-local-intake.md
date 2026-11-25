@@ -1,5 +1,25 @@
 # Marriage And House Current Intake
 
+## 2026-11-25T19:13:00+08:00 Frozen single-player projection compatibility
+
+PR #599's native single-player confirmation correction also changes the stored
+`social.advance_partnership` authorization in an older Marriage/House intake.
+Verification now rebuilds the current projection first, then the exact historical
+conservative projection if necessary. Both retain the complete unlimited social
+candidate denominator and compare every source hash and artifact field; originals
+are not normalized or rewritten. Current builds keep the new single-player rule.
+The default non-host farmhouse candidate is still denied by the independent host
+check; this fix does not remove that check.
+
+A 65-target regression reproduces the old-artifact rejection before the fix,
+accepts current and historical reports afterward, preserves all 65 social rows,
+and rejects an altered availability field. Related Core tests: 188/188. Exact
+head CI and native-source replay are recorded in the PR. The earlier confirmation
+wording below describes its historical intake, not an unconditional single-player
+restriction. See [scope correction](museum-policy-input-admission.md#2026-11-25t1638000800-single-player-scope-correction).
+
+<!-- audit_invalidation: scope=historical no-confirmation-bypass wording as an unconditional current single-player restriction or reason to reject unchanged old intake; invalidated_at=2026-11-25T19:13:00+08:00; superseded_by=this frozen projection compatibility section; reason=PR599 changes scoped confirmation semantics while frozen sources and complete social denominator remain reusable; historical_only=true -->
+
 ## Current Primary
 
 Friendship PR #465 passed all 38 steps of CI `42208557116` and merged as
