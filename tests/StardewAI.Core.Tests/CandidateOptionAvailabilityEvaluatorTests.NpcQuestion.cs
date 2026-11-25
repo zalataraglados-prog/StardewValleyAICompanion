@@ -10,17 +10,19 @@ namespace StardewAI.Core.Tests;
 
 public sealed class NativeNpcQuestionRecoveryTests
 {
-    [Fact]
-    public void NativeNpcQuestionCompilesThroughMandatoryRecoveryInsteadOfClosingIt()
+    [Theory]
+    [InlineData("", "positive")]
+    [InlineData("alex_native_structure", "summer_Wed_01_01")]
+    public void NativeNpcQuestionCompilesThroughMandatoryRecoveryInsteadOfClosingIt(string mutation, string expectedResponseKey)
     {
-        var snapshot = NpcQuestionSnapshot();
+        var snapshot = NpcQuestionSnapshot(mutation);
         var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
             snapshot, ["recovery.stabilize_day"], includeExecutorCalibrationOptions: true);
         var ranking = StageOneMandatoryMenuRecovery.BuildRanking(availability, "grandpa_evaluation_max_score");
         var selected = StageOneMandatoryMenuRecovery.TrySelect(ranking);
         Assert.True(selected is not null, JsonSerializer.Serialize(ranking));
         Assert.Equal(NativeNpcQuestionRecovery.CandidateKind, selected.Kind);
-        Assert.Contains(selected.Parameters, row => row.Name == "dialogue_response_key" && row.Value == "positive");
+        Assert.Contains(selected.Parameters, row => row.Name == "dialogue_response_key" && row.Value == expectedResponseKey);
         var plan = new DailyPlanCompiler().Compile([selected], snapshot.StateHash, maxCandidates: 1);
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
         Assert.Equal("pending", queue.Status);
@@ -59,7 +61,20 @@ public sealed class NativeNpcQuestionRecoveryTests
 
     [Theory]
     [InlineData("Yes!$h", true)]
+    [InlineData("Thanks!$h#$e#Keep talking.", true)]
+    [InlineData("$e#Only text.$neutral", true)]
+    [InlineData("Only text.$s#$e", true)]
+    [InlineData("$e", true)]
+    [InlineData("No.$a^Another answer.$a#$e#Go away.$a", true)]
     [InlineData("No.$a#$eAnother page", false)]
+    [InlineData("No.$a#$e reward", false)]
+    [InlineData("$extra", false)]
+    [InlineData("Inline$e", false)]
+    [InlineData("Text# $e#More", false)]
+    [InlineData("Text#$e#prefix$action AddMoney 100", false)]
+    [InlineData("Text#$e#$t topic 4", false)]
+    [InlineData("Text#$e#$q 1 next", false)]
+    [InlineData("Text#$e#%item object 72 1", false)]
     [InlineData("%item object 72 1", false)]
     [InlineData("[72]", false)]
     [InlineData("$action AddMoney 100", false)]
@@ -82,6 +97,17 @@ public sealed class NativeNpcQuestionRecoveryTests
                 new() { Key = "positive", SeenId = "qid", FriendshipChange = 20, Reply = "Thank you!$h" }
             ]
         };
+        if (mutation == "alex_native_structure")
+        {
+            // Native 43rd-frame response identities/effects and reply control-token
+            // structure. Display prose is synthetic; no original frame is rewritten.
+            evidence.Responses =
+            [
+                new() { Key = "summer_Wed_01_01", SeenId = "52", FriendshipChange = 30, Reply = "Thanks!$h#$e#Keep talking." },
+                new() { Key = "summer_Wed_01_02", SeenId = "52", FriendshipChange = 0, Reply = "Maybe.$u" },
+                new() { Key = "summer_Wed_01_03", SeenId = "53", FriendshipChange = -50, Reply = "No.$a^Another answer.$a#$e#Go away.$a" }
+            ];
+        }
         if (mutation == "event") active["event_up"] = true;
         if (mutation == "speaker") evidence.Speaker = "Lewis";
         if (mutation == "source") evidence.Source = "guessed_effects";

@@ -38,12 +38,16 @@ public sealed class NativeNpcQuestionEvidence
             .Replace("-", string.Empty).ToLowerInvariant();
     }
 
-    // Response parsing can run commands. Only plain text and native portrait emotions
-    // are admitted here; quests, follow-up questions, callbacks and rewards stay out.
+    // Response parsing can run commands. Only plain text, native portrait emotions
+    // and exact standalone $e display segments are admitted here. The native parser
+    // splits on '#' and consumes $e without adding an action callback; prefixes or
+    // arguments are not covered. Original reply text still binds the identity hash.
     public static bool IsDisplayOnlyReply(string text)
     {
         if (string.IsNullOrWhiteSpace(text) || text.Contains('%') || text.Contains('[') || text.Contains(']')) return false;
-        var stripped = Regex.Replace(text, @"\$(?:neutral|h|s|a|u|l|n)(?=$|[^A-Za-z0-9_])", string.Empty);
+        var displayOnlyText = string.Join("#", text.Split('#').Select(
+            segment => string.Equals(segment, "$e", StringComparison.Ordinal) ? string.Empty : segment));
+        var stripped = Regex.Replace(displayOnlyText, @"\$(?:neutral|h|s|a|u|l|n)(?=$|[^A-Za-z0-9_])", string.Empty);
         return !stripped.Contains('$');
     }
 }
