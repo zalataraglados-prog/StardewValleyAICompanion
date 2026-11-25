@@ -185,6 +185,7 @@ public static class StageOneMandatoryMenuRecovery
             .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal);
 
     private static bool IsMandatoryMenuRecovery(string kind) =>
+        string.Equals(kind, Infrastructure.NativeNpcQuestionRecovery.CandidateKind, StringComparison.Ordinal) ||
         string.Equals(kind, CloseMenuKind, StringComparison.Ordinal) ||
         string.Equals(
             kind,

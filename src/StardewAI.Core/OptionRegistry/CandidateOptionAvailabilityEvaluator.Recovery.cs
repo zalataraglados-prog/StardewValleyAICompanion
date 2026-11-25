@@ -37,6 +37,8 @@ namespace StardewAI.Core.OptionRegistry
                 StringComparison.OrdinalIgnoreCase);
             if (ActiveMenuOpenForCandidate(snapshot))
             {
+                var npcQuestion = Infrastructure.NativeNpcQuestionRecovery.Candidate(snapshot);
+                if (npcQuestion is not null) candidates.Add(npcQuestion);
                 var professionInputSettle =
                     LevelUpProfessionInputSettleCandidate(snapshot);
                 if (professionInputSettle is not null)

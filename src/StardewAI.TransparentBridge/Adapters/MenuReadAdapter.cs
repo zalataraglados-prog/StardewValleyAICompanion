@@ -960,6 +960,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                 width = menu.transitionWidth,
                 height = menu.transitionHeight
             },
+            npc_question = SharedNative.NativeNpcQuestionReader.Read(menu),
             current_text = menu.getCurrentString()
         };
     }

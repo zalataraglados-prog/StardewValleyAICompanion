@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Compile Include="..\SharedNative\CanonicalVanillaObjectUnit.cs" Link="Native\CanonicalVanillaObjectUnit.cs" />
+    <Compile Include="..\SharedNative\NativeNpcQuestionReader.cs" Link="Native\NativeNpcQuestionReader.cs" />
     <None Include="manifest.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

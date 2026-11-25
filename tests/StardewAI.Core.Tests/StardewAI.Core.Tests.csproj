@@ -55,6 +55,7 @@
     <Compile Include="PolicyTrajectoryDatasetBuilderTests.cs" />
     <Compile Include="PolicyDecisionTrajectoryBuilderTests.cs" />
     <Compile Include="SinglePlayerPolicyTrainingScopeTests.cs" />
+    <Compile Include="CandidateOptionAvailabilityEvaluatorTests.NpcQuestion.cs" />
     <Compile Include="PolicyIndependentDecisionDatasetTests.cs" />
     <Compile Include="StructuredPolicyTrainerTests.cs" />
     <Compile Include="StructuredPolicyTrainerTests.SinglePlayerScope.cs" />

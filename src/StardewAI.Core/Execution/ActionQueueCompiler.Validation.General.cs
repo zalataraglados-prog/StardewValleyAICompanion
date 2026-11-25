@@ -505,6 +505,11 @@ namespace StardewAI.Core.Execution
             var expectedDialogueKey = ReadParameter(action, "expected_dialogue_key");
             var responseKey = ReadParameter(action, "dialogue_response_key");
             var expectedShopId = ReadParameter(action, "expected_shop_id");
+            if (string.IsNullOrWhiteSpace(expectedShopId) &&
+                Infrastructure.NativeNpcQuestionRecovery.Matches(snapshot, expectedDialogueKey, responseKey))
+            {
+                return Array.Empty<string>();
+            }
             if (!DialogueResponseOpensExpectedShop(expectedDialogueKey, responseKey, expectedShopId))
             {
                 return new[] { "dialogue_response_not_whitelisted" };

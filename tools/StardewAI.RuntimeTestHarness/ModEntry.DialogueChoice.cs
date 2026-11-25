@@ -39,6 +39,11 @@ public sealed partial class ModEntry : Mod
             return BlockedWithPrimitive(request, "choose_dialogue_response", DialogueRequestedEffect(request), DialogueObservedEffect(), "dialogue_box_not_open");
         }
 
+        if (request.ExpectedDialogueKey.StartsWith("npc_question:", StringComparison.Ordinal))
+        {
+            return ExecuteNativeNpcQuestionResponse(request, menu);
+        }
+
         var expectedKey = request.ExpectedDialogueKey;
         var actualKey = Game1.currentLocation.lastQuestionKey ?? string.Empty;
         if (string.IsNullOrWhiteSpace(expectedKey) || !string.Equals(actualKey, expectedKey, StringComparison.Ordinal))
