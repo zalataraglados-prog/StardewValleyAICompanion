@@ -21,7 +21,13 @@
     "run_id": "teacher-year3-r2-20261125-0001",
     "state_file": "teacher-three-year-r2/state.json",
     "complete_three_year_route_verified": false,
-    "controller_pid": 37072
+    "controller_pid": 37072,
+    "latest_status": "failed_after_native_cold_readback",
+    "failure_recorded_at": "2026-11-25T22:13:56.5556929+08:00",
+    "attempts_started": 18,
+    "verified_actions": 2,
+    "stop_reason": "max_unverified_execution_streak_reached count=8 option=executor.water_crop failure=no_reachable_water_source",
+    "currently_running": false
   },
   "observed_bug": "Ordinary reply after native NPC answer retains responses while isQuestion=false. Old guard refused its native close.",
   "native_save": {
