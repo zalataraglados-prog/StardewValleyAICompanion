@@ -1,0 +1,153 @@
+{
+  "schema_version": "laboratory_cross_day_comparison.v1",
+  "recorded_at": "2026-11-25T23:46:45.639181+08:00",
+  "training_source_commit": "22bb73f2179a4bb0c7251d162bb66ff3892e5997",
+  "scope": "Research comparison of separately admitted executor versions; no formal product checkpoint.",
+  "data": {
+    "decisions": 20,
+    "train_decisions": 12,
+    "validation_decisions": 8,
+    "train_pairs": 31,
+    "validation_pairs": 20,
+    "features": 1773,
+    "harness_decisions": 16,
+    "product_decisions": 4,
+    "product_train_decisions": 3,
+    "product_train_save_days": 2,
+    "product_train_pairs": 9,
+    "product_validation_decisions": 1,
+    "product_validation_save_days": 1,
+    "product_validation_pairs": 5,
+    "new_native_days": {
+      "spring18": "train",
+      "summer11": "validation"
+    },
+    "new_accepted_rows": 2,
+    "new_rejected_rows": 0,
+    "native_version_manifests_kept_separate": true,
+    "shared_encoder_and_normalization_fit": "train_only",
+    "new_native_executed_episodes": 7,
+    "new_episodes_without_training_row": 5,
+    "rejection_count_scope": "Zero final dataset rejections among the two emitted eligible rows; five other native episodes were retained as execution evidence or lacked exact requirement advancement."
+  },
+  "fits": 84,
+  "implementations": 10,
+  "cumulative_research_fits": 192,
+  "families": {
+    "catboost": {
+      "fits": 18,
+      "product_validation_pair_accuracy_min": 1.0,
+      "product_validation_pair_accuracy_max": 1.0,
+      "combined_validation_pair_accuracy_min": 1.0,
+      "combined_validation_pair_accuracy_max": 1.0
+    },
+    "deep_sets": {
+      "fits": 6,
+      "product_validation_pair_accuracy_min": 0.6,
+      "product_validation_pair_accuracy_max": 0.6,
+      "combined_validation_pair_accuracy_min": 0.9,
+      "combined_validation_pair_accuracy_max": 0.9
+    },
+    "ft_transformer": {
+      "fits": 6,
+      "product_validation_pair_accuracy_min": 0.4,
+      "product_validation_pair_accuracy_max": 0.6,
+      "combined_validation_pair_accuracy_min": 0.75,
+      "combined_validation_pair_accuracy_max": 0.9
+    },
+    "lightgbm": {
+      "fits": 12,
+      "product_validation_pair_accuracy_min": 1.0,
+      "product_validation_pair_accuracy_max": 1.0,
+      "combined_validation_pair_accuracy_min": 1.0,
+      "combined_validation_pair_accuracy_max": 1.0
+    },
+    "original_linear": {
+      "fits": 6,
+      "product_validation_pair_accuracy_min": 0.6,
+      "product_validation_pair_accuracy_max": 0.6,
+      "combined_validation_pair_accuracy_min": 0.9,
+      "combined_validation_pair_accuracy_max": 0.9
+    },
+    "mlp": {
+      "fits": 6,
+      "product_validation_pair_accuracy_min": 0.4,
+      "product_validation_pair_accuracy_max": 0.6,
+      "combined_validation_pair_accuracy_min": 0.85,
+      "combined_validation_pair_accuracy_max": 0.9
+    },
+    "rank_svm": {
+      "fits": 6,
+      "product_validation_pair_accuracy_min": 0.6,
+      "product_validation_pair_accuracy_max": 0.6,
+      "combined_validation_pair_accuracy_min": 0.9,
+      "combined_validation_pair_accuracy_max": 0.9
+    },
+    "resnet": {
+      "fits": 6,
+      "product_validation_pair_accuracy_min": 0.4,
+      "product_validation_pair_accuracy_max": 0.6,
+      "combined_validation_pair_accuracy_min": 0.85,
+      "combined_validation_pair_accuracy_max": 0.9
+    },
+    "tabm": {
+      "fits": 6,
+      "product_validation_pair_accuracy_min": 0.6,
+      "product_validation_pair_accuracy_max": 0.6,
+      "combined_validation_pair_accuracy_min": 0.9,
+      "combined_validation_pair_accuracy_max": 0.9
+    },
+    "xgboost": {
+      "fits": 12,
+      "product_validation_pair_accuracy_min": 1.0,
+      "product_validation_pair_accuracy_max": 1.0,
+      "combined_validation_pair_accuracy_min": 1.0,
+      "combined_validation_pair_accuracy_max": 1.0
+    }
+  },
+  "neural_diagnosis": {
+    "fits": 30,
+    "training_31_of_31_runs": 28,
+    "epochs": 200,
+    "systematic_learning_rate_or_regularization_search_completed": false,
+    "interpretation": "Training-pair fit is generally complete while the new decision generalizes poorly. This does not establish a neural architecture ceiling or that extra epochs alone solve it."
+  },
+  "untrained_baselines": {
+    "prior_rank": {
+      "product_correct": 5,
+      "product_pairs": 5,
+      "harness_correct": 13,
+      "harness_pairs": 15
+    },
+    "estimated_ticks": {
+      "product_correct": 5,
+      "product_pairs": 5,
+      "harness_correct": 13,
+      "harness_pairs": 15
+    }
+  },
+  "validation_scope": "The five new Product comparisons are one same-day decision among six Sweet Pea targets, differentiated by collection cost. They are not five independent tasks or a complete-game success rate.",
+  "technical_audit": {
+    "reloaded_models_matching": 84,
+    "artifact_hashes_checked": 234,
+    "frozen_bindings_checked": 143,
+    "configuration_aggregations_checked": 36,
+    "original_training_pair_difference_max_error": 0
+  },
+  "artifact_sha256": {
+    "execution_plan": "c8a9ca142486149ef592717881a0bc32657eba316133a413b5a5308cba1f6b1b",
+    "comparison_results": "670f54bbcaf86040d45d1c82a79243f61738a7c3adb3a808389720c7233a697e",
+    "independent_review": "aff01f0266c25fee68c5fecbb093c552776cde2af5fc1a2dd9e6b3a8d6097967",
+    "feature_schema": "7285b7d08cb9f6d7841fa150903f104833ea70c2e69578c25bf86f7a1413031f"
+  },
+  "next_candidate_for_deployment_evaluation": "catboost",
+  "final_product_recommendation": null,
+  "test_decisions_sealed": 9,
+  "test_content_read": false,
+  "formal_checkpoint": false,
+  "limits": [
+    "Product validation covers one decision/day; more independent dates and substantive task trade-offs are required.",
+    "CatBoost, XGBoost and LightGBM tie in this comparison; a simple existing ranking also solves these five pairs.",
+    "Actual Provider integration, new artifact deployment parity and whole-machine8GiB validation remain unverified."
+  ]
+}

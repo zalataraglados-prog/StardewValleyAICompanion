@@ -1,0 +1,46 @@
+{
+  "schema_version": "native_clearance_tool_preconditions.v1",
+  "recorded_at": "2026-11-25T23:46:45.639181+08:00",
+  "observed_problem": "A bounded route compiled weed and stone clearance as pending while the actor carried only a WateringCan and FishingRod.",
+  "native_rule": "Weeds require a native heavy-hitter; ordinary breakable stone requires Pickaxe. The native refusal was correct.",
+  "core_change": "Check current native-compatible inventory tools before ordinary clearance; bind tool slot/kind for route repair. Native acquisition followed by a fresh compile remains valid.",
+  "retained_contracts": [
+    "No implicit obstacle mutation during movement",
+    "Twig/artifact exact resource projections",
+    "Original native tool selection and effects"
+  ],
+  "tests": {
+    "new_cases": 42,
+    "adjacent_targeted_passed": 110,
+    "full_core_passed": 3080,
+    "full_core_failed": 0,
+    "sealed_without_tool_status": "blocked",
+    "sealed_with_pickaxe_status": "pending",
+    "native_inputs_unchanged": true
+  },
+  "native_recovery": {
+    "stored_pickaxe_withdrawn": true,
+    "item_conservation_verified": true,
+    "explicit_clearance_and_refill_verified": true,
+    "watering_water_before": 0,
+    "watering_water_after": 39,
+    "additional_watering_before_sleep": 1,
+    "saved_year": 1,
+    "saved_season": "summer",
+    "saved_day": 12,
+    "saved_time": 600,
+    "saved_water": 38,
+    "saved_pickaxe_present": true,
+    "four_file_lineage_verified": true,
+    "complete_three_year_route_verified": false,
+    "scope": "Controlled native recovery and original warm-start continuation, not a Day0 or unassisted full-route claim.",
+    "cold_readback_verified": true
+  },
+  "artifact_sha256": {
+    "native_recovery": "c3c5a2ba5d496237a02c40036f11a6452bede965c0abb5ab073c9b57d76727d1",
+    "native_saved_boundary": "10b7153c13160a375fd97b509cb972318088bd5136d90fe6394d96dff0e2093a",
+    "sealed_core_compilation": "9931c0966dce12131d0a14376e86e41eb32ddd6b0a3cf2b7de4ecf14432bacbe",
+    "cold_readback": "15291b03c71234f0c201e5734c26b21a3a5b41e9ace65d1145cc99273a0f8f33"
+  },
+  "formal_training_started": false
+}
