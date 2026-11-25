@@ -1,0 +1,52 @@
+{
+  "recorded_at": "2026-11-25T22:12:37.2137684+08:00",
+  "source_commit": "95e0dbbe96c6eb13c6dc650c30dda6c20b4d4fe2",
+  "native_answer": {
+    "friendship_before": 20,
+    "friendship_after": 50,
+    "npc": "Alex",
+    "seen_id": "52",
+    "seen_after": true,
+    "response_key": "summer_Wed_01_01",
+    "seen_before": false
+  },
+  "pull_request": 600,
+  "status": "native_question_reply_close_and_saved_day_verified",
+  "raw_save_uploaded": false,
+  "formal_training_started": false,
+  "desktop_input_taken": false,
+  "long_horizon": {
+    "status_at_recording": "running",
+    "source_checkpoint": "ProofFarm year1 summer11",
+    "run_id": "teacher-year3-r2-20261125-0001",
+    "state_file": "teacher-three-year-r2/state.json",
+    "complete_three_year_route_verified": false,
+    "controller_pid": 37072
+  },
+  "observed_bug": "Ordinary reply after native NPC answer retains responses while isQuestion=false. Old guard refused its native close.",
+  "native_save": {
+    "year": 1,
+    "cold_readback_verified": true,
+    "day": 11,
+    "four_file_lineage_verified": true,
+    "time": 600,
+    "season": "summer"
+  },
+  "schema_version": "laboratory_native_npc_recovery.v1",
+  "artifact_sha256": {
+    "native_save_receipt": "f2bb8d519c5d2208ef69af49dd9cf32ff833178a9d97d54a879dcdcb9c7de4a5",
+    "native_question_receipt": "53ae5c50d77682c75c650b60b61559804a8ced80c26eab19b00196d8aecce8af",
+    "stale_responses_validation": "bcd67ce04fd301a652139d1b9ad725dff53e508a398a604941c1c2f33d0645f4",
+    "cold_readback_receipt": "88a4f2831a5b73c990589570e0fa57360c09ff9dee9da8bd10603fed25404084"
+  },
+  "tests": {
+    "harness_build_warnings": 0,
+    "harness_build_errors": 0,
+    "targeted_red_passed": 70,
+    "targeted_green_passed": 75,
+    "bridge_build_errors": 0,
+    "core_passed": 3038,
+    "targeted_red_failed": 5,
+    "bridge_build_warnings": 0
+  }
+}
