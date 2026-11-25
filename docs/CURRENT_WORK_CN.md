@@ -1,5 +1,16 @@
 # StardewAI 当前工作
 
+## 2026-11-25T20:04:00+08:00 实验室产品产数与副屏显示（304）
+
+- #599已合入`main@c15d3e7e`；最终`c85e13a2`完整CI45602485162通过、同head复核无新主要问题，原婚姻intake P2已解决。主线内容树与已验head相同；下方303的“待合入”只记录当时状态。当前主线五个工具／Mod已重建，两个Mod共享依赖SHA一致，历史拟合和原始输入未覆盖。
+- 实验室本机运行`lab-product-teacher-presented-20261125-04`：原生完成收取葡萄干及出货，共2个相关决策、4个队列动作，`product_executor.v1`真实回执及`policy_teacher_supervision.v2`独立重放经原PolicyDataset接受2／拒绝0；每次81个原始候选，合计6条严格比较。来源是同一个存档日，均在train；不存在Product validation/test覆盖或最终模型定型的声明。[公开身份与范围](../experiments/r2-lab-evidence/20261125/product-teacher-plumbing.json)。
+- 产数配置复用现有Product Teacher rollout，只限定`farm.collect_machine_outputs`／`economy.ship_items`两类输入，不追加捕鱼候选，显式记录受限候选范围。全候选试验的权威平局保留，未人为造顺序；旧v1行和旧快照不伪改为当前数据。原四文件存档SHA不变，旧单回合探针不与这2行叠加计数。
+- 已实见游戏画面位于副屏`(2560,0)`，监控位于副屏右侧；游戏派发前先核位置，监控置顶并继续按Steam条件隐藏。先前可见运行第2回合的移动阻塞完整保留；本轮先完成显示布置再执行，两回合均通过，不凭时间相邻断言引擎bug或唯一根因。空闲暂停可能保留黑色淡入帧，执行中的真实农场画面另已观察。本轮游戏按脚本结束，非持续训练。
+- 首轮／扩展横评仍绑定原4daa冻结数据，25行／24拟合的validation平局和test9封存不变。接下来扩充独立存档日与任务范围的Product语料，再按既定方案冻结选型输入、核实选中Student的实际Provider及旧机整机8GiB；不重开工程交接或倒挂完整三年方案。正式训练未启动。
+- 协作者本轮累计10次AGY请求：2评价、7个实际任务返回，1次Opus追加复核遇429额度限制。文件工具HOLD；失败保留，未自动重试或换模型。Sonnet给出的数据链分析由主协作者对照现有rollout和真实原件复核，未将材料推测当成代码事实。
+
+<!-- audit_invalidation: scope=303待合入及尚无当前格式Product独立Teacher行的状态; invalidated_at=2026-11-25T20:04:00+08:00; superseded_by=304; reason=599最终CI复核合入且受限两类产品产数真实通过; historical_only=true -->
+
 ## 2026-11-25T16:38:00+08:00 实验室单人过滤纠正与扩展预实验（303，待合入）
 
 - 2026-11-25T19:13:00+08:00 #599初始head `09b49a53` 完整CI45579822164通过；独立审查P2复现旧Marriage/House intake在单人确认修正后DeepEquals拒绝。现补精确保守投影重建，保留int.MaxValue社交分母，65目标正例与篡改拒绝、相关188项通过；默认房屋候选仍受原host门拒绝，未误改该权限。旧原件和初轮失败保留，最终head重新CI，当前不借旧head作最终通过。[实际兼容合同](marriage-house-local-intake.md#2026-11-25t1913000800-frozen-single-player-projection-compatibility)。

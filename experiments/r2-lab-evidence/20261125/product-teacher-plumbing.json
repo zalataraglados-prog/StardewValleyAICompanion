@@ -1,0 +1,138 @@
+{
+  "schema_version": "laboratory.product_teacher_plumbing.v1",
+  "recorded_at": "2026-11-25T20:03:21.682583+08:00",
+  "code_head": "c85e13a2ccec299fe511853b950059e8b7ff9050",
+  "integrated_main": "c15d3e7e3aa9d119736abea611d3eec0ffc953db",
+  "pr": 599,
+  "final_pr_ci": {
+    "run": 45602485162,
+    "conclusion": "success"
+  },
+  "independent_review": "same c85e13a2 head, no new major findings, original P2 resolved",
+  "run_id": "lab-product-teacher-presented-20261125-04",
+  "status": "passed",
+  "candidate_option_scope": [
+    "farm.collect_machine_outputs",
+    "economy.ship_items"
+  ],
+  "additional_fishing_candidates": false,
+  "full_action_policy_coverage_claim": false,
+  "scope": "Product/independent-Teacher data pipeline probe, two related decisions on one save-day; not final model selection or formal training",
+  "episodes": [
+    {
+      "episode_ordinal": 1,
+      "source_state_hash": "0c045d21910841ca09b03be1c20c1e59cd4312c4816de322bfc687c5c44368c8",
+      "after_state_hash": "324961ca6cfbde62b7cdc8d3294c604f1c61f14fbb8a062060e390c812940680",
+      "selected_candidate_id": "machine-output:Farm:58,43:(O)Raisins",
+      "selected_option_id": "farm.collect_machine_outputs",
+      "queue_id": "queue.9d089a28714c497ab3c7499ea82d2a19",
+      "queue_item_count": 2,
+      "primitive_option_ids": [
+        "executor.move_to_tile",
+        "executor.collect_machine_output"
+      ],
+      "verified_requirement_transition_count": 1,
+      "receipt_status": "ready",
+      "teacher_row_admitted": true
+    },
+    {
+      "episode_ordinal": 2,
+      "source_state_hash": "324961ca6cfbde62b7cdc8d3294c604f1c61f14fbb8a062060e390c812940680",
+      "after_state_hash": "206b88c0bc6a7713612e6c316298d20a531b1e4d4800057d78a25eacc87a55b2",
+      "selected_candidate_id": "ship:Farm:71,14:9:Raisins:move_then_deposit",
+      "selected_option_id": "economy.ship_items",
+      "queue_id": "queue.9d224852ca0b4ad381aa11d644e505ad",
+      "queue_item_count": 2,
+      "primitive_option_ids": [
+        "executor.move_to_tile",
+        "executor.ship_inventory_item_to_bin"
+      ],
+      "verified_requirement_transition_count": 1,
+      "receipt_status": "ready",
+      "teacher_row_admitted": true
+    }
+  ],
+  "accepted_rows": 2,
+  "rejected_rows": 0,
+  "partitions": {
+    "train": 2,
+    "validation": 0,
+    "test": 0
+  },
+  "save_days": 1,
+  "independent_teacher_replayed": true,
+  "teacher_schemas": [
+    "policy_teacher_supervision.v2"
+  ],
+  "teacher_ids": [
+    "deterministic_teacher.current_stage_one_collection"
+  ],
+  "strict_comparisons": 6,
+  "candidate_counts": [
+    81,
+    81
+  ],
+  "actual_executor": "product_executor.v1",
+  "original_source_save_unchanged": true,
+  "earlier_single_row_probe": "retained separately; not concatenated into this dataset or counted as an independent third decision",
+  "original_25_row_pilot": "unchanged, 4daa source; independent native source admission also reran on c85e13a2 with 25 accepted/0 rejected and same 9/7/9 partition",
+  "retained_failures": [
+    "September snapshots lack current farm_type_key; original v1 evidence retained, not relabeled by editing frames.",
+    "First fresh launch stopped before dispatch because the nested I: source namespace was not mounted; verified catalog hash already existed locally.",
+    "Unrestricted global candidate set has an authoritative top tie; no ordering fabricated. The subsequent probe explicitly limits option families.",
+    "Visible run 03 episode 2 reported movement_stuck_or_collision_blocked at 70,29 toward 70,28 during display operations; retained, not declared an engine bug or conclusive display root cause. Run 04 separates layout from dispatch and both episodes pass."
+  ],
+  "display": {
+    "native_game_observed": {
+      "x": 2560,
+      "y": 0,
+      "width": 1920,
+      "height": 1080,
+      "live_frame_verified_at": "2026-11-25T19:58:22+08:00"
+    },
+    "monitor_observed": {
+      "x": 3915,
+      "y": 12,
+      "width": 565,
+      "height": 1022,
+      "verified_at": "2026-11-25T19:59:25+08:00"
+    },
+    "monitor_topmost": true,
+    "user_rule": "project only when Steam is clear except Bongo Cat and explicit owned native run",
+    "dispatch_waits_for_position_readiness": true,
+    "native_run_finished": true,
+    "limitation": "Idle executor pause can hold a fade/black frame; position verified before dispatch and actual farm frame verified during execution. No claim of a separate always-running OS game-window manager."
+  },
+  "files": {
+    "summary.json": "c463e9b209c2b4ef2c6261a02b31222e54f44572389d3608f8e17659ae128c48",
+    "teacher-policy-decision-trajectories.jsonl": "59a692542d4b5d593dce0fcfc5f69ef573446c84095d669160749324b4024e48",
+    "validated-policy-dataset/policy-dataset-manifest.json": "982a023faa11ba627194315ebebf8e0d839c5aa82e2ecff0ea8c9de2cfd1e57f",
+    "before-snapshot-episode-0001.json": "cf6c5db600a9c2a7117b6e929d56241e6abaecd5f589c4e9d5567019a5188842",
+    "before-snapshot-episode-0002.json": "a231d09b8f2dcec4b86adb469b24a2dbad6c283501adf0c9b0bc848ddb746503",
+    "teacher-preference-episode-0001.json": "8d8ea7bf76b195cf9b2fd429c05b2b1849998cf0ff0779e2b14d17679a38d773",
+    "teacher-preference-episode-0002.json": "a9071d49519c6a89fdeafe4978e69d8ce436e918aaf6432fb87780c9fdefdf3d",
+    "episode-0001/teacher-receipt-admission.json": "bab2e4df3b2db2b8a67201119f18c50c11e9fe33f35f0b4a76fb9058cbc0c8bf",
+    "episode-0002/teacher-receipt-admission.json": "68fac8fa9ac2683b63d1f6df6d82310bb3cef8da88e5eb8418e3f7e4beea404d",
+    "presentation-ready.json": "9aa819a4441b79c373b74a2cd2e528066c5fa25590c27a5af176bf525de9fad7"
+  },
+  "configured_entry": {
+    "path": "Invoke-PresentedProductTeacherCapture.ps1",
+    "sha256": "41998128c845d4fed156ffca6f41b189d6927319c1272f91858c0949dc4f85d8",
+    "changes_from_canonical": [
+      "two explicit option families",
+      "no extra fishing candidates in pool",
+      "visible game only, services hidden",
+      "pre-dispatch presentation latch"
+    ]
+  },
+  "source_replay": "Original nested I: references resolve through the guarded local D:/Recovered-From-OldPC/I namespace; do not alter frozen source paths/hashes.",
+  "raw_data_uploaded": false,
+  "test_model_scores_opened": false,
+  "model_fits_started_in_this_capture": false,
+  "formal_training_started": false,
+  "remaining": [
+    "Expand Product inputs across independent save-days and the intended task scope; this probe has no validation/test Product rows.",
+    "Freeze the representative selection dataset/configuration, retain independent test, and verify the chosen Student through its actual product Provider.",
+    "Perform the actual old-PC game/SMAPI/Student whole-8GiB acceptance."
+  ]
+}
