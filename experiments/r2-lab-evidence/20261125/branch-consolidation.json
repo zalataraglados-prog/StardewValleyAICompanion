@@ -1,0 +1,84 @@
+{
+  "schema_version": "r2_branch_consolidation.v1",
+  "recorded_at": "2026-11-25T11:17:27+08:00",
+  "effective_when": "this change is merged into main",
+  "base_main": "17693584a7b5ee98b7443aded4126ae3eeb16433",
+  "sources": [
+    {
+      "branch": "fix/r2-lab-native-storage-shop-20261117",
+      "sha": "d287b3f5ab73bfa81aca3f7fb64ed28ee07bbc2b",
+      "archive_tag": "archive/20261125/storage-shop-source",
+      "disposition": "merge three original commits and include their tests in GameFreeGovernance",
+      "commits": ["faa987e8", "a334c0ac", "d287b3f5"],
+      "reason": "Current main reproduced the two native chest provenance failures and sale-timer failure. The integrated version passes the adjacent contract tests; standalone owner-zero wooden chest access remains restricted in both adapter and executor."
+    },
+    {
+      "branch": "docs/pluggable-policy-provider-contract",
+      "sha": "5f79ac5adfb32eaf93d433ed7344b4d0d2e9bf8e",
+      "archive_tag": "archive/20261125/provider-contract-draft",
+      "disposition": "archive superseded draft; do not establish a second normative contract",
+      "current_authority": "docs/STUDENT_TEACHER_PROVIDER_INTERFACE_REQUIREMENTS_CN.md",
+      "reason": "The older English draft covers replaceability, deterministic authority, model neutrality, provenance and the 8 GiB deployment boundary. The current contract carries the subsequent provider and parallel-handoff decisions; restoring the old draft as current would duplicate authority and omit later scope corrections."
+    },
+    {
+      "branch": "lab/r2-native-continuation-source-20261123",
+      "sha": "74741ed0235a2a967431a020cc5416fa17681c49",
+      "archive_tag": "archive/20261125/lab-native-source",
+      "disposition": "preserve experiment source, controllers and evidence; do not merge the mixed snapshot wholesale",
+      "reason": "The source explicitly declares itself a reviewable lab snapshot, not main integration or a completed route. Its fork delta includes 78 C# files, old native readers and crop-window logic now superseded on main. Current main already replays the accepted island functional originals through its strict shared reader. Experimental menu/protection/capture prototypes are retained as historical proposals, not declared production requirements or accepted fixes. The independent three-commit storage/shop branch is integrated separately.",
+      "snapshot_scope": {
+        "files_since_fork": 218,
+        "csharp_files": 78,
+        "csharp_files_identical_to_base_main": 3,
+        "evidence_files": 112,
+        "controller_files": 24,
+        "documentation_files": 3,
+        "snapshot_index_files": 1
+      }
+    },
+    {
+      "branch": "docs/r2-pretraining-execution-order",
+      "sha": "8250e356c13b44d63a26df9ce8da6acd98ec6e9e",
+      "archive_tag": "archive/20261125/legacy-pretraining-docs",
+      "disposition": "archive old local history; retain evolved main documentation",
+      "current_authority": ["docs/DOCUMENTATION_INDEX_CN.md", "docs/DOCUMENTATION_MAINTENANCE_CN.md", "docs/GLOBAL_DAILY_PLAN_CONTINUATION_CN.md"],
+      "reason": "The two local history commits predate the expanded documentation index and section 300. Their original directory/editing rules have evolved on main, and their earlier blocking order cannot override the user's subsequent normal-handoff and parallel-evaluation decision."
+    }
+  ],
+  "verification": {
+    "baseline_targeted": {"passed": 18, "failed": 3, "total": 21},
+    "integrated_targeted": {"passed": 32, "failed": 0, "skipped": 0},
+    "full_game_path_builds": {"bridge": "passed, zero warnings/errors", "harness": "passed, zero warnings/errors"},
+    "retained_native_functional_replay": {
+      "proof_sha256": "dab4932d7d5ed12aaf585f0ca41fa1c792839c45f6d2286332adf17b9a194ae2",
+      "positive_and_counterexample_cases": 14,
+      "passed": 14,
+      "three_consumer_parity": true,
+      "prepared_other_frame_mutations_rejected": 3,
+      "originals_modified": false,
+      "game_started": false
+    },
+    "final_head_ci": "PR check run; do not substitute an earlier head's result"
+  },
+  "private_archive": {
+    "root": "D:\\StardewValleyAICompanion前瞻实验室\\归档\\20261125-分支收口",
+    "worktree_snapshots": 23,
+    "dirty_worktrees": 5,
+    "files": 113423,
+    "uncompressed_bytes": 4009234788,
+    "includes": ["tracked working files", "staged index", "binary patches", "untracked and ignored files", "per-file SHA-256", "verified Git bundle"],
+    "bundle_sha256": "c74a006dc90b0dcb19e4c61c79eeaddb947de8e536ec4e898b65abd936b246af",
+    "restore_rehearsal": {"snapshot": "StardewValleyAICompanion-step5-evidence", "files": 4888, "all_hashes_match": true, "git_status_matches": true},
+    "restore_script": "Restore-ArchivedWorktree.ps1",
+    "privacy": "Only the four known-public source tags are published. Private archive-local tags, WIP commits, bundles and full working files stay local."
+  },
+  "cleanup_order": ["verify final PR head", "merge", "independently verify MERGED state and tested content tree", "recheck archives and unchanged source worktrees", "retire old branches and worktrees", "fast-forward main and refresh current local tool pointers"],
+  "boundaries": {
+    "engineering_handoff": "complete under section 300",
+    "lab_data_model_selection_and_evaluation": "continue under issue 569",
+    "issue_593_native_recheck": "pending",
+    "all_experimental_prototypes_accepted": false,
+    "formal_training_authorized": false,
+    "paid_model_calls": 0
+  }
+}
