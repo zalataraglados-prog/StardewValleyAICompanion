@@ -20,9 +20,10 @@ public static class NativeNpcQuestionRecovery
         if (!menu.HasValue || menu.Value.ValueKind != JsonValueKind.Object ||
             ReadString(menu.Value, "type") != "DialogueBox" || ReadBool(menu.Value, "is_open") != true ||
             ReadBool(menu.Value, "event_up") != false || ReadBool(menu.Value, "dialogue_is_question") != true ||
+            ReadBool(menu.Value, "dialogue_character_present") != true ||
+            ReadBool(menu.Value, "is_sleep_prompt") == true || ReadBool(menu.Value, "is_tent_sleep_prompt") == true ||
             ReadBool(menu.Value, "dialogue_transitioning") != false ||
             !menu.Value.TryGetProperty("dialogue_safety_timer", out var timer) || !timer.TryGetInt32(out var t) || t > 0 ||
-            !string.IsNullOrWhiteSpace(ReadString(menu.Value, "last_question_key")) ||
             !detail.HasValue || !detail.Value.TryGetProperty("npc_question", out var question)) return null;
         try
         {

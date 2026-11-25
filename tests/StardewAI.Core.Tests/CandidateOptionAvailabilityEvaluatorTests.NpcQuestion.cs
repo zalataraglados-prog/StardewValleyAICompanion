@@ -13,6 +13,10 @@ public sealed class NativeNpcQuestionRecoveryTests
     [Theory]
     [InlineData("", "positive")]
     [InlineData("alex_native_structure", "summer_Wed_01_01")]
+    [InlineData("alex_stale_carpenter", "summer_Wed_01_01")]
+    [InlineData("alex_stale_blacksmith", "summer_Wed_01_01")]
+    [InlineData("alex_stale_sleep", "summer_Wed_01_01")]
+    [InlineData("alex_stale_tent_sleep", "summer_Wed_01_01")]
     public void NativeNpcQuestionCompilesThroughMandatoryRecoveryInsteadOfClosingIt(string mutation, string expectedResponseKey)
     {
         var snapshot = NpcQuestionSnapshot(mutation);
@@ -42,6 +46,10 @@ public sealed class NativeNpcQuestionRecoveryTests
     [InlineData("quick_response")]
     [InlineData("transition")]
     [InlineData("location_question")]
+    [InlineData("character_missing")]
+    [InlineData("character_unknown")]
+    [InlineData("sleep_prompt")]
+    [InlineData("tent_sleep_prompt")]
     public void NativeNpcQuestionDoesNotWidenOtherDialogueContracts(string mutation)
     {
         var snapshot = NpcQuestionSnapshot(mutation);
@@ -97,7 +105,7 @@ public sealed class NativeNpcQuestionRecoveryTests
                 new() { Key = "positive", SeenId = "qid", FriendshipChange = 20, Reply = "Thank you!$h" }
             ]
         };
-        if (mutation == "alex_native_structure")
+        if (mutation.StartsWith("alex_", StringComparison.Ordinal))
         {
             // Native 43rd-frame response identities/effects and reply control-token
             // structure. Display prose is synthetic; no original frame is rewritten.
@@ -115,7 +123,27 @@ public sealed class NativeNpcQuestionRecoveryTests
         if (mutation == "extra_action") evidence.Responses[2].Reply = "$action AddMoney 100";
         if (mutation == "quick_response") evidence.Responses[2].SeenId = "";
         if (mutation == "transition") active["dialogue_transitioning"] = true;
-        if (mutation == "location_question") active["last_question_key"] = "Sleep";
+        if (mutation == "location_question")
+        {
+            // A location question has no characterDialogue; a stale key alone
+            // cannot turn a real NPC's question into a location-owned one.
+            active["last_question_key"] = "carpenter";
+            active["dialogue_character_present"] = false;
+            evidence.OrdinaryQuestion = false;
+        }
+        if (mutation == "character_missing") active["dialogue_character_present"] = false;
+        if (mutation == "character_unknown") active.Remove("dialogue_character_present");
+        if (mutation == "sleep_prompt") active["is_sleep_prompt"] = true;
+        if (mutation == "tent_sleep_prompt") active["is_tent_sleep_prompt"] = true;
+        var staleKey = mutation switch
+        {
+            "alex_stale_carpenter" => "carpenter",
+            "alex_stale_blacksmith" => "Blacksmith",
+            "alex_stale_sleep" => "Sleep",
+            "alex_stale_tent_sleep" => "SleepTent",
+            _ => null
+        };
+        if (staleKey is not null) active["last_question_key"] = staleKey;
         if (mutation == "effect") evidence.Responses[0].FriendshipChange = 25;
         menus["menu_specific_state"]!["value"] = JsonSerializer.SerializeToNode(new { npc_question = evidence });
         if (mutation == "unreadable") menus["menu_specific_state"]!["status"] = "unavailable";

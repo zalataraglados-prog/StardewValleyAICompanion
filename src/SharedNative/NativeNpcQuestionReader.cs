@@ -16,12 +16,13 @@ internal static class NativeNpcQuestionReader
         var evidence = new NativeNpcQuestionEvidence { Speaker = speaker?.Name ?? string.Empty };
         if (Game1.eventUp || Game1.isFestival() || !menu.isQuestion ||
             dialogue is null || speaker is null || dialogue.answerQuestionBehavior is not null ||
-            !string.IsNullOrEmpty(Game1.currentLocation?.lastQuestionKey) ||
             options is null || menu.responses is null || options.Count != menu.responses.Length ||
             options.Any(row => row.extraArgument is not null || row.id is null ||
                 !speaker.Dialogue.ContainsKey(row.responseKey)) ||
             !options.Select(row => row.responseKey).SequenceEqual(menu.responses.Select(row => row.responseKey)))
             return evidence;
+        // DialogueBox dispatches a character-owned question to chooseResponse;
+        // the location's lastQuestionKey may still describe an earlier menu.
         evidence.OrdinaryQuestion = true;
         evidence.Responses = options.Select(row => new NativeNpcQuestionAnswer
         {
