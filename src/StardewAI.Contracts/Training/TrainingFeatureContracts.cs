@@ -187,6 +187,10 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("training_allowlist")]
         public string[] TrainingAllowlist { get; set; } = Array.Empty<string>();
 
+        // The report describes its dataset; runtime ranking resolves admission from the current snapshot.
+        [JsonPropertyName("training_admission_scopes")]
+        public string[] TrainingAdmissionScopes { get; set; } = Array.Empty<string>();
+
         [JsonPropertyName("excluded_reasons")]
         public string[] ExcludedReasons { get; set; } = Array.Empty<string>();
 

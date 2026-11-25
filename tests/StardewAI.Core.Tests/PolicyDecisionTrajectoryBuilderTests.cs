@@ -7,6 +7,37 @@ namespace StardewAI.Core.Tests;
 
 public sealed class PolicyDecisionTrajectoryBuilderTests
 {
+    [Theory]
+    [InlineData("training_singleplayer", true)]
+    [InlineData("coop_companion", false)]
+    [InlineData("", false)]
+    public void DonationSelectionAndCandidateFlagsUseTheSameTrainingScope(string mode, bool admitted)
+    {
+        var features = Features();
+        if (mode.Length > 0)
+            features.Categorical = features.Categorical.Append(new CategoricalFeature
+                { Name = "world.mode", Value = mode }).ToArray();
+        var versions = Versions();
+        versions.Executor = PolicyTrajectoryVersionPins.RuntimeTestHarnessExecutor;
+        var decision = new AvailabilityAwarePolicyPredictionEnvelope
+        {
+            RankedEventCandidates = new[]
+            {
+                Candidate("donate", "museum.donate_items", 1, available: true, ticks: 60, energy: 0),
+                Candidate("gift", "social.gift_npc", 2, available: true, ticks: 120, energy: 0)
+            }
+        };
+        PolicyDecisionTrajectoryEnvelope Build(string selected) => new PolicyDecisionTrajectoryBuilder().Build(
+            "trajectory.scope", "run.one", Context(), features, versions, "hash.before", decision, selected, Execution());
+        if (!admitted)
+            Assert.Throws<InvalidOperationException>(() => Build("donate"));
+        var row = Build(admitted ? "donate" : "gift");
+        Assert.Equal(admitted, row.Candidates.Single(candidate => candidate.CandidateId == "donate").AdmittedForPolicy);
+        Assert.Null(new PolicyTrajectoryDatasetValidator().Validate(row));
+        row.Candidates.Single(candidate => candidate.CandidateId == "donate").AdmittedForPolicy = !admitted;
+        Assert.Equal("candidate_admission_mismatch", new PolicyTrajectoryDatasetValidator().Validate(row));
+    }
+
     [Fact]
     public void BuildPreservesCompleteCandidateSetSelectionBudgetsAndOutcome()
     {

@@ -1,0 +1,40 @@
+{
+  "schema_version": "laboratory.marriage_intake_scope_compatibility.v1",
+  "recorded_at": "2026-11-25T19:13:37.2613007+08:00",
+  "base_head": "09b49a536f6093af0c3e2d1ffb5a4b5c6401a3f4",
+  "pr": 599,
+  "review_comment": 4692448040,
+  "initial_head_full_ci": {
+    "conclusion": "success",
+    "run": 45579822164,
+    "is_final_head_claim": false
+  },
+  "red": {
+    "failure": "Marriage/House intake differs from its original sources",
+    "sha256": "baaeaa1319c2c7709a8a5921b1aa8ad98977570f5733df1c53ddd7bda47e06e0",
+    "initial_fixture_failure": "Housing default actor is not host; corrected fixture expectations without relaxing the host gate"
+  },
+  "green": {
+    "source_unchanged": true,
+    "passed": 188,
+    "social_denominator": 65,
+    "altered_availability_rejected": true,
+    "trx_sha256": "52530c7e0a2273bd6e4d7e6b4a28b11c06ec77131186580d1fd8003ca5a6b082",
+    "current_and_historical_reports_accepted": true,
+    "failed": 0
+  },
+  "scope": {
+    "housing_advance_farmhouse": "Default non-host candidate still denied in both profiles",
+    "historical_sources_rewritten": false,
+    "current_runtime_default_changed_by_this_increment": false,
+    "social_advance_partnership": "Singleplayer authorization changes; exact historical confirmation projection retained for frozen evidence"
+  },
+  "native_input_25_independent_teacher_replay": "running; report separately when complete",
+  "game_launched": false,
+  "test_model_scores_opened": false,
+  "formal_training_started": false,
+  "external_models": {
+    "sonnet": "product data-flow material review completed",
+    "opus": "additional compatibility review failed with AGY third-party quota 429; no retry or model switch"
+  }
+}

@@ -16,21 +16,24 @@ public static partial class MuseumPolicyRowAdmissionBuilder
         var snapshot = source.Native.Before;
         var projector = new MuseumPolicyInputProjector(snapshot);
         var inputs = BuildCandidates(source, projector);
+        var stateFeatures = projector.ProjectState(new PolicyStateFeatureProjector().Project(new WorldModelProjector().Project(snapshot,
+            MuseumPolicyInputProjector.GoalId, "training_singleplayer")));
+        var trainingAdmission = new PolicyTrainingAdmissionFilter().ForState(stateFeatures);
         var candidates = inputs.Select(candidate => new MuseumPolicyCandidateAdmission(candidate,
             candidate.Kind != MuseumPolicyInputProjector.DeferKind,
             source.Comparison.CandidateEvaluations.Single(row => row.CandidateId == candidate.CandidateId).Admitted,
-            new PolicyTrainingAdmissionFilter().FilterOptionIds(new[] { candidate.OptionId }).Length == 1,
-            OptionCapabilityRegistrySource.GetRequired(candidate.OptionId).TrainingExclusionReasons.Select(reason => reason.ToString()).ToArray())).ToArray();
+            trainingAdmission.FilterOptionIds(new[] { candidate.OptionId }).Length == 1,
+            trainingAdmission.FilterOptionIds(new[] { candidate.OptionId }).Length == 1 ? Array.Empty<string>() :
+                OptionCapabilityRegistrySource.GetRequired(candidate.OptionId).TrainingExclusionReasons.Select(reason => reason.ToString()).ToArray())).ToArray();
         var blockers = AdmissionReasons(candidates, source.Receipt.PreferredCandidateId, source.Receipt.PairwisePreferences);
         // Native corpus and original policy datasets use different split contracts. Do not overwrite either one.
         var context = CurrentStageOneCollectionTeacherReceiptBuilder.BuildContext(snapshot);
         context.SplitKey = context.SaveId + ":" + context.Year + ":" + context.Season + ":" + context.Day;
         context.DatasetPartition = PolicyTrajectoryDatasetBuilder.PartitionFor(context.SplitKey);
         return new(joinPath, CurrentTeacherFrontierSupport.HashFile(joinPath), AcquisitionRoutePortfolioTeacherPreferenceBuilder.ArtifactSha256(
-                new PolicyTrainingAdmissionFilter().Allowlist.Order(StringComparer.Ordinal).ToArray()),
+                trainingAdmission.Allowlist.Order(StringComparer.Ordinal).ToArray()),
             source.Receipt.RunId, snapshot.StateHash, source.Receipt.SplitKey, source.Receipt.DatasetPartition, context,
-            projector.ProjectState(new PolicyStateFeatureProjector().Project(new WorldModelProjector().Project(snapshot,
-                MuseumPolicyInputProjector.GoalId, "training_singleplayer"))),
+            stateFeatures,
             candidates, source.Receipt.PreferredCandidateId, source.Receipt.PairwisePreferences, blockers);
     }
 

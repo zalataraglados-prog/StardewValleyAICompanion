@@ -770,6 +770,9 @@ and auditing each acquisition rule before it is admitted to the hypergraph.
   exact initial adoption, native event acceptance/naming, daily care and native day settlement.
 - Twelve criteria are connected but still have typed dependency-expansion work. This is
   knowledge translation work, not evidence that their underlying actions are absent.
+<!-- audit_invalidation: scope=following five-criteria confirmation-only governance exclusion as an unconditional single-player restriction; invalidated_at=2026-11-25T16:38:00+08:00; superseded_by=museum-policy-input-admission.md single-player scope correction; reason=the historical global registry did not distinguish single-player training/play; historical_only=true -->
+> **2026-11-25T16:38:00+08:00 Scope correction.** The following exclusion describes the historical unscoped registry. Confirmation-only exclusions now resolve by execution scope; it is not a current single-player ban. Independent native/Teacher evidence and original policy alternatives remain separate obligations. See [current scope](museum-policy-input-admission.md#2026-11-25t1638000800-single-player-scope-correction).
+
 - Five criteria are blocked by current product governance: museum donation affects two
   criteria, Community Center donation affects two, and partnership plus farmhouse upgrade
   affects one. Their native executors are runtime-verified but the high-level options remain

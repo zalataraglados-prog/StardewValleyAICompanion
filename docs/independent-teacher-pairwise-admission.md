@@ -1,5 +1,7 @@
 # Independent Teacher Pairwise Admission
 
+> **2026-11-25T16:38:00+08:00 Scope correction (pending integration).** Confirmation-only exclusions resolve from the row's explicit `training_singleplayer` scope, rather than the global conservative list. Runtime consumers use native multiplayer context. Both endpoints of a strict pair must still be original, available, independently supervised and admitted in that scope. Native success alone does not create a pair. [Scope, historical source compatibility and Museum limits](museum-policy-input-admission.md#2026-11-25t1638000800-single-player-scope-correction).
+
 ## Reason And Scope
 
 Issue #394 confirmed that the structured trainer treated the executed selection

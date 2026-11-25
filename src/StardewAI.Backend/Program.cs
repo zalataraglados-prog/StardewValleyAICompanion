@@ -740,7 +740,7 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
     }
     var autonomousCandidateOptionIds = useStructuredPolicy &&
         request.CandidateOptionIds.Length == 0
-            ? policyTrainingAdmissionFilter.FilterOptionIds(
+            ? policyTrainingAdmissionFilter.ForSnapshot(snapshot).FilterOptionIds(
                     availabilityEvaluator.DefaultAutonomousRuntimeOptionIds())
                 .Append("recovery.stabilize_day")
                 .Distinct(StringComparer.Ordinal)
@@ -859,7 +859,7 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
             rankedEventCandidates = structuredRanker.Rank(
                 checkpoint,
                 museumInputs?.ProjectState(stateFeatureProjector.Project(worldModel)) ?? stateFeatureProjector.Project(worldModel, snapshot),
-                rankedEventCandidates);
+                rankedEventCandidates, snapshot);
         }
         catch (Exception ex) when (ex is ArgumentException or IOException or InvalidOperationException or JsonException)
         {
@@ -873,7 +873,7 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
             ? structuredRanker.Summarize(checkpoint, rankedEventCandidates)
             : rankedCandidates.Length == 0
                 ? new PolicyPredictionEnvelope()
-                : ranker.Rank(report, rankedCandidates),
+                : ranker.Rank(report, rankedCandidates, snapshot),
         Availability = availability,
         RankedEventCandidates = rankedEventCandidates,
         GoalResolution = goalResolution

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using StardewAI.Contracts.Training;
+using StardewAI.Contracts.State;
 
 namespace StardewAI.Core.Training
 {
@@ -24,11 +25,13 @@ namespace StardewAI.Core.Training
 
         public PolicyPredictionEnvelope Rank(
             BaselineTrainingReport report,
-            string[] candidateOptionIds)
+            string[] candidateOptionIds,
+            SnapshotEnvelope? snapshot = null)
         {
+            var effectiveAdmission = admissionFilter.ForSnapshot(snapshot);
             var candidates = candidateOptionIds.Length > 0
-                ? admissionFilter.FilterOptionIds(candidateOptionIds)
-                : admissionFilter.Allowlist.ToArray();
+                ? effectiveAdmission.FilterOptionIds(candidateOptionIds)
+                : effectiveAdmission.Allowlist.ToArray();
             if (candidateOptionIds.Length > 0 && candidates.Length == 0)
             {
                 return new PolicyPredictionEnvelope();

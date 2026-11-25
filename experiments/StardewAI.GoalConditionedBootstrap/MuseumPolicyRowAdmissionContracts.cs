@@ -27,7 +27,12 @@ public sealed record MuseumPolicyRowAdmission(
 {
     [JsonPropertyName("schema_version")] public string SchemaVersion => "museum_policy_row_admission.v1";
     [JsonPropertyName("status")] public string Status => BlockingReasons.Length == 0
-        ? "verified_evidence_ready_for_original_policy_builder" : "verified_evidence_only_policy_option_not_admitted";
+        ? "verified_evidence_ready_for_original_policy_builder"
+        : BlockingReasons.Contains("no_strict_pair_between_original_policy_admitted_candidates") &&
+          !BlockingReasons.Any(reason => reason.StartsWith(
+              "policy_training_option_not_admitted:", StringComparison.Ordinal))
+            ? "verified_evidence_only_no_trainable_teacher_comparison"
+            : "verified_evidence_only_policy_option_not_admitted";
     [JsonPropertyName("native_terminal_outcome_verified")] public bool NativeTerminalOutcomeVerified => true;
     [JsonPropertyName("original_candidate_count")] public int OriginalCandidateCount => Candidates.Count(row => row.OriginalRuntimeCandidate);
     [JsonPropertyName("comparison_reference_count")] public int ComparisonReferenceCount => Candidates.Count(row => !row.OriginalRuntimeCandidate);

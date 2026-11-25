@@ -48,7 +48,7 @@ namespace StardewAI.Core.PreviewCompiler
                 Options = new[] { optionInstance }
             };
             SafetyResult safety = verifier.Verify(snapshot, spec);
-            var safetyPolicy = SafetyPolicyGate.Evaluate(spec, new OptionAvailabilityCandidate());
+            var safetyPolicy = SafetyPolicyGate.Evaluate(spec, new OptionAvailabilityCandidate(), snapshot);
             var wouldRequireConfirmation =
                 safetyPolicy.ExecutionAuthorization == "confirmation_required";
 

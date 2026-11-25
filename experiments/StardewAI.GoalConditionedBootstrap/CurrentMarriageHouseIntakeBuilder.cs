@@ -30,6 +30,11 @@ public static class CurrentMarriageHouseIntakeBuilder
     public const string DirectionId = "marriage_and_house_upgrade";
 
     public static CurrentMarriageHouseIntake Build(string snapshotPath, string knowledgePath, string dependenciesPath)
+        => Build(snapshotPath, knowledgePath, dependenciesPath,
+            CandidateOptionAvailabilityEvaluator.ForCompleteOfflineSocialComparison());
+
+    private static CurrentMarriageHouseIntake Build(string snapshotPath, string knowledgePath, string dependenciesPath,
+        CandidateOptionAvailabilityEvaluator evaluator)
     {
         snapshotPath = RequiredFile(snapshotPath);
         knowledgePath = RequiredFile(knowledgePath);
@@ -61,7 +66,7 @@ public static class CurrentMarriageHouseIntakeBuilder
         var state = new CurrentMarriageHouseStateBuilder().Build(snapshot);
         // Inspection must retain every option and unavailable row; exclusive recovery/ranking is not denominator collection.
         var availability = state.Status == "ready_current_state_only"
-            ? CandidateOptionAvailabilityEvaluator.ForCompleteOfflineSocialComparison().Evaluate(snapshot, optionIds, true)
+            ? evaluator.Evaluate(snapshot, optionIds, true)
             : new OptionAvailabilityEnvelope { StateHash = snapshot.StateHash };
         return new(snapshotPath, CurrentTeacherFrontierSupport.HashFile(snapshotPath), knowledgePath, knowledge.Sha256,
             dependenciesPath, CurrentTeacherFrontierSupport.HashFile(dependenciesPath), state, direction.Clone(), optionIds, availability);
@@ -69,11 +74,17 @@ public static class CurrentMarriageHouseIntakeBuilder
 
     public static CurrentMarriageHouseIntake Verify(string intakePath)
     {
-        var stored = JsonSerializer.Deserialize<CurrentMarriageHouseIntake>(
-            CurrentTeacherFrontierSupport.ReadArtifactText(RequiredFile(intakePath)), JsonDefaults.Options) ??
+        var text = CurrentTeacherFrontierSupport.ReadArtifactText(RequiredFile(intakePath));
+        var stored = JsonSerializer.Deserialize<CurrentMarriageHouseIntake>(text, JsonDefaults.Options) ??
             throw new InvalidDataException("Marriage/House intake is null.");
         var rebuilt = Build(stored.SnapshotPath, stored.KnowledgePath, stored.DependenciesPath);
-        Require(JsonNode.DeepEquals(JsonNode.Parse(CurrentTeacherFrontierSupport.ReadArtifactText(intakePath)),
+        if (!JsonNode.DeepEquals(JsonNode.Parse(text), JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)))
+        {
+            // Historical confirmation metadata must replay exactly, including the unlimited social denominator.
+            rebuilt = Build(stored.SnapshotPath, stored.KnowledgePath, stored.DependenciesPath,
+                CandidateOptionAvailabilityEvaluator.ForConservativeEvidenceReplay(completeSocialComparison: true));
+        }
+        Require(JsonNode.DeepEquals(JsonNode.Parse(text),
             JsonSerializer.SerializeToNode(rebuilt, JsonDefaults.Options)), "Marriage/House intake differs from its original sources.");
         return rebuilt;
     }

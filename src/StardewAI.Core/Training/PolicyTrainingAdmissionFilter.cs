@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using StardewAI.Contracts.Capabilities;
 using StardewAI.Contracts.Training;
+using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 
 namespace StardewAI.Core.Training
 {
@@ -23,10 +25,20 @@ namespace StardewAI.Core.Training
         public const string OptionNotAdmittedReason = "policy_training_option_not_admitted";
 
         private readonly HashSet<string> allowlist;
+        private readonly bool useExecutionContext;
+        private readonly bool singlePlayerVariant;
+        private static readonly Lazy<PolicyTrainingAdmissionFilter> ConservativeFilter = new(() => new PolicyTrainingAdmissionFilter());
+        private static readonly Lazy<PolicyTrainingAdmissionFilter> SinglePlayerFilter = new(() =>
+            new PolicyTrainingAdmissionFilter(OptionCapabilityRegistrySource.All
+                .Where(declaration => declaration.PolicyTrainingCandidate &&
+                    declaration.TrainingExclusionReasons.All(reason =>
+                        reason == TrainingAdmissionExclusionReason.ExplicitPlayerConfirmationRequired))
+                .Select(declaration => declaration.OptionId), true));
 
         public PolicyTrainingAdmissionFilter()
             : this(OptionCapabilityRegistrySource.TrainingAllowlist)
         {
+            useExecutionContext = true;
         }
 
         internal PolicyTrainingAdmissionFilter(IEnumerable<string> optionIds)
@@ -40,7 +52,27 @@ namespace StardewAI.Core.Training
             Allowlist = new ReadOnlyCollection<string>(values);
         }
 
+        private PolicyTrainingAdmissionFilter(IEnumerable<string> optionIds, bool singlePlayer)
+            : this(optionIds)
+        {
+            useExecutionContext = true;
+            singlePlayerVariant = singlePlayer;
+        }
+
         public IReadOnlyCollection<string> Allowlist { get; }
+
+        public PolicyTrainingAdmissionFilter ForState(FeatureVector? features) =>
+            WithSinglePlayerScope(SinglePlayerScope.IsSinglePlayerTraining(features));
+
+        public PolicyTrainingAdmissionFilter ForSnapshot(SnapshotEnvelope? snapshot) =>
+            WithSinglePlayerScope(SinglePlayerScope.IsKnownSinglePlayer(snapshot));
+
+        private PolicyTrainingAdmissionFilter WithSinglePlayerScope(bool singlePlayer)
+        {
+            if (!useExecutionContext) return this;
+            if (singlePlayer) return SinglePlayerFilter.Value;
+            return singlePlayerVariant ? ConservativeFilter.Value : this;
+        }
 
         public string[] FilterOptionIds(IEnumerable<string> optionIds)
         {
@@ -74,7 +106,7 @@ namespace StardewAI.Core.Training
                 return Excluded(optionIds, calibration: false, MultipleOptionsReason);
             }
 
-            if (!allowlist.Contains(optionIds[0]))
+            if (!ForState(row.StateFeatures).allowlist.Contains(optionIds[0]))
             {
                 return Excluded(optionIds, calibration: false, OptionNotAdmittedReason);
             }

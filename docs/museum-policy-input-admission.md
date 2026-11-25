@@ -1,5 +1,38 @@
 # Museum Policy Inputs And Admission
 
+## 2026-11-25T16:38:00+08:00 Single-player scope correction
+
+The old report below faithfully records the unscoped rules at `b4baed10`; it does
+not justify applying multiplayer/player-confirmation restrictions to single-player
+training or play. The laboratory repair on `lab/singleplayer-policy-scope`, based
+on `4daa7cf2`, removes **only confirmation-only exclusions** for explicitly declared
+`world.mode=training_singleplayer` rows. Dataset construction and validation use
+the same effective admission. Runtime availability, compilation and ranking use
+the readable native `player.multiplayer_runtime.context_is_multiplayer=false`
+fact; a supplied runtime snapshot takes precedence over request feature mode.
+Cooperative, unknown and unreadable runtime contexts retain confirmation checks.
+Player-command-only invocation, ownership, host, primitive/calibration and native
+evidence requirements remain independent checks.
+
+The registry's mode-independent `TrainingEligibility`/confirmation metadata and
+default allowlist remain conservative. They describe an unscoped declaration,
+not the effective permission of a known single-player consumer. Baseline reports
+record their dataset admission scopes; their allowlist is not runtime authority.
+
+Frozen Museum intake verification can reproduce either the current projection
+or the exact older conservative confirmation projection. Both rebuild all source
+hashes and fields; neither edits nor normalizes retained evidence. The admission
+report binds the effective allowlist hash, rather than the old global list.
+
+This correction admits the donation option in the single-player target scope.
+It does **not** turn the bounded wait reference into an original policy candidate:
+the retained one-donation/one-reference example still has no strict pair between
+two original admitted policy alternatives. Its functional/criterion evidence is
+reusable; no game replay is required by this filter repair. The laboratory pilot
+and formal product training remain separate, and engineering handoff is complete.
+
+<!-- audit_invalidation: scope=below claims that confirmation-only EvaluationOnly is an unconditional Museum policy exclusion and that retaining an old contract establishes its applicability; invalidated_at=2026-11-25T16:38:00+08:00; superseded_by=this single-player scope correction; reason=mode-blind filtering mixed single-player training/play with conservative multiplayer/player-confirmation governance; historical_only=true -->
+
 ## Scope And Original Intent
 
 Continue accepted PR #478, merge `b4baed10`, CI `42294539442` (all 38 steps).
