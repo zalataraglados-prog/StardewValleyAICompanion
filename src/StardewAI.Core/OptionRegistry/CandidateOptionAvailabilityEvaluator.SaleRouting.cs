@@ -19,7 +19,36 @@ namespace StardewAI.Core.OptionRegistry
         {
             if (ActiveShopMenuOpen(snapshot))
             {
-                return Array.Empty<EventCandidate>();
+                var context = ReadStateFieldValue(snapshot, "menus", "sell_context");
+                var waitTicks = context is { ValueKind: JsonValueKind.Object }
+                    ? ShopMenuSafetyWaitTicks(context.Value) : 0;
+                if (waitTicks is < 1 or > 60)
+                    return Array.Empty<EventCandidate>();
+
+                var location = ReadStateFieldString(snapshot, "player", "location_id");
+                return SellCandidates(snapshot, boundParameters, saleStock, afterSafetyWait: true)
+                    .Where(candidate => candidate.Available && candidate.UnitPrice > 0)
+                    .Select(candidate => new EventCandidate
+                    {
+                        CandidateId = "sale-wait:" + candidate.ShopId + ":" + candidate.CandidateId,
+                        Kind = "wait_for_shop_sale",
+                        Available = true,
+                        AllowedNow = true,
+                        LocationId = location,
+                        ShopId = candidate.ShopId,
+                        ItemId = candidate.ItemId,
+                        QualifiedItemId = candidate.QualifiedItemId,
+                        SlotIndex = candidate.SlotIndex,
+                        Quantity = candidate.Quantity,
+                        UnitPrice = candidate.UnitPrice,
+                        EstimatedTicks = waitTicks,
+                        AvailabilityClass = "native_shop_sale_timer",
+                        ExpectedEffect = "shop_menu_safety_timer_elapsed=true;fresh_snapshot_replan_required=true",
+                        Parameters = SaleContinuationParameters(candidate, location)
+                            .Append(Parameter("sale_wait_ticks", waitTicks.ToString(CultureInfo.InvariantCulture)))
+                            .ToArray()
+                    })
+                    .ToArray();
             }
 
             var previews = SellCandidatesFromShopPreview(snapshot, saleStock)

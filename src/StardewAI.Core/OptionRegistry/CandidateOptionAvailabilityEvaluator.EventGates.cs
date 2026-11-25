@@ -564,8 +564,7 @@ namespace StardewAI.Core.OptionRegistry
             if (optionId == "crafting.cook_recipe")
                 return CookingCandidatesWithSaleStock(snapshot, parameters, commitmentLedger);
             if (optionId == "economy.sell_items")
-                return ActiveShopMenuOpen(snapshot) ? Array.Empty<EventCandidate>() :
-                    SellItemStageCandidates(snapshot, parameters, ReadSaleStockBudget(snapshot, commitmentLedger));
+                return SellItemStageCandidates(snapshot, parameters, ReadSaleStockBudget(snapshot, commitmentLedger));
             if (optionId == "inventory.transfer_item")
             {
                 var rows = MaterialTransferCandidates(snapshot, parameters);
