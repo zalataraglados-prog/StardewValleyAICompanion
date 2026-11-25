@@ -68,6 +68,52 @@ public sealed class NativeNpcQuestionRecoveryTests
     }
 
     [Theory]
+    [InlineData("")]
+    [InlineData("stale_sleep_key")]
+    [InlineData("stale_tent_key")]
+    public void AnsweredNativeQuestionWithProvenStaleResponsesCanAdvanceOrdinaryReply(string mutation)
+    {
+        var snapshot = NpcAnsweredDialogueSnapshot(mutation);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot, ["recovery.stabilize_day"], includeExecutorCalibrationOptions: true);
+        var close = availability.Options.Single().EventCandidates.Single(row => row.Kind == "recovery_close_menu");
+        Assert.True(close.Available, string.Join(";", close.BlockReasons));
+        var ranking = StageOneMandatoryMenuRecovery.BuildRanking(availability, "daily.closed_loop");
+        var selected = StageOneMandatoryMenuRecovery.TrySelect(ranking);
+        Assert.NotNull(selected);
+        Assert.Equal("recovery_close_menu", selected.Kind);
+        var plan = new DailyPlanCompiler().Compile([selected], snapshot.StateHash, maxCandidates: 1);
+        var queue = new ActionQueueCompiler().Compile(plan, snapshot);
+        Assert.Equal("pending", queue.Status);
+        Assert.Single(queue.Items);
+        Assert.Equal("executor.close_menu", queue.Items[0].OptionId);
+        Assert.Equal("pending", queue.Items[0].Status);
+    }
+
+    [Theory]
+    [InlineData("question")]
+    [InlineData("native_question")]
+    [InlineData("missing_witness")]
+    [InlineData("null_witness")]
+    [InlineData("callback")]
+    [InlineData("missing_callback_witness")]
+    [InlineData("event")]
+    [InlineData("speaker")]
+    [InlineData("character_missing")]
+    [InlineData("sleep")]
+    [InlineData("tent")]
+    [InlineData("native_question_zero_responses")]
+    [InlineData("callback_zero_responses")]
+    public void StaleResponseExceptionCannotAdvanceQuestionsCallbacksOrUnprovenMenus(string mutation)
+    {
+        var snapshot = NpcAnsweredDialogueSnapshot(mutation);
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(
+            snapshot, ["recovery.stabilize_day"], includeExecutorCalibrationOptions: true);
+        var close = availability.Options.Single().EventCandidates.Single(row => row.Kind == "recovery_close_menu");
+        Assert.False(close.Available);
+    }
+
+    [Theory]
     [InlineData("Yes!$h", true)]
     [InlineData("Thanks!$h#$e#Keep talking.", true)]
     [InlineData("$e#Only text.$neutral", true)]
@@ -89,6 +135,38 @@ public sealed class NativeNpcQuestionRecoveryTests
     [InlineData("$q 1 next", false)]
     public void NpcReplyRequiresOnlyTextAndPortraitEffects(string reply, bool allowed) =>
         Assert.Equal(allowed, NativeNpcQuestionEvidence.IsDisplayOnlyReply(reply));
+
+    private static SnapshotEnvelope NpcAnsweredDialogueSnapshot(string mutation)
+    {
+        // Observed post-answer native state: isQuestion=false with responses[3]
+        // still populated. The getter witness is a new read-only fact, never
+        // inferred from or written into historical snapshots.
+        var snapshot = NpcQuestionSnapshot("alex_native_structure");
+        var menus = JsonNode.Parse(snapshot.State["menus"].GetRawText())!.AsObject();
+        var active = menus["active_menu"]!["value"]!.AsObject();
+        active["dialogue_is_question"] = false;
+        active["dialogue_character_is_question"] = false;
+        active["dialogue_character_answer_callback_present"] = false;
+        active["is_tent_sleep_prompt"] = false;
+        active["dialogue_safety_timer"] = -66;
+        if (mutation == "stale_sleep_key") active["last_question_key"] = "Sleep";
+        if (mutation == "stale_tent_key") active["last_question_key"] = "SleepTent";
+        if (mutation == "question") active["dialogue_is_question"] = true;
+        if (mutation is "native_question" or "native_question_zero_responses") active["dialogue_character_is_question"] = true;
+        if (mutation == "missing_witness") active.Remove("dialogue_character_is_question");
+        if (mutation == "null_witness") active["dialogue_character_is_question"] = null;
+        if (mutation is "callback" or "callback_zero_responses") active["dialogue_character_answer_callback_present"] = true;
+        if (mutation == "missing_callback_witness") active.Remove("dialogue_character_answer_callback_present");
+        if (mutation == "event") active["event_up"] = true;
+        if (mutation == "speaker") active["dialogue_speaker_name"] = "";
+        if (mutation == "character_missing") active["dialogue_character_present"] = false;
+        if (mutation == "sleep") active["is_sleep_prompt"] = true;
+        if (mutation == "tent") active["is_tent_sleep_prompt"] = true;
+        if (mutation.EndsWith("_zero_responses", StringComparison.Ordinal)) active["dialogue_response_count"] = 0;
+        menus["menu_specific_state"]!["value"]!["npc_question"]!["ordinary_question"] = false;
+        snapshot.State["menus"] = JsonSerializer.SerializeToElement(menus);
+        return snapshot;
+    }
 
     private static SnapshotEnvelope NpcQuestionSnapshot(string mutation = "")
     {
