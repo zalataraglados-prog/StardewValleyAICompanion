@@ -1120,6 +1120,7 @@ namespace StardewAI.Contracts.Capabilities
                 SupportedCandidate("process_open_letter"),
                 SupportedCandidate("select_mine_elevator_floor"),
                 SupportedCandidate("recovery_close_menu"),
+                SupportedCandidate("recovery_answer_npc_question"),
                 SupportedCandidate("recovery_claim_fishing_item_grab_reward"),
                 SupportedCandidate("recovery_refresh_plan"),
                 SupportedCandidate("recovery_resume_sleep_prompt"),

@@ -8,6 +8,21 @@ namespace StardewAI.Core.Training
 {
     public sealed partial class DailyPlanCompiler
     {
+        private static IEnumerable<SmallModelPlanStep> NpcQuestionResponseSteps(PolicyEventCandidatePrediction candidate) =>
+            new[]
+            {
+                new SmallModelPlanStep
+                {
+                    StepId = StepId(candidate, "npc_question_response", 0),
+                    Kind = "choose_dialogue_response", EstimatedMinutes = 1,
+                    Preconditions = new[] { "candidate_id:" + candidate.CandidateId, "active_menu.type=DialogueBox" },
+                    ExpectedEffects = new[] { candidate.ExpectedEffect },
+                    SafetyConstraints = new[] { "native_pure_friendship_question_only", "source_bound_response_effect" },
+                    FailurePolicy = new[] { "refresh_snapshot_and_replan" },
+                    Parameters = candidate.Parameters
+                }
+            };
+
         private static IEnumerable<SmallModelPlanStep> RecoveryRefreshSteps(PolicyEventCandidatePrediction candidate)
         {
             var waitTicks = CandidateInt(candidate, "wait_ticks") ?? candidate.EstimatedTicks;

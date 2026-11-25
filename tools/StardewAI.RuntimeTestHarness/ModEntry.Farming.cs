@@ -902,6 +902,8 @@ public sealed partial class ModEntry : Mod
         {
             var unsafeReasons = new List<string>();
             if (unsafeBox.isQuestion) unsafeReasons.Add("dialogue_is_question_true");
+            if (unsafeBox.characterDialogue?.isCurrentDialogueAQuestion() == true) unsafeReasons.Add("dialogue_native_character_question_true");
+            if (unsafeBox.characterDialogue?.answerQuestionBehavior is not null) unsafeReasons.Add("dialogue_character_answer_callback_present");
             if (unsafeBox.responses is { Length: > 0 }) unsafeReasons.Add("dialogue_responses_present:" + unsafeBox.responses.Length);
             if (Game1.eventUp) unsafeReasons.Add("dialogue_event_up_true");
             if (unsafeBox.characterDialogue is null) unsafeReasons.Add("dialogue_character_missing");
@@ -1098,10 +1100,23 @@ public sealed partial class ModEntry : Mod
         bool allowSpeakerlessSocialContinuation = false,
         bool allowEventDialogue = false)
     {
+        var characterDialogue = dialogueBox.characterDialogue;
+        var nativeCharacterQuestion = characterDialogue?.isCurrentDialogueAQuestion();
+        // A reply to an NPC question leaves responses populated; only a proven
+        // ordinary character line makes those entries irrelevant to native input.
+        var provenOrdinaryCharacterDialogue = !Game1.eventUp &&
+            !dialogueBox.isQuestion &&
+            characterDialogue is not null &&
+            nativeCharacterQuestion == false &&
+            characterDialogue.answerQuestionBehavior is null &&
+            !string.IsNullOrWhiteSpace(characterDialogue.speaker?.Name);
         return !dialogueBox.isQuestion &&
-            (dialogueBox.responses is null || dialogueBox.responses.Length == 0) &&
-            !string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
-            !string.Equals(Game1.currentLocation?.lastQuestionKey, "SleepTent", StringComparison.Ordinal) &&
+            nativeCharacterQuestion != true &&
+            (characterDialogue is null || characterDialogue.answerQuestionBehavior is null) &&
+            (dialogueBox.responses is null || dialogueBox.responses.Length == 0 || provenOrdinaryCharacterDialogue) &&
+            ((!string.Equals(Game1.currentLocation?.lastQuestionKey, "Sleep", StringComparison.Ordinal) &&
+                !string.Equals(Game1.currentLocation?.lastQuestionKey, "SleepTent", StringComparison.Ordinal)) ||
+                provenOrdinaryCharacterDialogue) &&
             (!Game1.eventUp || allowEventDialogue) &&
             (dialogueBox.characterDialogue is null ||
                 (dialogueBox.characterDialogue is not null &&

@@ -360,6 +360,35 @@ public sealed partial class ModEntry : Mod
         return true;
     }
 
+    private static Point? FindCurrentWarpStandTile(
+        GameLocation location, TrainingExecutionRequest request, Point startTile, Point actionTile)
+    {
+        if (!string.Equals(request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase)) return null;
+        var warp = location.warps.FirstOrDefault(value => value.X == actionTile.X && value.Y == actionTile.Y);
+        if (warp is null || warp.npcOnly.Value || ValidateConnectorTarget(request, actionTile) is not null) return null;
+        var playerBounds = Game1.player.GetBoundingBox();
+        var facts = new CurrentWarpStandFacts
+        {
+            ConnectorKind = "warp", ConnectorValidated = true,
+            CurrentTileX = Game1.player.TilePoint.X, CurrentTileY = Game1.player.TilePoint.Y,
+            StandTileX = startTile.X, StandTileY = startTile.Y,
+            WarpTileX = actionTile.X, WarpTileY = actionTile.Y, TileSize = Game1.tileSize,
+            StandOnMap = IsTileOnMap(location, startTile),
+            StandHardWalkable = IsTileWalkable(location, startTile),
+            WarpHardWalkable = IsTileWalkable(location, actionTile),
+            StandHasTouchAction = !string.IsNullOrWhiteSpace(location.doesTileHaveProperty(startTile.X, startTile.Y, "TouchAction", "Back")),
+            StandIsWarp = location.warps.Any(value => value.X == startTile.X && value.Y == startTile.Y),
+            PlayerBounds = new(playerBounds.X, playerBounds.Y, playerBounds.Width, playerBounds.Height),
+            CharacterBounds = location.characters.Select(character =>
+            {
+                var bounds = character.GetBoundingBox();
+                if (character.layingDown) { bounds.Y -= 64; bounds.Height += 64; }
+                return new ConnectorStandBounds(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+            }).ToArray()
+        };
+        return NativeCurrentWarpStandPolicy.CanUse(facts) ? startTile : null;
+    }
+
     private static Point? FindConnectorActionStandTile(GameLocation location, Point startTile, Point actionTile)
     {
         return Neighbors(actionTile)

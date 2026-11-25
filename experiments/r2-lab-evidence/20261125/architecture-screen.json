@@ -1,0 +1,170 @@
+{
+  "schema_version": "laboratory_architecture_screen.v1",
+  "recorded_at": "2026-11-25T22:06:27.463856+08:00",
+  "status": "exploratory_screen_completed_final_model_not_selected",
+  "scope": "Exploratory breadth screen after earlier validation scores were known; same frozen train9/validation7 across two save-days; not final product model selection.",
+  "frozen_source_commit": "4daa7cf2",
+  "current_model_implementations": 10,
+  "current_total_fits": 108,
+  "new_fits": 60,
+  "families": {
+    "rank_svm": {
+      "fits": 6,
+      "best_validation": 1.0,
+      "worst_validation": 1.0
+    },
+    "xgboost": {
+      "fits": 12,
+      "best_validation": 1.0,
+      "worst_validation": 1.0
+    },
+    "lightgbm": {
+      "fits": 12,
+      "best_validation": 1.0,
+      "worst_validation": 1.0
+    },
+    "mlp": {
+      "fits": 6,
+      "best_validation": 1.0,
+      "worst_validation": 1.0
+    },
+    "resnet": {
+      "fits": 6,
+      "best_validation": 1.0,
+      "worst_validation": 1.0
+    },
+    "tabm": {
+      "fits": 6,
+      "best_validation": 1.0,
+      "worst_validation": 1.0
+    },
+    "ft_transformer": {
+      "fits": 6,
+      "best_validation": 1.0,
+      "worst_validation": 0.8666666666666667
+    },
+    "deep_sets": {
+      "fits": 6,
+      "best_validation": 1.0,
+      "worst_validation": 1.0
+    }
+  },
+  "neural_implementations": [
+    "MLP",
+    "residual MLP",
+    "TabM",
+    "PCA+FT-Transformer",
+    "Deep Sets scorer"
+  ],
+  "neural_new_fits": 30,
+  "neural_parameter_counts": {
+    "deep_sets": [
+      22849,
+      97537
+    ],
+    "ft_transformer": [
+      3825,
+      4849
+    ],
+    "mlp": [
+      22321,
+      195073
+    ],
+    "resnet": [
+      122817,
+      311169
+    ],
+    "tabm": [
+      51944,
+      100360
+    ]
+  },
+  "ft_transformer_preprocessing": "Train-only PCA32/64; parameter counts exclude PCA transform. Not directly the same preprocessing as other candidates.",
+  "data": {
+    "train_decisions": 9,
+    "train_pairs": 22,
+    "validation_decisions": 7,
+    "validation_save_days": 2,
+    "validation_pairs": 15,
+    "test_decisions_sealed": 9
+  },
+  "independent_review": {
+    "sha256": "6f3dedef773ec0ccd21fbc0c495675e1258d13c65d1973e84964de76c3cf3333",
+    "reloaded_model_reports_matched": 60,
+    "prior_rank_validation_pairs_correct": 13,
+    "validation_pairs": 15,
+    "validation_pairs_with_exact_training_difference": 2,
+    "direct_teacher_selected_outcome_leak_found": false
+  },
+  "deployment": {
+    "status": "pass",
+    "purpose": "deployment-only source encoder and CPU scoring probe; not full Provider or whole-machine acceptance",
+    "onnx_sha256": "762e1bd0081a65888ea86e1858696378e38fee15961daeebba3595a3759841d3",
+    "onnx_runtime_version": "1.31.1.0",
+    "threads": 1,
+    "feature_count": 1393,
+    "decisions": 16,
+    "candidates": 505,
+    "explicit_pairs": 37,
+    "max_abs_native_mlp_csharp_ort_difference": 9.5367431640625e-07,
+    "explicit_pair_order_changes": 0,
+    "metrics": [
+      {
+        "name": "original_core_linear_dot_only",
+        "warmups": 50,
+        "repeats": 250,
+        "p50_ms": 0.0765,
+        "p95_ms": 0.2239,
+        "p99_ms": 0.2311,
+        "managed_allocated_bytes_per_decision": 0
+      },
+      {
+        "name": "onnxruntime_mlp_score_only",
+        "warmups": 50,
+        "repeats": 250,
+        "p50_ms": 0.0184,
+        "p95_ms": 0.045,
+        "p99_ms": 0.0727,
+        "managed_allocated_bytes_per_decision": 1239.872
+      },
+      {
+        "name": "original_core_encode_plus_linear_dot",
+        "warmups": 50,
+        "repeats": 250,
+        "p50_ms": 1.2964,
+        "p95_ms": 6.5286,
+        "p99_ms": 9.0618,
+        "managed_allocated_bytes_per_decision": 1826992.608
+      },
+      {
+        "name": "original_core_encode_float32_plus_onnxruntime",
+        "warmups": 50,
+        "repeats": 250,
+        "p50_ms": 1.066,
+        "p95_ms": 5.0764,
+        "p99_ms": 6.4838,
+        "managed_allocated_bytes_per_decision": 2227454.816
+      }
+    ],
+    "process_peak_working_set_bytes": 284901376,
+    "memory_scope": "one probe process containing both models and loaded fixture/trajectory JSON; not per-model incremental RAM or whole-machine 8GiB",
+    "production_provider_integration_verified": false
+  },
+  "artifacts_sha256": {
+    "execution-plan.json": "9eb5ae232e3e878e4afa168fc5440c9263b5f21a9ca966f4feb8eb42770cd8c6",
+    "requirements-lock.txt": "67dda86dadb038d54fca2d86b61f440f52728a0a1f79746751236a310319842e",
+    "execution-receipt.json": "a8a85ca274c2bb7c18be33d748deadb2f8f6b7d5d054de4c68fd1f88f99afdce",
+    "independent-review.json": "6f3dedef773ec0ccd21fbc0c495675e1258d13c65d1973e84964de76c3cf3333",
+    "run_models.py": "b5202f936f6cef886dae467ba5e745b62aa3b6957c4a41c0d989d2ba0531bcfd",
+    "deployment/csharp-neural-deployment-probe.json": "c3504fd324b3e069aacaf6add893e63ed6161987a5040497c172e02228490828"
+  },
+  "limits": [
+    "Exploratory reuse of seven validation decisions on two save-days, after earlier scores were known.",
+    "Prior rank is strong; two action-pair differences repeat training examples. This does not prove equal generalization.",
+    "No test model score read; final product model choice, actual Provider integration and whole-machine8GiB remain unverified."
+  ],
+  "test_scores_opened": false,
+  "formal_training_started": false,
+  "raw_private_data_uploaded": false,
+  "next": "Collect independent Product save-days and informative tasks; grouped validation. Actual Provider and old-PC whole-machine8GiB validation remain pending; long-horizon Teacher proceeds independently."
+}

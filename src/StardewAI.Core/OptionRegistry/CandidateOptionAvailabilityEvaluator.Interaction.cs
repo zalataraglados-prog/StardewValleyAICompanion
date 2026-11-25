@@ -586,8 +586,22 @@ namespace StardewAI.Core.OptionRegistry
                 return new[] { "dialogue_close_transparent_active_menu_fields_missing" };
             }
 
+            var nativeCharacterQuestion = ReadNullableBool(activeMenu.Value, "dialogue_character_is_question");
+            var characterAnswerCallback = ReadNullableBool(activeMenu.Value, "dialogue_character_answer_callback_present");
+            // checkDialogue retains the old response array after an NPC answer. Native
+            // input dispatch uses isQuestion, so ignore it only with positive owner facts.
+            var provenOrdinaryCharacterDialogue =
+                ReadNullableBool(activeMenu.Value, "dialogue_is_question") == false &&
+                ReadNullableBool(activeMenu.Value, "dialogue_character_present") == true &&
+                nativeCharacterQuestion == false &&
+                characterAnswerCallback == false &&
+                ReadNullableBool(activeMenu.Value, "event_up") == false &&
+                !string.IsNullOrWhiteSpace(ReadString(activeMenu.Value, "dialogue_speaker_name")) &&
+                ReadNullableBool(activeMenu.Value, "is_sleep_prompt") == false &&
+                ReadNullableBool(activeMenu.Value, "is_tent_sleep_prompt") == false;
+
             var lastQuestionKey = ReadString(activeMenu.Value, "last_question_key");
-            if (IsTerminalSleepQuestionKey(lastQuestionKey))
+            if (IsTerminalSleepQuestionKey(lastQuestionKey) && !provenOrdinaryCharacterDialogue)
             {
                 reasons.Add("dialogue_close_terminal_question_key_present:" + lastQuestionKey);
             }
@@ -595,6 +609,21 @@ namespace StardewAI.Core.OptionRegistry
             if (ReadBool(activeMenu.Value, "is_sleep_prompt") == true)
             {
                 reasons.Add("dialogue_close_is_sleep_prompt");
+            }
+
+            if (ReadNullableBool(activeMenu.Value, "is_tent_sleep_prompt") == true)
+            {
+                reasons.Add("dialogue_close_is_tent_sleep_prompt");
+            }
+
+            if (nativeCharacterQuestion == true)
+            {
+                reasons.Add("dialogue_close_native_character_question_true");
+            }
+
+            if (characterAnswerCallback == true)
+            {
+                reasons.Add("dialogue_close_character_answer_callback_present");
             }
 
             var eventUp = ReadNullableBool(activeMenu.Value, "event_up");
@@ -622,7 +651,7 @@ namespace StardewAI.Core.OptionRegistry
             {
                 reasons.Add("dialogue_close_response_count_field_missing_or_ambiguous");
             }
-            else if (responseCount.Value > 0)
+            else if (responseCount.Value > 0 && !provenOrdinaryCharacterDialogue)
             {
                 reasons.Add("dialogue_close_responses_present:" + responseCount.Value);
             }

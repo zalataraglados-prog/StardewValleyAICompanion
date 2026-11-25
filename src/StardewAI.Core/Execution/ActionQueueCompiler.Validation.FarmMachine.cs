@@ -61,6 +61,12 @@ namespace StardewAI.Core.Execution
                 var clearIndex = clearObstacleValidationBySnapshot.GetValue(
                     snapshot,
                     BuildClearObstacleValidationIndex);
+                if (clearIndex.OrdinaryObjects.TryGetValue((targetX.Value, targetY.Value), out var ordinary))
+                {
+                    var kind = ClearableObjectKind(ReadString(ordinary, "qualified_item_id"), ReadString(ordinary, "name"));
+                    var toolReason = OrdinaryClearanceToolBlockReason(action, snapshot, kind);
+                    if (toolReason is not null) reasons.Add(toolReason);
+                }
                 var target = clearIndex.TerrainFeatures.TryGetValue(
                     (targetX.Value, targetY.Value),
                     out var terrainFeature)
@@ -191,6 +197,7 @@ namespace StardewAI.Core.Execution
             var objectsByTile = new Dictionary<
                 (int X, int Y),
                 JsonElement>();
+            var ordinaryObjectsByTile = new Dictionary<(int X, int Y), JsonElement>();
             var objects = ReadStateFieldValue(
                 snapshot,
                 "current_location",
@@ -200,6 +207,9 @@ namespace StardewAI.Core.Execution
             {
                 foreach (var item in objects.Value.EnumerateArray())
                 {
+                    if (item.ValueKind == JsonValueKind.Object &&
+                        ClearableObjectKind(ReadString(item, "qualified_item_id"), ReadString(item, "name")) is "weeds" or "stone")
+                        ordinaryObjectsByTile.TryAdd((ReadInt(item, "tile_x"), ReadInt(item, "tile_y")), item);
                     if (item.ValueKind == JsonValueKind.Object &&
                         ReadString(item, "clear_kind") is
                             "twig" or "artifact_spot")
@@ -212,9 +222,16 @@ namespace StardewAI.Core.Execution
                 }
             }
 
+            foreach (var item in ReadRouteBlockerRows(snapshot, "objects"))
+            {
+                if (ClearableObjectKind(ReadString(item, "qualified_item_id"), ReadString(item, "name")) is "weeds" or "stone")
+                    ordinaryObjectsByTile.TryAdd((ReadInt(item, "tile_x"), ReadInt(item, "tile_y")), item);
+            }
+
             return new ClearObstacleValidationIndex(
                 terrainByTile,
-                objectsByTile);
+                objectsByTile,
+                ordinaryObjectsByTile);
         }
 
         private sealed class ClearObstacleValidationIndex
@@ -222,16 +239,20 @@ namespace StardewAI.Core.Execution
             public ClearObstacleValidationIndex(
                 IReadOnlyDictionary<(int X, int Y), JsonElement>
                     terrainFeatures,
-                IReadOnlyDictionary<(int X, int Y), JsonElement> objects)
+                IReadOnlyDictionary<(int X, int Y), JsonElement> objects,
+                IReadOnlyDictionary<(int X, int Y), JsonElement> ordinaryObjects)
             {
                 TerrainFeatures = terrainFeatures;
                 Objects = objects;
+                OrdinaryObjects = ordinaryObjects;
             }
 
             public IReadOnlyDictionary<(int X, int Y), JsonElement>
                 TerrainFeatures { get; }
 
             public IReadOnlyDictionary<(int X, int Y), JsonElement> Objects
+                { get; }
+            public IReadOnlyDictionary<(int X, int Y), JsonElement> OrdinaryObjects
                 { get; }
         }
 

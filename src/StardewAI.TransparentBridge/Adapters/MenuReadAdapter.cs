@@ -137,6 +137,10 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                 dialogue_transitioning = (bool?)dialogueBox.transitioning,
                 dialogue_safety_timer = (int?)dialogueBox.safetyTimer,
                 dialogue_character_present = (bool?)(dialogueBox.characterDialogue is not null),
+                dialogue_character_is_question = dialogueBox.characterDialogue?.isCurrentDialogueAQuestion(),
+                dialogue_character_answer_callback_present = dialogueBox.characterDialogue is null
+                    ? (bool?)null
+                    : dialogueBox.characterDialogue.answerQuestionBehavior is not null,
                 dialogue_speaker_name = dialogueBox.characterDialogue?.speaker?.Name,
                 dialogue_typing = (bool?)dialogueBox.showTyping,
                 dialogue_finished = (bool?)dialogueBox.dialogueFinished
@@ -157,6 +161,8 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
             dialogue_transitioning = (bool?)null,
             dialogue_safety_timer = (int?)null,
             dialogue_character_present = (bool?)null,
+            dialogue_character_is_question = (bool?)null,
+            dialogue_character_answer_callback_present = (bool?)null,
             dialogue_speaker_name = (string?)null,
             dialogue_typing = (bool?)null,
             dialogue_finished = (bool?)null
@@ -960,6 +966,7 @@ public sealed partial class MenuReadAdapter : ReadAdapterBase
                 width = menu.transitionWidth,
                 height = menu.transitionHeight
             },
+            npc_question = SharedNative.NativeNpcQuestionReader.Read(menu),
             current_text = menu.getCurrentString()
         };
     }

@@ -1,0 +1,68 @@
+{
+  "schema_version": "teacher_rank_input_correction.v1",
+  "recorded_at": "2026-11-26T02:15:21+08:00",
+  "analyzed_source_commit": "927da6fae57c611cb88fed330220f13fe6b870ed",
+  "confirmed": {
+    "collection_train_decisions": 6,
+    "collection_train_pairs": 17,
+    "collection_rank_origin": "Teacher SelectionOrder, copied into Rank by BuildTeacherDecision, then SourceCandidate and the model encoder.",
+    "other_train_decisions": 6,
+    "other_train_pairs": 14,
+    "other_rank_origin": "Candidate-ID lexical enumeration, not the original event-ranker prior.",
+    "retained_original_rank_examples": [
+      {
+        "case": "machine output",
+        "before_teacher_rank": 76,
+        "trajectory_rank": 1
+      },
+      {
+        "case": "shipping",
+        "before_teacher_rank": 41,
+        "trajectory_rank": 1
+      },
+      {
+        "case": "spring18 forage",
+        "before_teacher_rank": 5,
+        "trajectory_rank": 1
+      }
+    ]
+  },
+  "invalidation": {
+    "old_raw_evidence_and_native_outcomes": "retained and not invalidated by the model-input issue",
+    "score_reload_arithmetic": "still reproducible",
+    "old_rank_as_independent_baseline": false,
+    "old_contaminated_scores_as_clean_model_selection_evidence": false,
+    "neural_vs_tree_winner_established": false
+  },
+  "required_correction": "Keep raw Teacher/native evidence intact. Version a causal model-input projection that excludes post-Teacher answers and distinguishes an actual pre-Teacher prior from enumeration order. Do not choose a leaking view by validation score.",
+  "friendship_data_funnel": {
+    "missing_route_calibration_forwarding_confirmed": true,
+    "retained_original_episode_replayed_without_new_game": true,
+    "trajectory_appended_after_calibration": 1,
+    "original_dataset_accepted": 0,
+    "original_dataset_rejected": 1,
+    "rejection_reason": "independent_teacher_preference_required",
+    "meaning": "Native success and writer append do not establish independent pairwise supervision."
+  },
+  "integration_status": {
+    "core_passed": 3101,
+    "backend_failed": 56,
+    "backend_passed": 4127,
+    "failure_count_is_not_bug_count": true,
+    "r4_verified_actions": 60,
+    "r4_attempts": 94,
+    "r4_stopped_on_same_state_blocked_queues": true,
+    "r4_complete_three_year_route_verified": false
+  },
+  "next_work_order": [
+    "causal input and full original-supervision join",
+    "same-head regression closure",
+    "mechanism-defined Product coverage",
+    "bounded clean-input controls",
+    "one fixed action-model comparison; separate goal-method shadow scope",
+    "actual Provider and existing low-end/formal gates"
+  ],
+  "rank_origin_receipt_sha256": "bf1acb24e10b3fd24e1582cbf188cd9c16ad11c1ba18ce8da5daad17a3a6998f",
+  "new_model_experiments_started": false,
+  "formal_training_started": false
+}

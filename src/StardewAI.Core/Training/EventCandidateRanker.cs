@@ -198,7 +198,8 @@ namespace StardewAI.Core.Training
                     {
                         urgencySignal = 0.04;
                     }
-                    if (candidate.Kind == "recovery_close_menu")
+                    if (candidate.Kind == "recovery_close_menu" ||
+                        candidate.Kind == Infrastructure.NativeNpcQuestionRecovery.CandidateKind)
                     {
                         urgencySignal = 0.25;
                     }
@@ -426,7 +427,7 @@ namespace StardewAI.Core.Training
         }
 
         private static bool IsMandatoryMenuRecovery(string kind) =>
-            (kind is "recovery_close_menu" or
+            (kind is Infrastructure.NativeNpcQuestionRecovery.CandidateKind or "recovery_close_menu" or
                 "recovery_claim_fishing_item_grab_reward") ||
             string.Equals(
                 kind,

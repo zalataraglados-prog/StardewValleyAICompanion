@@ -96,7 +96,7 @@ namespace StardewAI.Core.Training
                     "advance_story_event_automatic", "advance_story_event_choice",
                     "advance_story_event_minigame_passive", "advance_story_event_minigame_choice",
                     "mailbox_approach", "open_mailbox_letter", "mail_input_wait", "process_open_letter",
-                    "recovery_close_menu", "recovery_resume_sleep_prompt",
+                    "recovery_close_menu", Infrastructure.NativeNpcQuestionRecovery.CandidateKind, "recovery_resume_sleep_prompt",
                     "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse"
                 },
                 ["fishing.collect_crab_pots"] = new[] { "route_connector_tile", "clear_obstacle_tile", "interact_endpoint", "buy_shop_item", "collect_crab_pot", "load_crab_pot_bait", "place_crab_pot", "craft_crab_pot", "recovery_close_menu", "recovery_resume_sleep_prompt", "recovery_sleep_immediately", "recovery_return_home", "recovery_sleep_before_collapse" },
@@ -246,6 +246,11 @@ namespace StardewAI.Core.Training
                 StageOneMandatoryMenuRecovery.ProfessionInputSettleKind)
             {
                 return ProfessionInputSettleSteps(candidate);
+            }
+
+            if (candidate.Kind == Infrastructure.NativeNpcQuestionRecovery.CandidateKind)
+            {
+                return NpcQuestionResponseSteps(candidate);
             }
 
             if (candidate.Kind == "recovery_close_menu")

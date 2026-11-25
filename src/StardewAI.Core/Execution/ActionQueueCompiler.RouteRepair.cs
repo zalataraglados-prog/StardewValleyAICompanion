@@ -108,11 +108,25 @@ namespace StardewAI.Core.Execution
                         Parameter("max_tool_swings", repair.MaxToolSwings.ToString()),
                         Parameter("route_repair_clear_kind", repair.ClearKind),
                         Parameter("route_repair_energy_cost", repair.EnergyCost.ToString())
-                    }
+                    }.Concat(OrdinaryRouteRepairToolParameters(snapshot, repair.ClearKind)).ToArray()
                 });
             }
 
             return steps.ToArray();
+        }
+
+        private static SmallModelActionParameter[] OrdinaryRouteRepairToolParameters(
+            SnapshotEnvelope snapshot, string clearKind)
+        {
+            var tool = SelectOrdinaryClearanceTool(snapshot, clearKind);
+            // Retain the geometric repair when no tool is proved: final clear
+            // validation must block the queue, rather than fall back to an
+            // unrepaired move which would still be compiled as pending.
+            return tool is null ? Array.Empty<SmallModelActionParameter>() : new[]
+            {
+                Parameter("tool_slot_index", tool.SlotIndex.ToString()),
+                Parameter("required_tool_kind", tool.Kind)
+            };
         }
 
         private static string RepairStepId(SmallModelPlanStep moveStep, string suffix, int index)

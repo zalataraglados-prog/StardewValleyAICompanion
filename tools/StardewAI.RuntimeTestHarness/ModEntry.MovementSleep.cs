@@ -141,7 +141,9 @@ public sealed partial class ModEntry : Mod
             IsTileOnMap(Game1.currentLocation, requestedTargetTile))
         {
             connectorActionTile = requestedTargetTile;
-            var standTile = FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
+            var standTile = FindCurrentWarpStandTile(
+                    Game1.currentLocation, pending.Request, startTile, requestedTargetTile)
+                ?? FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
             if (standTile is null)
             {
                 pending.Completion.SetResult(BlockedWithPrimitive(

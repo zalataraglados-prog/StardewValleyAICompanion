@@ -1,0 +1,455 @@
+{
+  "schema_version": "neural_train_only_tuning_and_new_day.v1",
+  "recorded_at": "2026-11-26T01:37:13+08:00",
+  "training": {
+    "decisions": 12,
+    "strict_pairs": 31,
+    "save_day_groups": 5,
+    "families": 5,
+    "cv_trajectory_fits": 300,
+    "full_train_refits": 15,
+    "checkpoints_per_cv_trajectory": [
+      25,
+      50,
+      100,
+      200,
+      400
+    ],
+    "checkpoints_counted_as_extra_fits": false,
+    "learning_rates": [
+      0.0003,
+      0.001,
+      0.003
+    ],
+    "adamw_weight_decays": [
+      0.001,
+      0.05
+    ],
+    "cv_seeds": [
+      17,
+      41
+    ],
+    "refit_seeds": [
+      17,
+      41,
+      83
+    ],
+    "same_save_day_across_executors_kept_together": true,
+    "encoder_and_preprocessing_fit": "fold_train_only",
+    "old_validation_or_test_used_for_parameter_selection": false
+  },
+  "selected_configs": [
+    {
+      "family": "mlp",
+      "learning_rate": 0.001,
+      "weight_decay": 0.05,
+      "epochs": 200,
+      "oof_day_macro": 0.775
+    },
+    {
+      "family": "resnet",
+      "learning_rate": 0.003,
+      "weight_decay": 0.05,
+      "epochs": 25,
+      "oof_day_macro": 0.825
+    },
+    {
+      "family": "tabm",
+      "learning_rate": 0.0003,
+      "weight_decay": 0.05,
+      "epochs": 400,
+      "oof_day_macro": 0.825
+    },
+    {
+      "family": "ft_transformer",
+      "learning_rate": 0.003,
+      "weight_decay": 0.05,
+      "epochs": 25,
+      "oof_day_macro": 0.82
+    },
+    {
+      "family": "deep_sets",
+      "learning_rate": 0.001,
+      "weight_decay": 0.05,
+      "epochs": 50,
+      "oof_day_macro": 0.675
+    }
+  ],
+  "known_summer11_retrospective": {
+    "decisions": 1,
+    "save_days": [
+      "ProofFarm:1:summer:11"
+    ],
+    "pairs": 5,
+    "neural": {
+      "deep_sets": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      },
+      "ft_transformer": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 2
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      },
+      "mlp": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 2
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 2
+          }
+        ]
+      },
+      "resnet": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 2
+          }
+        ]
+      },
+      "tabm": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 2
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      }
+    },
+    "fixed_controls_correct_pairs": {
+      "original-linear-fixed": 3,
+      "xgboost-fixed": 5,
+      "lightgbm-fixed": 5,
+      "catboost-fixed": 5,
+      "prior-rank": 5,
+      "estimated-ticks": 5
+    },
+    "previously_observed_validation": true,
+    "blind_evaluation": false,
+    "improved_seed_pairs": 0,
+    "degraded_seed_pairs": 3
+  },
+  "fresh_spring15_evaluation": {
+    "decisions": 1,
+    "save_days": [
+      "ProofFarm:1:spring:15"
+    ],
+    "pairs": 4,
+    "neural": {
+      "deep_sets": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      },
+      "ft_transformer": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 4
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      },
+      "mlp": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      },
+      "resnet": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 4
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 4
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      },
+      "tabm": {
+        "untuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ],
+        "tuned": [
+          {
+            "seed": 17,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 41,
+            "correct_pairs": 3
+          },
+          {
+            "seed": 83,
+            "correct_pairs": 3
+          }
+        ]
+      }
+    },
+    "fixed_controls_correct_pairs": {
+      "original-linear-fixed": 3,
+      "xgboost-fixed": 4,
+      "lightgbm-fixed": 4,
+      "catboost-fixed": 4,
+      "prior-rank": 4,
+      "estimated-ticks": 4
+    },
+    "weights_fixed_before_scoring": true,
+    "improved_seed_pairs": 1,
+    "degraded_seed_pairs": 0,
+    "original_source_save_unchanged": true,
+    "native_executed_episodes": 4,
+    "accepted_learning_rows": 1,
+    "dataset_rejected_rows": 0,
+    "candidate_scope": [
+      "foraging.collect_spawned_objects",
+      "economy.ship_items"
+    ]
+  },
+  "independent_audit": {
+    "cv_checkpoint_score_recomputations": 1500,
+    "cv_final_model_reloads": 300,
+    "full_train_refit_reloads": 15,
+    "old_day_matched_neural_comparisons": 15,
+    "fresh_day_matched_neural_comparisons": 15
+  },
+  "interpretation": "This bounded train-only tuning did not repair the original weak Product case. A single seed gained one comparison on the new day; no general neural improvement or architecture winner is established. Expand independent Product day/task coverage before further broad tuning.",
+  "limits": [
+    "Only one new validation decision and four comparisons; not four independent game tasks.",
+    "All four fresh comparisons first differ by deterministic estimated ticks; task diversity remains narrow.",
+    "Three fixed tree models tie simple prior-rank and elapsed-cost controls; superiority is not established.",
+    "The FT implementation is PCA+FT-Transformer, not raw-feature FT.",
+    "Actual Provider and whole-machine 8GiB verification remain separate."
+  ],
+  "artifact_sha256": {
+    "frozen_tuning_plan": "40bb64c7e36ea5955245ea1353eb3803d1e923117a25eb7a411be1bc98b9a8b2",
+    "tuning_results": "589dfacb9991dea243fabfded15e365f42ea9b14b6379db5be5789f8cafd5cb7",
+    "independent_hpo_audit": "1896b6c22db6cef1ab206da550d3419ec267cbd7b908d037ed07553c2fe0c112",
+    "independent_retrospective_audit": "f2c1b2b027fd92897aa9729819d97472b979f8065c4b4e34556ba0140c07a436",
+    "independent_fresh_audit": "5c2ea95d7c74a6a0893979a7e7dd5b5735cfefdbe6dbe495167c30f3adf4ef7e",
+    "retrospective_results": "13c7d2271ceea8c89d6679a56212e371b8a347fada3cf67f74e3b6ddcc5ede5c",
+    "fresh_results": "d23f1defd98fa32ce969ab102207cba1ca9c74829e8f39557a1b2ce4a8de8be8",
+    "new_native_row": "abfe0a6dcd43e6ea304ad44c0c9904d1c2a11559bf4b26b8d2a3aa3c4250af53"
+  },
+  "final_product_model_selected": false,
+  "test_content_read": false,
+  "formal_checkpoint": false
+}
