@@ -1442,6 +1442,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         dailyMaintenancePreemption.ShouldPreempt
                             ? null
                             : activeObjectiveContinuation);
+                if (dailyPlan.Ranking["global_primary_budget_recovery"] is JsonObject)
+                {
+                    useDailyPlanDecisionLease = false;
+                    AppendProgress(options, "global_primary_budget_recovery", iteration, lastStateHash,
+                        ReadString(dailyPlan.Queue, "queue_id"),
+                        "reason=all_bound_primary_work_exceeds_daily_time_budget next=original_native_save_boundary");
+                }
                 modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
                 await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
                 var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");

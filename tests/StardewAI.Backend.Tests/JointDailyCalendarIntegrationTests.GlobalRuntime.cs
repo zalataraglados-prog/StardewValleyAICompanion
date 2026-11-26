@@ -54,6 +54,30 @@ public sealed partial class JointDailyCalendarIntegrationTests
         else Assert.Null(handler.CompileRequest!.PrimaryCandidateIds);
     }
 
+    [Theory]
+    [InlineData("time", true)]
+    [InlineData("energy", false)]
+    [InlineData("wrong_state", false)]
+    [InlineData("absent", false)]
+    public async Task OnlyPinnedPrimaryTimeExhaustionInvokesOriginalNativeSaveRoute(string fault, bool expected)
+    {
+        using var handler = new PrimaryRuntimeHandler { PrimaryFailure = fault };
+        var result = await BuildPrimaryRuntime(handler, true, true, false, requireNativeSave: true);
+        Assert.Equal(expected, handler.RecoveryRequested);
+        Assert.Equal(expected ? 4 : 2, handler.Paths.Count);
+        if (!expected)
+        {
+            Assert.Empty(result.Plan["steps"]!.AsArray());
+            Assert.Null(result.Ranking["global_primary_budget_recovery"]);
+            return;
+        }
+        Assert.Equal("pending", result.Queue["status"]!.GetValue<string>());
+        Assert.Null(handler.CompileRequest!.PrimaryCandidateIds);
+        Assert.Equal("native-recovery", Assert.Single(handler.CompileRequest.RankedEventCandidates).CandidateId);
+        Assert.NotNull(result.Ranking["global_primary_budget_recovery"]?["blocked_compile_response"]);
+        Assert.Contains("sleep", result.Plan["steps"]!.ToJsonString(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void NonGlobalRequestsKeepTheirOriginalBytes()
     {
@@ -68,14 +92,15 @@ public sealed partial class JointDailyCalendarIntegrationTests
     }
 
     private static async Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildPrimaryRuntime(
-        PrimaryRuntimeHandler handler, bool global, bool joint, bool owned)
+        PrimaryRuntimeHandler handler, bool global, bool joint, bool owned, bool requireNativeSave = false)
     {
         using var http = new HttpClient(handler, disposeHandler: false);
         var options = new LiveTrainingOptions
         {
             Root = Path.Combine(Path.GetTempPath(), "global-primary-client"), RunId = "client",
             Goal = "grandpa.maximum_21", BackendUrl = "http://planner.test", UseDailyPlan = true,
-            ContinueGlobalDailyPlanAfterCropTeacherRun = global, UseJointDailyCalendar = joint
+            ContinueGlobalDailyPlanAfterCropTeacherRun = global, UseJointDailyCalendar = joint,
+            RequireNativeSaveBoundary = requireNativeSave
         };
         Func<DailyPlanCompileRequest, DailyPlanCompileRequest>? hook = owned ? request =>
         {
@@ -94,6 +119,8 @@ public sealed partial class JointDailyCalendarIntegrationTests
         internal string Reply { get; init; } = "current";
         internal string ResolutionStatus { get; init; } = "resolved";
         internal bool EmptyBinding { get; init; }
+        internal string PrimaryFailure { get; init; } = "";
+        internal bool RecoveryRequested { get; private set; }
         internal List<string> Paths { get; } = [];
         internal DailyPlanCompileRequest? CompileRequest { get; private set; }
 
@@ -103,15 +130,35 @@ public sealed partial class JointDailyCalendarIntegrationTests
             Paths.Add(path);
             object body;
             if (path == "/api/v1/planner/baseline/rank-options")
+            {
+                var rankRequest = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))!;
+                var candidates = rankRequest["candidates"] as JsonArray;
+                RecoveryRequested = candidates is { Count: > 0 } &&
+                    candidates[0]?["option_id"]?.GetValue<string>() == "recovery.stabilize_day";
+                if (RecoveryRequested)
+                {
+                    Assert.Contains(candidates![0]!["parameters"]!.AsArray(), parameter =>
+                        parameter?["name"]?.GetValue<string>() == "control_plane.native_save_boundary" &&
+                        parameter?["value"]?.GetValue<string>() == "true");
+                }
+                var optional = Work("optional", 1, 42);
+                var primary = Work("primary", 2, PrimaryFailure is "time" or "wrong_state" or "absent" ? 4800 : 420);
+                if (PrimaryFailure == "energy") primary.EnergyCost = 200;
+                var recovery = Work("native-recovery", 1, 60);
+                recovery.OptionId = "recovery.stabilize_day";
+                recovery.Kind = "recovery_sleep_immediately";
+                recovery.LocationId = "FarmHouse";
+                recovery.Parameters = [new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.sleep" }];
                 body = new
                 {
-                    ranked_event_candidates = new[] { Work("optional", 1, 42), Work("primary", 2, 420) },
+                    ranked_event_candidates = RecoveryRequested ? new[] { recovery } : new[] { optional, primary },
                     goal_resolution = new
                     {
                         status = ResolutionStatus, source_state_hash = "source", requested_goal_id = "grandpa.maximum_21",
                         effective_goal_id = "earn_money", bound_candidate_ids = EmptyBinding ? Array.Empty<string>() : new[] { "primary" }
                     }
                 };
+            }
             else if (path == "/api/v1/planner/daily-plan/compile")
             {
                 CompileRequest = JsonSerializer.Deserialize<DailyPlanCompileRequest>(await request.Content!.ReadAsStringAsync(cancellationToken), Json)!;
@@ -125,7 +172,18 @@ public sealed partial class JointDailyCalendarIntegrationTests
                         : compiler.Compile(CompileRequest.RankedEventCandidates, "source", availableMinutes: 60, energyBudget: 100);
                 if (Reply == "wrong") plan.PrimaryCandidateIds = ["other"];
                 if (Reply == "duplicate") plan.PrimaryCandidateIds = ["primary", "primary"];
-                body = new { plan, action_queue = new { status = plan.Steps.Length == 0 ? "blocked" : "pending", items = Array.Empty<object>() } };
+                body = new
+                {
+                    plan,
+                    action_queue = new
+                    {
+                        state_hash = PrimaryFailure == "wrong_state" ? "different" : "source",
+                        status = plan.Steps.Length == 0 ? "blocked" : "pending",
+                        compiler_diagnostics = plan.Steps.Length == 0 && PrimaryFailure != "absent"
+                            ? new[] { "empty_action_list" } : Array.Empty<string>(),
+                        items = Array.Empty<object>()
+                    }
+                };
             }
             else throw new InvalidOperationException("Unexpected native/runtime request: " + path);
             return new HttpResponseMessage(HttpStatusCode.OK)

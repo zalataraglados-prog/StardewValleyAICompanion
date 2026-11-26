@@ -285,6 +285,17 @@ static partial class Program
         var queue = compileActionQueue
             ? response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue")
             : new JsonObject();
+        if (options.RequireNativeSaveBoundary && GlobalDailyPrimaryTimeExhausted(stateHash, primaryCandidateIds, plan, queue))
+        {
+            var recovery = await BuildNativeSaveBoundaryQueueAsync(http, options, stateHash);
+            recovery.Ranking["global_primary_budget_recovery"] = new JsonObject
+            {
+                ["reason"] = "all_bound_primary_work_exceeds_daily_time_budget",
+                ["blocked_resolution"] = goalResolution?.DeepClone(),
+                ["blocked_compile_response"] = response.DeepClone()
+            };
+            return recovery;
+        }
         return (response, plan, queue, ranking);
     }
 

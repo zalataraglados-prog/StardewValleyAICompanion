@@ -35,4 +35,29 @@ static partial class Program
                 .SequenceEqual(primary.OrderBy(id => id, StringComparer.Ordinal), StringComparer.Ordinal))
             throw new InvalidDataException("daily_plan_primary_goal_constraint_not_applied: use a matching backend/compiler before dispatch.");
     }
+
+    private static bool GlobalDailyPrimaryTimeExhausted(
+        string stateHash, string[]? primary, JsonObject plan, JsonObject queue)
+    {
+        if (primary is not { Length: > 0 } || string.IsNullOrWhiteSpace(stateHash) ||
+            ReadString(plan, "state_hash") != stateHash || ReadString(queue, "state_hash") != stateHash ||
+            plan["steps"] is not JsonArray { Count: 0 } ||
+            ReadString(queue, "status") != "blocked" || queue["items"] is not JsonArray { Count: 0 } ||
+            queue["compiler_diagnostics"] is not JsonArray { Count: 1 } diagnostics ||
+            diagnostics[0]?.ToString() != "empty_action_list" ||
+            plan["candidate_audit"] is not JsonArray audit)
+            return false;
+
+        return primary.All(id =>
+        {
+            var rows = audit.OfType<JsonObject>().Where(row => ReadString(row, "candidate_id") == id).ToArray();
+            if (rows is not [var row] || ReadString(row, "decision") != "skipped" ||
+                row["reasons"] is not JsonArray { Count: 1 } reasons ||
+                reasons[0]?.ToString() != "aggregate_time_budget_exceeded" ||
+                row["candidate_minutes"] is not JsonValue duration || !duration.TryGetValue<int>(out var needed) ||
+                row["remaining_minutes_before"] is not JsonValue remaining || !remaining.TryGetValue<int>(out var available))
+                return false;
+            return available >= 0 && needed > available;
+        });
+    }
 }
