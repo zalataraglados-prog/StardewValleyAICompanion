@@ -39,12 +39,7 @@ static partial class Program
     private static bool GlobalDailyPrimaryTimeExhausted(
         string stateHash, string[]? primary, JsonObject plan, JsonObject queue)
     {
-        if (primary is not { Length: > 0 } || string.IsNullOrWhiteSpace(stateHash) ||
-            ReadString(plan, "state_hash") != stateHash || ReadString(queue, "state_hash") != stateHash ||
-            plan["steps"] is not JsonArray { Count: 0 } ||
-            ReadString(queue, "status") != "blocked" || queue["items"] is not JsonArray { Count: 0 } ||
-            queue["compiler_diagnostics"] is not JsonArray { Count: 1 } diagnostics ||
-            diagnostics[0]?.ToString() != "empty_action_list" ||
+        if (primary is not { Length: > 0 } || !IsPinnedEmptyDailyCompile(stateHash, plan, queue) ||
             plan["candidate_audit"] is not JsonArray audit)
             return false;
 
@@ -54,4 +49,11 @@ static partial class Program
             return rows is [var row] && QueueReplanFilter.IsExclusiveTimeBudgetSkip(row);
         });
     }
+
+    private static bool IsPinnedEmptyDailyCompile(string stateHash, JsonObject plan, JsonObject queue) =>
+        !string.IsNullOrWhiteSpace(stateHash) && ReadString(plan, "state_hash") == stateHash &&
+        ReadString(queue, "state_hash") == stateHash && plan["steps"] is JsonArray { Count: 0 } &&
+        ReadString(queue, "status") == "blocked" && queue["items"] is JsonArray { Count: 0 } &&
+        queue["compiler_diagnostics"] is JsonArray { Count: 1 } diagnostics &&
+        diagnostics[0]?.ToString() == "empty_action_list";
 }
