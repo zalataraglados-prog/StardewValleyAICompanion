@@ -62,7 +62,27 @@ $globalOptions = [LiveTrainingOptions]::Parse([string[]]($base + $globalExtra + 
 Check ($globalOptions.ContinueGlobalDailyPlanAfterCropTeacherRun -and $globalOptions.ShouldContinueAfterCropTeacherRun) 'actual_launcher_continues_original_daily_planning'
 Check (!$globalOptions.UseStageOneCollectionTeacher -and !$globalOptions.ContinueAfterCropTeacherRun) 'global_daily_does_not_alias_collection_control'
 Check (@($globalExtra | Where-Object { $_ -ceq '--continue-global-daily-plan-after-crop-teacher-run' }).Count -eq 1) 'global_daily_flag_forwarded_once'
+$authorityBindings = @($primary.FindAll({ param($node) $node -is [Management.Automation.Language.IfStatementAst] -and
+    $node.Clauses[0].Item1.Extent.Text.StartsWith('$RequireGoldenWalnutSourceScheduleReady -or') -and
+    $node.Extent.Text.Contains('"--stage-one-collection-requirement-inventory"') }, $true))
+Check ($authorityBindings.Count -eq 1) 'one_original_authority_argument_binding'
+$authorityBinding = [scriptblock]::Create($authorityBindings[0].Extent.Text)
+$RouteTimingCalibration = [IO.Path]::GetFullPath($LiveLoopDll)
+$StageOneCollectionRequirementInventory = $StageOneCollectionAcquisitionLowering = $MasterAnglerStageOneWindowIndex = $RouteTimingCalibration
+$RequireGoldenWalnutSourceScheduleReady = $false
+$ContinueAfterCropTeacherRun = $false
+$arguments = @($base + $globalExtra + @('--artifact-retention-mode', 'stop', '--require-native-save-boundary',
+    '--save-slot', 'declared-global-slot', '--save-isolation-path', (Join-Path $OutputRoot 'saves')))
+. $authorityBinding
+$withGlobalTiming = [LiveTrainingOptions]::Parse([string[]]$arguments)
+Check ($withGlobalTiming.RouteTimingCalibrationPath -ceq $RouteTimingCalibration) 'global_daily_forwards_original_route_timing'
+Check (!$withGlobalTiming.UseStageOneCollectionTeacher -and !$withGlobalTiming.ContinueAfterCropTeacherRun -and
+    !($arguments -contains '--stage-one-collection-requirement-inventory') -and
+    @($arguments | Where-Object { $_ -ceq '--route-timing-calibration' }).Count -eq 1) 'global_timing_does_not_enable_collection_authority'
 $ContinueGlobalDailyPlanAfterCropTeacherRun = $false
+$arguments = @($base)
+. $authorityBinding
+Check (!($arguments -contains '--route-timing-calibration')) 'ordinary_bootstrap_does_not_forward_global_authority'
 $authority = [IO.Path]::GetFullPath($LiveLoopDll)
 $legacyArgs = @('--continue-after-crop-teacher-run', '--resume-crop-teacher-transition-ledger', $authority,
     '--stage-one-collection-requirement-inventory', $authority, '--stage-one-collection-acquisition-lowering', $authority,

@@ -122,6 +122,12 @@ if ($ContinueAfterCropTeacherRun -and -not $resumeCropTeacher -and -not $UseMana
 if ($UseManagedCropTeacher -and $ContinueAfterCropTeacherRun -and $ArtifactRetentionMode -ne 'stop') {
     throw 'Managed global continuation requires ArtifactRetentionMode stop; rolling retention does not preserve the original owner inputs.'
 }
+if ($PSBoundParameters.ContainsKey('RouteTimingCalibration') -and
+    $ContinueGlobalDailyPlanAfterCropTeacherRun -and
+    -not [string]::IsNullOrWhiteSpace($RouteTimingCalibration) -and
+    -not (Test-Path -LiteralPath $RouteTimingCalibration -PathType Leaf)) {
+    throw "Global daily continuation route timing calibration was not found: $RouteTimingCalibration"
+}
 if ($RequireGoldenWalnutSourceScheduleReady -or
     $ContinueAfterCropTeacherRun) {
     foreach ($path in @(
@@ -730,6 +736,11 @@ try {
             "--route-timing-calibration",
             $RouteTimingCalibration
         )
+    }
+    elseif ($ContinueGlobalDailyPlanAfterCropTeacherRun -and
+        -not [string]::IsNullOrWhiteSpace($RouteTimingCalibration) -and
+        (Test-Path -LiteralPath $RouteTimingCalibration -PathType Leaf)) {
+        $arguments += @("--route-timing-calibration", $RouteTimingCalibration)
     }
     if ($resumeCropTeacher) {
         $arguments += @(

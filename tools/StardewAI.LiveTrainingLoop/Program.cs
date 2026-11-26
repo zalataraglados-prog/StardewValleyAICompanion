@@ -1666,10 +1666,13 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         attemptOrdinal);
                     continue;
                 }
+                var talkTimeExhausted = executableSubsetCount == 0 &&
+                    options.ContinueGlobalDailyPlanAfterCropTeacherRun &&
+                    QueueReplanFilter.ShouldReleaseTimeBlockedSocialTalk(activeObjectiveContinuation, dailyPlanRanking, queue);
                 if (executableSubsetCount == 0 &&
-                    QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+                    (talkTimeExhausted || QueueReplanFilter.ShouldReleaseUnavailableContinuation(
                         activeObjectiveContinuation,
-                        dailyPlanRanking))
+                        dailyPlanRanking)))
                 {
                     var releasedContinuation = activeObjectiveContinuation!;
                     var releasedOptionId = ReadString(
@@ -1686,7 +1689,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         iteration,
                         lastStateHash,
                         lastQueueId,
-                        "reason=no_available_continuation_candidate option_id=" +
+                        "reason=" + (talkTimeExhausted ? "continuation_exceeds_daily_time_budget" :
+                            "no_available_continuation_candidate") + " option_id=" +
                         releasedOptionId +
                         " suppressed_until_day_change=true suppressed_count=" +
                         suppressedObjectiveContinuations.Count);
