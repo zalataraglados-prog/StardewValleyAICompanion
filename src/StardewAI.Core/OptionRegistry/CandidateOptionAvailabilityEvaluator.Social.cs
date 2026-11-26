@@ -63,12 +63,13 @@ namespace StardewAI.Core.OptionRegistry
             var routeCandidates = RouteConnectorCandidates(snapshot, int.MaxValue)
                 .Where(candidate => candidate.Kind == "route_connector_tile")
                 .ToArray();
+            var routeTo = SocialRouteLookup(snapshot, currentLocation, routeCandidates);
             var routed = candidates
                 .Select(candidate =>
                     string.IsNullOrWhiteSpace(candidate.LocationId) ||
                     string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase)
                         ? candidate
-                        : SocialRouteCandidate(snapshot, optionId, candidate, currentLocation, routeCandidates))
+                        : SocialRouteCandidate(optionId, candidate, currentLocation, routeTo(candidate.LocationId)))
                 // Keep the locked NPC's real route and gate reasons in the bounded refresh.
                 .OrderByDescending(IsContinuationNpc)
                 .ThenByDescending(candidate => candidate.Available)
@@ -277,33 +278,59 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private EventCandidate SocialRouteCandidate(
-            SnapshotEnvelope snapshot,
+        private static Func<string, (ResolvedRoutePlan? Plan, bool DateBlocked)> SocialRouteLookup(
+            SnapshotEnvelope snapshot, string currentLocation, EventCandidate[] routeCandidates)
+        {
+            var routes = new Dictionary<string, (ResolvedRoutePlan? Plan, bool DateBlocked)>(StringComparer.OrdinalIgnoreCase);
+            return location =>
+            {
+                if (!routes.TryGetValue(location, out var route))
+                {
+                    var plan = FindResolvedRoutePlans(snapshot, currentLocation, location, routeCandidates,
+                        IncludeSocialRouteEdge).FirstOrDefault();
+                    route = (plan, plan is null &&
+                        FindResolvedRoutePlan(snapshot, currentLocation, location, routeCandidates) is not null);
+                    routes.Add(location, route);
+                }
+                return route;
+            };
+        }
+
+        private static bool IncludeSocialRouteEdge(JsonElement edge) =>
+            !edge.TryGetProperty("gate", out var gate) || gate.ValueKind != JsonValueKind.Object ||
+            !string.IsNullOrWhiteSpace(ReadString(gate, "unresolved_reason")) ||
+            ReadBool(gate, "allowed_now") == true || ReadBool(gate, "allowed_on_capture_date") != false;
+
+        private static EventCandidate SocialRouteCandidate(
             string optionId,
             EventCandidate socialCandidate,
             string currentLocation,
-            EventCandidate[] routeCandidates)
+            (ResolvedRoutePlan? Plan, bool DateBlocked) route)
         {
             var remainingReasons = socialCandidate.BlockReasons
                 .Where(reason => reason != "social_npc_not_in_player_location" &&
                     reason != "social_npc_not_in_player_location_stand_skipped" &&
                     reason != "partnership_npc_not_in_player_location")
                 .ToList();
-            var routePlan = FindResolvedRoutePlan(
-                snapshot,
-                currentLocation,
-                socialCandidate.LocationId,
-                routeCandidates);
+            var routePlan = route.Plan;
             if (routePlan is null)
             {
-                remainingReasons.Add("social_cross_map_route_unavailable");
-                return CopySocialRouteCandidate(
+                remainingReasons.Add(route.DateBlocked
+                    ? "social_cross_map_route_gate_unavailable_on_capture_date"
+                    : "social_cross_map_route_unavailable");
+                var blocked = CopySocialRouteCandidate(
                     socialCandidate,
                     optionId,
                     currentLocation,
                     null,
                     0,
                     remainingReasons);
+                if (route.DateBlocked)
+                {
+                    blocked.AllowedNow = false;
+                    blocked.AllowedToday = false;
+                }
+                return blocked;
             }
 
             var routeCandidate = routePlan.FirstActionCandidate;

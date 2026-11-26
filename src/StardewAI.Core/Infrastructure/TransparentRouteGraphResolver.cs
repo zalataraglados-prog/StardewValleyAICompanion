@@ -55,7 +55,11 @@ namespace StardewAI.Core.Infrastructure
             this.adjacency = adjacency;
         }
 
-        public static bool TryCreate(JsonElement graph, out TransparentRouteGraphResolver resolver)
+        public static bool TryCreate(JsonElement graph, out TransparentRouteGraphResolver resolver) =>
+            TryCreateFiltered(graph, null, out resolver);
+
+        internal static bool TryCreateFiltered(
+            JsonElement graph, Func<JsonElement, bool>? includeEdge, out TransparentRouteGraphResolver resolver)
         {
             resolver = new TransparentRouteGraphResolver(
                 new Dictionary<string, TransparentRouteEdge[]>(StringComparer.OrdinalIgnoreCase));
@@ -68,6 +72,7 @@ namespace StardewAI.Core.Infrastructure
 
             var edges = edgesElement.EnumerateArray()
                 .Where(edge => edge.ValueKind == JsonValueKind.Object && ReadBool(edge, "resolved") == true)
+                .Where(edge => includeEdge is null || includeEdge(edge))
                 .Select(edge => new TransparentRouteEdge(
                     ReadString(edge, "kind").ToLowerInvariant(),
                     ReadString(edge, "from_location"),
