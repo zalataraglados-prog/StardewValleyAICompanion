@@ -538,7 +538,7 @@ static partial class Program
                 string.Equals(executionStatus, "applied", StringComparison.Ordinal))
             {
                 continuationForCompletion =
-                    QueueReplanFilter.ReadObjectiveContinuation(item);
+                    QueueReplanFilter.ReadContinuationToStartAfterAppliedStep(item);
             }
 
             if (QueueReplanFilter.CompletesObjectiveContinuation(

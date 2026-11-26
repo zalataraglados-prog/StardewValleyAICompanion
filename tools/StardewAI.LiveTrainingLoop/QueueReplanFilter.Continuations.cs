@@ -4,6 +4,16 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class QueueReplanFilter
 {
+    public static JsonObject? ReadContinuationToStartAfterAppliedStep(JsonObject? queueItem)
+    {
+        var continuation = ReadObjectiveContinuation(queueItem);
+        // Post-purchase cleanup carries provenance, not a new purchase lease.
+        return ReadString(queueItem, "option_id") == "executor.close_menu" &&
+            ReadString(continuation, "kind") == "economy_purchase"
+            ? null
+            : continuation;
+    }
+
     public static JsonObject? ReadObjectiveContinuation(JsonObject? queueItem)
     {
         var optionId = ReadParameter(queueItem, "continuation.option_id");

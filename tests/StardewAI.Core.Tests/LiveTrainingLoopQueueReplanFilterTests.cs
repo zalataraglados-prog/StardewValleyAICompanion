@@ -1073,6 +1073,25 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
     }
 
     [Fact]
+    public void AppliedPurchaseCleanupRetainsProvenanceWithoutStartingAnotherPurchase()
+    {
+        var close = QueueItem("queue.purchase.close", "executor.close_menu", "0", "0", string.Empty);
+        var parameters = close["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "economy.buy_supplies"));
+        parameters.Add(Parameter("continuation.shop_id", "FishShop"));
+        parameters.Add(Parameter("continuation.qualified_item_id", "(O)219"));
+        parameters.Add(Parameter("continuation.quantity", "1"));
+
+        Assert.Equal("economy_purchase", QueueReplanFilter.ReadObjectiveContinuation(close)!["kind"]!.GetValue<string>());
+        var restarted = QueueReplanFilter.ReadContinuationToStartAfterAppliedStep(close);
+        Assert.Null(restarted);
+        Assert.True(QueueReplanFilter.CompletesSelectedQueueCandidate("applied", restarted, "purchase:219", "next"));
+
+        close["option_id"] = "executor.interact";
+        Assert.NotNull(QueueReplanFilter.ReadContinuationToStartAfterAppliedStep(close));
+    }
+
+    [Fact]
     public void ReleasedPurchaseSuppressionRemovesOnlyExactShopAndItem()
     {
         var suppressed = new JsonObject
