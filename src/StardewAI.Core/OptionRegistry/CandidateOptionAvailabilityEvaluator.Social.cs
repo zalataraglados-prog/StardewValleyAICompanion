@@ -37,11 +37,13 @@ namespace StardewAI.Core.OptionRegistry
                 : SocialCandidateBuilder.Build(snapshot, optionId, int.MaxValue);
             var continuationNpc = ReadParameter(boundParameters, "continuation.npc_name");
             var continuationTarget = ReadParameter(boundParameters, "continuation.target_location");
-            var hasCurrentContinuationNpc = candidates.Any(candidate =>
-                string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase));
+            bool IsContinuationNpc(EventCandidate candidate) =>
+                !string.IsNullOrWhiteSpace(continuationNpc) &&
+                string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase);
+
             if (!string.IsNullOrWhiteSpace(continuationNpc) &&
                 !string.IsNullOrWhiteSpace(continuationTarget) &&
-                !hasCurrentContinuationNpc)
+                !candidates.Any(IsContinuationNpc))
             {
                 candidates = candidates
                     .Concat(new[] { LastObservedSocialContinuationCandidate(optionId, continuationNpc, continuationTarget, boundParameters) })
@@ -67,7 +69,9 @@ namespace StardewAI.Core.OptionRegistry
                     string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase)
                         ? candidate
                         : SocialRouteCandidate(snapshot, optionId, candidate, currentLocation, routeCandidates))
-                .OrderByDescending(candidate => candidate.Available)
+                // Keep the locked NPC's real route and gate reasons in the bounded refresh.
+                .OrderByDescending(IsContinuationNpc)
+                .ThenByDescending(candidate => candidate.Available)
                 .ThenBy(candidate => candidate.LocationId, StringComparer.Ordinal)
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .Take(socialCandidateLimit)
@@ -75,12 +79,12 @@ namespace StardewAI.Core.OptionRegistry
             if (!string.IsNullOrWhiteSpace(continuationNpc))
             {
                 routed = routed
-                    .Select(candidate => string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase) &&
+                    .Select(candidate => IsContinuationNpc(candidate) &&
                         !candidate.Available &&
                         candidate.BlockReasons.Length > 0 &&
                         candidate.BlockReasons.All(reason => reason == "social_menu_must_be_clear")
                             ? SocialContinuationCloseMenu(optionId, candidate)
-                            : string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase) &&
+                            : IsContinuationNpc(candidate) &&
                         !candidate.Available &&
                         string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase) &&
                         candidate.BlockReasons.Length > 0 &&

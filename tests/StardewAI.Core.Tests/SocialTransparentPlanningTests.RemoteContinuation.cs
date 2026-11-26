@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -93,20 +94,55 @@ public sealed partial class SocialTransparentPlanningTests
         Assert.Contains(item.NormalizedCommand.Parameters, parameter => parameter.Name == "continuation.target_location" && parameter.Value == "SeedShop");
     }
 
-    [Fact]
-    public void RemoteTalkAtClosedDoorDefersSameNpcWithOneRollingWait()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(65)]
+    public void RemoteTalkAtClosedDoorDefersSameNpcWithOneRollingWait(int unrelatedTargets)
     {
         var remoteSocial = "[{\"name\":\"Abigail\",\"display_name\":\"Abigail\",\"master_data_present\":true,\"gift_taste_master_data_present\":true,\"current_instance_loaded\":true,\"location_id\":\"SeedShop\",\"tile_x\":10,\"tile_y\":10,\"facing_direction\":2,\"is_villager\":true,\"simple_non_villager_npc\":false,\"is_invisible\":false,\"is_sleeping\":false,\"has_controller\":false,\"is_busy\":false,\"schedule_loaded\":true,\"can_socialize\":true,\"can_socialize_complete\":true,\"can_receive_gifts\":true,\"can_receive_gifts_complete\":true,\"is_birthday\":false,\"current_route_window_complete\":true}]";
+        var villagers = JsonNode.Parse(remoteSocial)!.AsArray();
+        for (var i = 0; i < unrelatedTargets; i++)
+        {
+            var otherNpc = villagers[0]!.DeepClone();
+            otherNpc["name"] = $"Aardvark{i:D2}";
+            otherNpc["display_name"] = $"Aardvark{i:D2}";
+            villagers.Add(otherNpc);
+        }
         var snapshot = CompleteSocialSnapshot(
-            socialInteractionValue: remoteSocial,
+            socialInteractionValue: villagers.ToJsonString(),
             routeConnectorsValue: "{\"location_id\":\"Town\",\"connectors\":[{\"kind\":\"locked_door_warp\",\"tile_x\":11,\"tile_y\":10,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true},{\"kind\":\"warp\",\"tile_x\":19,\"tile_y\":10,\"target_location\":\"Beach\",\"target_x\":1,\"target_y\":1,\"resolved\":true}]}",
             routeGraphValue: "{\"edges\":[{\"kind\":\"locked_door_warp\",\"from_location\":\"Town\",\"from_x\":11,\"from_y\":10,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true},{\"kind\":\"warp\",\"from_location\":\"Town\",\"from_x\":19,\"from_y\":10,\"target_location\":\"Beach\",\"target_x\":1,\"target_y\":1,\"resolved\":true},{\"kind\":\"warp\",\"from_location\":\"Beach\",\"from_x\":2,\"from_y\":2,\"target_location\":\"SeedShop\",\"target_x\":3,\"target_y\":9,\"resolved\":true}]}",
             routeGateContextValue: "{\"location_id\":\"Town\",\"action_gates\":[{\"kind\":\"locked_door_warp\",\"tile_x\":11,\"tile_y\":10,\"target_location\":\"SeedShop\",\"open_time\":900,\"effective_open_time\":900,\"close_time\":1700,\"festival_closed\":false,\"seed_shop_wednesday_closed\":false,\"friendship_allowed\":true,\"green_rain_override\":false,\"allowed_now\":false,\"unresolved_reason\":null}]}",
             currentTime: 620);
 
-        var candidate = Assert.Single(Assert.Single(new CandidateOptionAvailabilityEvaluator()
-            .Evaluate(snapshot, new[] { "social.talk_npc" })
-            .Options).SocialCandidates);
+        const string optionId = "social.talk_npc";
+        var evaluator = new CandidateOptionAvailabilityEvaluator();
+        var unbound = Assert.Single(evaluator.Evaluate(snapshot, new[] { optionId }).Options).SocialCandidates;
+        EventCandidate candidate;
+        if (unrelatedTargets == 0)
+        {
+            candidate = Assert.Single(unbound);
+        }
+        else
+        {
+            Assert.Equal(64, unbound.Length);
+            Assert.DoesNotContain(unbound, row => row.CandidateId.Contains(":Abigail:", StringComparison.Ordinal));
+            var binding = new OptionAvailabilityCandidate
+            {
+                OptionId = optionId,
+                Parameters = new[]
+                {
+                    new SmallModelActionParameter { Name = "continuation.option_id", Value = optionId },
+                    new SmallModelActionParameter { Name = "continuation.npc_name", Value = "Abigail" },
+                    new SmallModelActionParameter { Name = "continuation.target_location", Value = "SeedShop" }
+                }
+            };
+            var rebound = Assert.Single(evaluator.Evaluate(snapshot, new[] { binding }).Options).SocialCandidates;
+            Assert.Equal(64, rebound.Length);
+            candidate = Assert.Single(rebound, row => row.CandidateId.Contains(":Abigail:", StringComparison.Ordinal));
+            Assert.Equal(unbound.Take(63).Select(row => row.CandidateId),
+                rebound.Where(row => !ReferenceEquals(row, candidate)).Select(row => row.CandidateId));
+        }
 
         Assert.False(candidate.Available);
         Assert.False(candidate.AllowedNow);
