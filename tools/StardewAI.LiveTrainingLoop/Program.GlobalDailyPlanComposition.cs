@@ -51,13 +51,7 @@ static partial class Program
         return primary.All(id =>
         {
             var rows = audit.OfType<JsonObject>().Where(row => ReadString(row, "candidate_id") == id).ToArray();
-            if (rows is not [var row] || ReadString(row, "decision") != "skipped" ||
-                row["reasons"] is not JsonArray { Count: 1 } reasons ||
-                reasons[0]?.ToString() != "aggregate_time_budget_exceeded" ||
-                row["candidate_minutes"] is not JsonValue duration || !duration.TryGetValue<int>(out var needed) ||
-                row["remaining_minutes_before"] is not JsonValue remaining || !remaining.TryGetValue<int>(out var available))
-                return false;
-            return available >= 0 && needed > available;
+            return rows is [var row] && QueueReplanFilter.IsExclusiveTimeBudgetSkip(row);
         });
     }
 }

@@ -4,12 +4,10 @@ namespace StardewAI.LiveTrainingLoop;
 
 public static partial class QueueReplanFilter
 {
-    public static bool ShouldReleaseTimeBlockedSocialTalk(
+    public static bool ShouldReleaseTimeBlockedRouteContinuation(
         JsonObject? continuation, JsonObject? ranking, JsonObject queue)
     {
-        if (ReadString(continuation, "kind") != "social" ||
-            ReadString(continuation, "option_id") != "social.talk_npc" ||
-            string.IsNullOrWhiteSpace(ReadString(continuation, "npc_name")) ||
+        if (continuation is null ||
             ReadString(queue, "status") != "blocked" ||
             queue["items"] is not JsonArray { Count: 0 } ||
             !ContainsOnlyReason(queue["compiler_diagnostics"], "empty_action_list") ||
@@ -29,21 +27,37 @@ public static partial class QueueReplanFilter
         if (string.IsNullOrWhiteSpace(stateHash) || stateHash != ReadString(resolution, "source_state_hash"))
             return false;
 
-        var matchingIds = rankedCandidates.OfType<JsonObject>()
-            .Where(candidate => MatchesContinuation(candidate, continuation!))
-            .Select(candidate => ReadString(candidate, "candidate_id"))
-            .ToHashSet(StringComparer.Ordinal);
-        matchingIds.Remove(string.Empty);
-        // Release only the exact audited talk lock. An empty queue caused by any
-        // other precondition must retain its original handling.
-        return audit.All(node => node is JsonObject item &&
-            matchingIds.Remove(ReadString(item, "candidate_id")) &&
-            ReadString(item, "decision") == "skipped" &&
-            ContainsOnlyReason(item["reasons"], "aggregate_time_budget_exceeded") &&
-            TryReadInt(item, "candidate_minutes", out var minutes) &&
-            TryReadInt(item, "remaining_minutes_before", out var remaining) &&
-            remaining >= 0 && minutes > remaining);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        // Only defer travel from the ordinary planner, never a terminal action
+        // or an untyped fallback that happens to use the same option ID.
+        return audit.All(node =>
+        {
+            if (node is not JsonObject item || !IsExclusiveTimeBudgetSkip(item))
+                return false;
+            var id = ReadString(item, "candidate_id");
+            if (string.IsNullOrWhiteSpace(id) || !seen.Add(id))
+                return false;
+            var matches = rankedCandidates.OfType<JsonObject>()
+                .Where(candidate => ReadString(candidate, "candidate_id") == id).ToArray();
+            if (matches is not [var candidate] || ReadString(candidate, "kind") != "route_connector_tile" ||
+                !MatchesContinuation(candidate, continuation))
+                return false;
+            var rebound = ReadObjectiveContinuation(new JsonObject
+            {
+                ["normalized_command"] = new JsonObject { ["parameters"] = candidate["parameters"]?.DeepClone() }
+            });
+            return rebound is not null && ReadString(rebound, "kind") == ReadString(continuation, "kind") &&
+                ReadString(rebound, "option_id") == ReadString(continuation, "option_id") &&
+                MatchesContinuation(candidate, rebound);
+        });
     }
+
+    internal static bool IsExclusiveTimeBudgetSkip(JsonObject item) =>
+        ReadString(item, "decision") == "skipped" &&
+        ContainsOnlyReason(item["reasons"], "aggregate_time_budget_exceeded") &&
+        TryReadInt(item, "candidate_minutes", out var minutes) &&
+        TryReadInt(item, "remaining_minutes_before", out var remaining) &&
+        remaining >= 0 && minutes > remaining;
 
     private static bool ContainsOnlyReason(JsonNode? node, string reason) =>
         node is JsonArray { Count: 1 } values &&

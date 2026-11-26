@@ -1673,11 +1673,12 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         attemptOrdinal);
                     continue;
                 }
-                var talkTimeExhausted = executableSubsetCount == 0 &&
+                var routeTimeExhausted = executableSubsetCount == 0 &&
                     options.ContinueGlobalDailyPlanAfterCropTeacherRun &&
-                    QueueReplanFilter.ShouldReleaseTimeBlockedSocialTalk(activeObjectiveContinuation, dailyPlanRanking, queue);
+                    options.UseJointDailyCalendar &&
+                    QueueReplanFilter.ShouldReleaseTimeBlockedRouteContinuation(activeObjectiveContinuation, dailyPlanRanking, queue);
                 if (executableSubsetCount == 0 &&
-                    (talkTimeExhausted || QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+                    (routeTimeExhausted || QueueReplanFilter.ShouldReleaseUnavailableContinuation(
                         activeObjectiveContinuation,
                         dailyPlanRanking)))
                 {
@@ -1696,7 +1697,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         iteration,
                         lastStateHash,
                         lastQueueId,
-                        "reason=" + (talkTimeExhausted ? "continuation_exceeds_daily_time_budget" :
+                        "reason=" + (routeTimeExhausted ? "continuation_exceeds_daily_time_budget" :
                             "no_available_continuation_candidate") + " option_id=" +
                         releasedOptionId +
                         " suppressed_until_day_change=true suppressed_count=" +
