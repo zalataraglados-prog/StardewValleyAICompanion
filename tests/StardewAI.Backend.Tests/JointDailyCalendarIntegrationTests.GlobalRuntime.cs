@@ -118,6 +118,20 @@ public sealed partial class JointDailyCalendarIntegrationTests
     }
 
     [Fact]
+    public void GlobalRuntimeKeepsAcceptedReturnHomeSelectionUntilTheDayChanges()
+    {
+        var main = RuntimeHarnessSources.RepositoryFile("tools", "StardewAI.LiveTrainingLoop", "Program.cs");
+        Assert.Contains("currentDayKey != globalNativeSaveRecoveryDayKey", main, StringComparison.Ordinal);
+        Assert.Contains("ReadString(dailyPlan.Queue, \"status\") == \"pending\" && !string.IsNullOrWhiteSpace(currentDayKey)", main, StringComparison.Ordinal);
+        Assert.Contains("globalNativeSaveRecoveryDayKey = currentDayKey;", main, StringComparison.Ordinal);
+        Assert.Contains("var hasDecisionLease = !continuingGlobalNativeSaveRecovery &&", main, StringComparison.Ordinal);
+        var branch = main[main.IndexOf("else if (closingNativeSaveBoundary || continuingGlobalNativeSaveRecovery)", StringComparison.Ordinal)..];
+        branch = branch[..branch.IndexOf("var mandatoryMenuRecovery", StringComparison.Ordinal)];
+        Assert.Contains("BuildNativeSaveBoundaryQueueAsync", branch, StringComparison.Ordinal);
+        Assert.DoesNotContain("BuildQueueFromDailyPlanAsync", branch, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void NonGlobalRequestsKeepTheirOriginalBytes()
     {
         var method = typeof(LiveTrainingOptions).Assembly.GetType("Program", true)!

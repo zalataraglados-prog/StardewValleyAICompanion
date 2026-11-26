@@ -203,6 +203,7 @@ var nativeSaveBoundaryVerified = false;
 ManagedCropGlobalContinuation? pendingManagedGlobalSave = null;
 var nativeSaveBoundaryInitialDayKey = string.Empty;
 var nativeSaveBoundaryCurrentDayKey = string.Empty;
+var globalNativeSaveRecoveryDayKey = string.Empty;
 var goldenWalnutSourceMilestone =
     new GoldenWalnutFreshSaveMilestoneAssessment(
         false,
@@ -413,6 +414,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
         }
         var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
+        if (!string.IsNullOrWhiteSpace(currentDayKey) && currentDayKey != globalNativeSaveRecoveryDayKey)
+        {
+            globalNativeSaveRecoveryDayKey = string.Empty;
+        }
         if (pendingCropTeacherDayBoundary is not null)
         {
             var boundaryCheck = await CheckCropTeacherDayBoundaryAsync(
@@ -1105,7 +1110,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
     else if (options.UseDailyPlan)
     {
-        var hasDecisionLease = File.Exists(leasedDecisionModelPlanPath) &&
+        var continuingGlobalNativeSaveRecovery = !string.IsNullOrWhiteSpace(globalNativeSaveRecoveryDayKey);
+        var hasDecisionLease = !continuingGlobalNativeSaveRecovery &&
+            File.Exists(leasedDecisionModelPlanPath) &&
             File.Exists(leasedDecisionRankingPath) &&
             File.Exists(leasedDecisionCompiledQueuePath) &&
             File.Exists(leasedDecisionSnapshotPath) &&
@@ -1146,8 +1153,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             selectedQueueIndex = selectedCandidate.QueueIndex;
             resumedSelectedQueueDecision = true;
         }
-        else if (closingNativeSaveBoundary)
+        else if (closingNativeSaveBoundary || continuingGlobalNativeSaveRecovery)
         {
+            if (continuingGlobalNativeSaveRecovery) useDailyPlanDecisionLease = false;
             var saveBoundary = await BuildNativeSaveBoundaryQueueAsync(
                 http,
                 options,
@@ -1442,12 +1450,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         dailyMaintenancePreemption.ShouldPreempt
                             ? null
                             : activeObjectiveContinuation);
-                if (dailyPlan.Ranking["global_primary_budget_recovery"] is JsonObject)
+                if (dailyPlan.Ranking["global_primary_budget_recovery"] is JsonObject recovery)
                 {
                     useDailyPlanDecisionLease = false;
+                    if (ReadString(dailyPlan.Queue, "status") == "pending" && !string.IsNullOrWhiteSpace(currentDayKey))
+                        globalNativeSaveRecoveryDayKey = currentDayKey;
                     AppendProgress(options, "global_primary_budget_recovery", iteration, lastStateHash,
                         ReadString(dailyPlan.Queue, "queue_id"),
-                        "reason=all_bound_primary_work_exceeds_daily_time_budget next=original_native_save_boundary");
+                        "reason=" + ReadString(recovery, "reason") + " next=original_native_save_boundary");
                 }
                 modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
                 await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
