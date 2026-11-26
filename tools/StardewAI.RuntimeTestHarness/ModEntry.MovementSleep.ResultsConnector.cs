@@ -389,10 +389,11 @@ public sealed partial class ModEntry : Mod
         return NativeCurrentWarpStandPolicy.CanUse(facts) ? startTile : null;
     }
 
-    private static Point? FindConnectorActionStandTile(GameLocation location, Point startTile, Point actionTile)
+    private static Point? FindConnectorActionStandTile(
+        GameLocation location, Point startTile, Point actionTile, int maxTiles, out List<Point>? path)
     {
-        return Neighbors(actionTile)
-            .Where(tile => IsTileTraversableForPlan(location, tile, avoidSoftObstacles: true))
+        var candidates = Neighbors(actionTile)
+            .Where(tile => IsTileTraversableForPlan(location, tile, avoidSoftObstacles: true, allowRemovableObstacles: false))
             .Where(tile => string.IsNullOrWhiteSpace(
                 location.doesTileHaveProperty(
                     tile.X,
@@ -402,9 +403,16 @@ public sealed partial class ModEntry : Mod
             .Where(tile => !location.warps.Any(warp =>
                 warp.X == tile.X &&
                 warp.Y == tile.Y))
-            .OrderBy(tile => Math.Abs(startTile.X - tile.X) + Math.Abs(startTile.Y - tile.Y))
-            .Cast<Point?>()
-            .FirstOrDefault();
+            .OrderBy(tile => ManhattanDistance(startTile, tile));
+        foreach (var tile in candidates)
+        {
+            path = tile == startTile ? new List<Point>() : TryBuildTilePath(
+                location, startTile, tile, maxTiles, out _, allowRemovableObstacles: false);
+            if (path is not null) return tile;
+        }
+
+        path = null;
+        return null;
     }
 
     private static bool TryResolveBoundaryWarpStandTile(GameLocation location, Point warpTile, out Point standTile, out int direction)

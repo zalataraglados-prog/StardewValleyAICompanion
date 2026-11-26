@@ -33,6 +33,22 @@ public sealed class RuntimeRouteConnectorSmokeSourceGuardTests
     }
 
     [Fact]
+    public void ConnectorStandMustBeReachableWithinTheExistingNativePathBudget()
+    {
+        var connector = RuntimeHarnessSources.RepositoryFile("tools", "StardewAI.RuntimeTestHarness",
+            "ModEntry.MovementSleep.ResultsConnector.cs");
+        var selection = connector[connector.IndexOf("private static Point? FindConnectorActionStandTile(", StringComparison.Ordinal)..];
+        selection = selection[..selection.IndexOf("private static bool TryResolveBoundaryWarpStandTile", StringComparison.Ordinal)];
+        Assert.Contains("foreach (var tile in candidates)", selection, StringComparison.Ordinal);
+        Assert.Contains("location, startTile, tile, maxTiles, out _, allowRemovableObstacles: false", selection, StringComparison.Ordinal);
+        Assert.Contains("if (path is not null) return tile;", selection, StringComparison.Ordinal);
+
+        var movement = RuntimeHarnessSources.RepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.cs");
+        Assert.Contains("maxTiles, out connectorStandPath", movement, StringComparison.Ordinal);
+        Assert.Contains("var path = connectorStandPath ?? TryBuildTilePath(", movement, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OrdinaryMineIngressUsesTheSharedNativeConnectorWithoutDirectWarp()
     {
         var connector = RuntimeHarnessSources.RepositoryFile(

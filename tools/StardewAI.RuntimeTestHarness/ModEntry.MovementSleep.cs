@@ -81,6 +81,8 @@ public sealed partial class ModEntry : Mod
         }
 
         var targetTile = requestedTargetTile;
+        var maxTiles = Math.Clamp(pending.Request.MaxMovementTiles ?? 512, 1, 512);
+        List<Point>? connectorStandPath = null;
         Point? connectorActionTile = null;
         int? connectorExitDirection = null;
         if (pending.Request.OptionId == "executor.traverse_connector" && IsActionConnectorKind(pending.Request.ConnectorKind))
@@ -121,7 +123,8 @@ public sealed partial class ModEntry : Mod
             }
             else
             {
-                var standTile = FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
+                var standTile = FindConnectorActionStandTile(
+                    Game1.currentLocation, startTile, requestedTargetTile, maxTiles, out connectorStandPath);
                 if (standTile is null)
                 {
                     pending.Completion.SetResult(BlockedWithPrimitive(
@@ -143,7 +146,8 @@ public sealed partial class ModEntry : Mod
             connectorActionTile = requestedTargetTile;
             var standTile = FindCurrentWarpStandTile(
                     Game1.currentLocation, pending.Request, startTile, requestedTargetTile)
-                ?? FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
+                ?? FindConnectorActionStandTile(
+                    Game1.currentLocation, startTile, requestedTargetTile, maxTiles, out connectorStandPath);
             if (standTile is null)
             {
                 pending.Completion.SetResult(BlockedWithPrimitive(
@@ -190,13 +194,13 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var maxTiles = Math.Clamp(pending.Request.MaxMovementTiles ?? 512, 1, 512);
-        var path = TryBuildTilePath(
+        var blockReason = string.Empty;
+        var path = connectorStandPath ?? TryBuildTilePath(
             Game1.currentLocation,
             startTile,
             targetTile,
             maxTiles,
-            out var blockReason,
+            out blockReason,
             allowRemovableObstacles: false);
         if (path is null)
         {
