@@ -1219,8 +1219,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 parameter.Name == "route_repair.snapshot_policy"));
     }
 
-    [Fact]
-    public void VisitLocationEmitsRouteRepairClearObstacleCandidateWhenPathSegmentIsClearable()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void VisitLocationEmitsRouteRepairClearObstacleCandidateWhenPathSegmentIsClearable(bool missingToolShortcut)
     {
         var snapshot = Snapshot("""
         {
@@ -1250,6 +1252,27 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         }
         """);
 
+        if (missingToolShortcut)
+        {
+            var location = JsonNode.Parse(snapshot.State["current_location"].GetRawText())!.AsObject();
+            location["objects"]!["value"] = JsonNode.Parse("""
+                [{"tile_x":1,"tile_y":0,"qualified_item_id":"(O)294","name":"Twig","clear_kind":"twig","clear_obstacle_executor_status":"blocked_required_axe_missing"}]
+                """);
+            location["terrain_features"]!["value"] = JsonNode.Parse("""
+                [{"tile_x":1,"tile_y":1,"type":"Grass"},{"tile_x":2,"tile_y":1,"type":"Grass"}]
+                """);
+            snapshot.State["current_location"] = JsonSerializer.SerializeToElement(location);
+            var locations = JsonNode.Parse(snapshot.State["locations"].GetRawText())!.AsObject();
+            locations["collision_grid"]!["value"]!["height"] = 2;
+            locations["collision_grid"]!["value"]!["notable_tiles"]!.AsArray().Add(JsonNode.Parse("""
+                {"tile_x":1,"tile_y":1,"collision_blocked":true}
+                """));
+            locations["collision_grid"]!["value"]!["notable_tiles"]!.AsArray().Add(JsonNode.Parse("""
+                {"tile_x":2,"tile_y":1,"collision_blocked":true}
+                """));
+            snapshot.State["locations"] = JsonSerializer.SerializeToElement(locations);
+        }
+
         var option = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(snapshot, new[] { "exploration.visit_location" })
             .Options[0];
@@ -1259,6 +1282,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("route_path_blocked_by_collision_grid", route.BlockReasons);
         var repair = Assert.Single(option.EventCandidates, candidate => candidate.Kind == "clear_obstacle_tile");
         Assert.True(repair.Available);
+        if (missingToolShortcut)
+        {
+            Assert.EndsWith(":clear:Farm:1,1:grass", repair.CandidateId, StringComparison.Ordinal);
+            return;
+        }
         Assert.StartsWith("route-repair:route:Farm:3,0:warp:to=Town:arrival=1,2:clear:Farm:1,0:grass", repair.CandidateId);
         Assert.Equal("route_repair_for=route:Farm:3,0:warp:to=Town:arrival=1,2;route_repair_expected_target_location=Town;fresh_snapshot_replan_required=true;move_to_adjacent=0,0;current_location.obstacle[1,0]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
     }
