@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -1111,6 +1112,37 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal("blocked", option.Status);
         Assert.Contains("no_available_route_connector_candidates", option.BlockingReasons);
         Assert.Contains("unsupported_route_action_branch_at_target", option.BlockingReasons);
+    }
+
+    [Theory]
+    [InlineData(true, true, false, true)]
+    [InlineData(true, false, false, false)]
+    [InlineData(false, false, false, false)]
+    [InlineData(false, true, true, false)]
+    public void RouteConnectorUsesNativeTimeOverrideWithoutIgnoringHardGates(
+        bool allowedNow, bool timeUnrestricted, bool festivalClosed, bool removeNominalWindow)
+    {
+        var snapshot = RouteConnectorSnapshot(routeTrainingBlocked: false, targetLocation: "SeedShop", currentTime: 600);
+        var locations = JsonNode.Parse(snapshot.State["locations"].GetRawText())!.AsObject();
+        locations["route_connectors"]!["value"]!["connectors"]![0]!["kind"] = "locked_door_warp";
+        locations["route_action_branch_coverage"]!["value"]!["rows"]![0]!["branch"] = "LockedDoorWarp";
+        locations["route_gate_context"]!["value"]!["action_gates"] = JsonSerializer.SerializeToNode(new[]
+        {
+            new
+            {
+                kind = "locked_door_warp", tile_x = 12, tile_y = 10, target_location = "SeedShop",
+                allowed_now = allowedNow, time_unrestricted_on_capture_date = timeUnrestricted,
+                effective_open_time = 900, close_time = 2100, festival_closed = festivalClosed
+            }
+        });
+        snapshot.State["locations"] = JsonSerializer.SerializeToElement(locations);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "exploration.visit_location" }).Options[0].EventCandidates);
+
+        Assert.Equal(allowedNow, candidate.AllowedNow);
+        Assert.Equal(removeNominalWindow ? null : 900, candidate.EffectiveOpenTime);
+        Assert.Equal(removeNominalWindow ? null : 2100, candidate.ClosesAt);
+        if (festivalClosed) Assert.False(candidate.AllowedToday);
     }
 
     [Fact]
