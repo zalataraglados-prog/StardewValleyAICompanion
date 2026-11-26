@@ -1424,6 +1424,26 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
     }
 
     [Fact]
+    public void LegacyBuyEndpointRoutesFromAboveToANativeLegalStand()
+    {
+        var snapshot = InteractEndpointSnapshot(
+            menuOpen: false,
+            branch: "Buy",
+            routeTrainingBlocked: false,
+            action: "Buy Fish",
+            parsed: "\"parsed\":{\"kind\":\"legacy_buy\",\"shop_id\":\"FishShop\"}",
+            playerX: 11,
+            playerY: 9);
+
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "executor.interact" }, includeExecutorCalibrationOptions: true)
+            .Options[0].EventCandidates);
+
+        Assert.True(candidate.Available);
+        Assert.Equal("move_to_adjacent=10,10;preview_interact=Buy", candidate.ExpectedEffect);
+    }
+
+    [Fact]
     public void InteractOptionEmitsJojaShopEndpointCandidate()
     {
         var snapshot = InteractEndpointSnapshot(

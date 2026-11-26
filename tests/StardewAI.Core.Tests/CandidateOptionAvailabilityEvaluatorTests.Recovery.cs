@@ -698,7 +698,9 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         string parsed = "\"parsed\":{\"kind\":\"open_shop\",\"shop_id\":\"SeedShop\",\"required_direction\":\"Down\",\"open_time\":900,\"close_time\":1700}",
         string ownerServiceStatus = "\"owner_service_status\":{\"owner_required\":false,\"owner_npc\":null,\"owner_found\":null,\"in_service_area\":null,\"block_reason\":null}",
         string serviceTimeStatus = "\"service_time_status\":{\"current_time\":900,\"time_gate_known\":false,\"allowed_now\":true,\"block_reasons\":[]}",
-        string npcPositions = "[]")
+        string npcPositions = "[]",
+        int playerX = 10,
+        int playerY = 10)
     {
         return Snapshot("""
         {
@@ -707,8 +709,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
           },
           "player": {
             "location_id": {"value":"Town","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tile_x": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
-            "tile_y": {"value":10,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_x": {"value":PLAYER_X,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
+            "tile_y": {"value":PLAYER_Y,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "energy": {"value":270,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "facing_direction": {"value":1,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
@@ -729,6 +731,8 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         }
         """
         .Replace("MENU_OPEN", menuOpen ? "true" : "false")
+        .Replace("PLAYER_X", playerX.ToString(System.Globalization.CultureInfo.InvariantCulture))
+        .Replace("PLAYER_Y", playerY.ToString(System.Globalization.CultureInfo.InvariantCulture))
         .Replace("ACTION", action)
         .Replace("PARSED", parsed)
         .Replace("OWNER_SERVICE_STATUS", ownerServiceStatus)
