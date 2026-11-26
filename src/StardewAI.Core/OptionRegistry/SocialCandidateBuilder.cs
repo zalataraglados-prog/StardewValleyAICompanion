@@ -592,9 +592,17 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return new StandTileSelection(null, -1, new[] { "social_route_action_coverage_incomplete" });
             }
+            var npcs = ReadStateFieldValue(snapshot, "npcs", "social_interaction");
+            var occupants = npcs is { ValueKind: JsonValueKind.Array }
+                ? npcs.Value.EnumerateArray().Where(npc => npc.ValueKind == JsonValueKind.Object &&
+                    ReadBool(npc, "current_instance_loaded") &&
+                    ReadString(npc, "location_id") == playerLocationId).ToArray()
+                : Array.Empty<JsonElement>();
             var legalAdjacent = new[] { new CandidateTile(targetX + 1, targetY), new CandidateTile(targetX - 1, targetY), new CandidateTile(targetX, targetY + 1), new CandidateTile(targetX, targetY - 1) }
                 .Where(tile => TileInBounds(tile.X, tile.Y, width, height))
                 .Where(tile => !blocked.Contains(TileKey(tile.X, tile.Y)))
+                .Where(tile => tile.X == playerX && tile.Y == playerY ||
+                    !occupants.Any(npc => IntersectsNpcBounds(npc, tile)))
                 .ToArray();
 
             var bestDistance = int.MaxValue;
@@ -619,6 +627,20 @@ namespace StardewAI.Core.OptionRegistry
             }
 
             return new StandTileSelection(null, -1, new[] { "social_no_reachable_adjacent_stand_tile" });
+        }
+
+        private static bool IntersectsNpcBounds(JsonElement npc, CandidateTile tile)
+        {
+            const int tileSize = 64;
+            var x = ReadNullableInt(npc, "bounding_box_x");
+            var y = ReadNullableInt(npc, "bounding_box_y");
+            var width = ReadNullableInt(npc, "bounding_box_width");
+            var height = ReadNullableInt(npc, "bounding_box_height");
+            if (!x.HasValue || !y.HasValue || width is not > 0 || height is not > 0) return false;
+            var left = tile.X * tileSize;
+            var top = tile.Y * tileSize;
+            return x.Value < left + tileSize && x.Value + width.Value > left &&
+                y.Value < top + tileSize && y.Value + height.Value > top;
         }
 
         private static int BfsDistance(int startX, int startY, int targetX, int targetY, int width, int height, HashSet<string> blockedTiles, HashSet<string> extraBlockedTiles)
