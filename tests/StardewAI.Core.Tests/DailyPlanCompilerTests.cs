@@ -136,6 +136,42 @@ public sealed partial class DailyPlanCompilerTests
             parameter.Value == "community_center.donate_bundle_items");
     }
 
+    [Theory]
+    [InlineData(76, false)]
+    [InlineData(75, true)]
+    [InlineData(0, true)]
+    public void JointCalendarChecksProjectedSocialSuffixWithoutDispatchingIt(int followup, bool fits)
+    {
+        var candidate = new PolicyEventCandidatePrediction
+        {
+            CandidateId = "social:talk:Wizard:route:Town:-1,89", OptionId = "social.talk_npc",
+            Kind = "route_connector_tile", Rank = 1, TimelineStatus = "ready_now",
+            LocationId = "Town", TileX = -1, TileY = 89,
+            Parameters = new[]
+            {
+                new SmallModelActionParameter { Name = "connector_kind", Value = "warp" },
+                new SmallModelActionParameter { Name = "expected_target_location", Value = "Forest" },
+                new SmallModelActionParameter { Name = "estimated_minutes", Value = "25" },
+                new SmallModelActionParameter { Name = "social_route.projected_followup_minutes", Value = followup.ToString() }
+            }
+        };
+        var plan = new DailyPlanCompiler().CompileWithJointCalendar(new[] { candidate }, "source", 1720,
+            availableMinutes: 100);
+        var audit = Assert.Single(plan.CandidateAudit);
+        if (fits)
+        {
+            Assert.Equal("traverse_connector", Assert.Single(plan.Steps).Kind);
+            Assert.Equal(25, audit.CandidateMinutes);
+            Assert.Equal(75, audit.RemainingMinutesAfter);
+        }
+        else
+        {
+            Assert.Empty(plan.Steps);
+            Assert.Equal(25 + followup, audit.CandidateMinutes);
+            Assert.Equal(new[] { "aggregate_time_budget_exceeded" }, audit.Reasons);
+        }
+    }
+
     [Fact]
     public void CompileTurnsBuyCandidateIntoPurchasePlanStep()
     {

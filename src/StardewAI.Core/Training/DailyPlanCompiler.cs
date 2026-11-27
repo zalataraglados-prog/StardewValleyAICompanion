@@ -184,13 +184,19 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
-                if (remainingMinutes.HasValue && candidateMinutes > remainingMinutes.Value)
+                // Recheck future hops after dispatch; admission still needs enough
+                // budget for the itinerary, not just for the first leg.
+                var followupMinutes = calendar is not null && !rollingDeferred && candidate.Kind == "route_connector_tile"
+                    ? Math.Max(0, CandidateInt(candidate, "social_route.projected_followup_minutes") ?? 0)
+                    : 0;
+                var requiredMinutes = (int)Math.Min(int.MaxValue, (long)candidateMinutes + followupMinutes);
+                if (remainingMinutes.HasValue && requiredMinutes > remainingMinutes.Value)
                 {
                     audit.Add(CandidateAudit(
                         candidate,
                         "skipped",
                         new[] { "aggregate_time_budget_exceeded" },
-                        candidateMinutes,
+                        requiredMinutes,
                         remainingMinutes,
                         remainingMinutes,
                         remainingEnergy,

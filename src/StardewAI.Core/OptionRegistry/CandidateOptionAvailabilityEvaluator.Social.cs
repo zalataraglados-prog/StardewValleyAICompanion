@@ -7,6 +7,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -324,6 +325,7 @@ namespace StardewAI.Core.OptionRegistry
                     currentLocation,
                     null,
                     0,
+                    0,
                     remainingReasons);
                 if (route.DateBlocked)
                 {
@@ -349,7 +351,32 @@ namespace StardewAI.Core.OptionRegistry
                 currentLocation,
                 routeCandidate,
                 routePlan.Path.Length,
+                ProjectedSocialRouteFollowupMinutes(routePlan.Path),
                 remainingReasons);
+        }
+
+        private static int ProjectedSocialRouteFollowupMinutes(TransparentRouteEdge[] path)
+        {
+            var minutes = 0;
+            for (var index = 1; index < path.Length; index++)
+            {
+                var arrival = path[index - 1];
+                var next = path[index];
+                if (arrival.Kind is not ("warp" or "locked_door_warp" or "action_warp" or "building_door") ||
+                    next.Kind is not ("warp" or "locked_door_warp" or "action_warp" or "building_door") ||
+                    arrival.TargetX is not int arrivalX || arrival.TargetY is not int arrivalY ||
+                    next.FromX is not int nextX || next.FromY is not int nextY)
+                    continue;
+
+                // This is only the budget on the projected itinerary. A real
+                // arrival still requires a fresh route and native collision check.
+                var distance = Math.Abs((long)arrivalX - nextX) + Math.Abs((long)arrivalY - nextY);
+                var approachTiles = (int)Math.Min(ConnectorRouteExecutionBudgetPolicy.MaximumMovementTiles,
+                    Math.Max(0, distance - 1));
+                minutes += GameClockBudgetPolicy.TicksToGameMinutes(
+                    ConnectorRouteExecutionBudgetPolicy.EstimatedTicks(approachTiles));
+            }
+            return minutes;
         }
 
         private static string PartnershipContinuationCandidateKind(string actionKind)
@@ -369,6 +396,7 @@ namespace StardewAI.Core.OptionRegistry
             string currentLocation,
             EventCandidate? routeCandidate,
             int remainingConnectorCount,
+            int projectedFollowupMinutes,
             IEnumerable<string> blockReasons)
         {
             var npcName = ReadParameter(socialCandidate.Parameters, "npc_name");
@@ -388,6 +416,8 @@ namespace StardewAI.Core.OptionRegistry
                     : ReadParameter(socialCandidate.Parameters, "social_route.position_source")),
                 Parameter("social_route.future_schedule_projection", "not_used")
             };
+            if (projectedFollowupMinutes > 0 && routeCandidate?.Kind == "route_connector_tile")
+                continuationParameters.Add(Parameter("social_route.projected_followup_minutes", projectedFollowupMinutes.ToString()));
             var slotIndex = ReadParameter(socialCandidate.Parameters, "slot_index");
             var qualifiedItemId = ReadParameter(socialCandidate.Parameters, "qualified_item_id");
             var partnershipActionKind = ReadParameter(socialCandidate.Parameters, "partnership_action_kind");
