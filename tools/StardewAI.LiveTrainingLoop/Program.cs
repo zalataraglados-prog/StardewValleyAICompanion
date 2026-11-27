@@ -1111,7 +1111,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     else if (options.UseDailyPlan)
     {
         var continuingGlobalNativeSaveRecovery = !string.IsNullOrWhiteSpace(globalNativeSaveRecoveryDayKey);
-        var hasDecisionLease = !continuingGlobalNativeSaveRecovery &&
+        var priorityStoryEvent = options.ContinueGlobalDailyPlanAfterCropTeacherRun &&
+            HasPriorityStoryEventInterrupt(beforeSnapshot);
+        var hasDecisionLease = !priorityStoryEvent && !continuingGlobalNativeSaveRecovery &&
             File.Exists(leasedDecisionModelPlanPath) &&
             File.Exists(leasedDecisionRankingPath) &&
             File.Exists(leasedDecisionCompiledQueuePath) &&
@@ -1153,7 +1155,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             selectedQueueIndex = selectedCandidate.QueueIndex;
             resumedSelectedQueueDecision = true;
         }
-        else if (closingNativeSaveBoundary || continuingGlobalNativeSaveRecovery)
+        else if (!priorityStoryEvent && (closingNativeSaveBoundary || continuingGlobalNativeSaveRecovery))
         {
             if (continuingGlobalNativeSaveRecovery) useDailyPlanDecisionLease = false;
             var saveBoundary = await BuildNativeSaveBoundaryQueueAsync(
@@ -1188,7 +1190,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
         }
         else
         {
-            var mandatoryMenuRecovery =
+            var mandatoryMenuRecovery = priorityStoryEvent ? null :
                 await TryBuildStageOneMandatoryMenuRecoveryQueueAsync(
                     http,
                     options,
@@ -1199,7 +1201,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             var dailyMaintenancePreemption =
                 StageOneDailyMaintenancePreemptionPolicy.Evaluate(
                     beforeSnapshot);
-            if (mandatoryMenuRecovery is null &&
+            if (!priorityStoryEvent && mandatoryMenuRecovery is null &&
                 dailyMaintenancePreemption.ShouldPreempt &&
                 activeObjectiveContinuation is not null)
             {
@@ -1209,7 +1211,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                     .AsObject();
             }
             var collectionTeacher = mandatoryMenuRecovery ??
-                (dailyMaintenancePreemption.ShouldPreempt
+                (priorityStoryEvent || dailyMaintenancePreemption.ShouldPreempt
                     ? NotAttemptedStageOneCollectionTeacher()
                     : await TryBuildStageOneCollectionTeacherQueueAsync(
                     http,
@@ -1299,7 +1301,7 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
             else
             {
-                if (dailyMaintenancePreemption.ShouldPreempt)
+                if (!priorityStoryEvent && dailyMaintenancePreemption.ShouldPreempt)
                 {
                     AppendProgress(
                         options,
@@ -1430,7 +1432,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         " next=shared_daily_plan");
                 }
 
-                var dailyPlan = await BuildQueueFromDailyPlanAsync(
+                var dailyPlan = priorityStoryEvent
+                    ? await BuildPriorityStoryEventQueueAsync(http, options, lastStateHash)
+                    : await BuildQueueFromDailyPlanAsync(
                     http,
                     options,
                     lastStateHash,

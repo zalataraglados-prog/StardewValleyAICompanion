@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.Execution;
@@ -64,7 +65,8 @@ public sealed partial class ActionQueueCompiler
         var responseIndex = ReadIntParameter(action, "story_event_response_index");
         if (boundary == "dialogue_decision")
         {
-            if (ReadString(row, "dialogue_question_key") != ReadParameter(action, "story_event_question_key") ||
+            if (!StoryEventQuestionKey.TryRead(row, out var questionKey) ||
+                questionKey != ReadParameter(action, "story_event_question_key") ||
                 !StoryEventResponseMatches(row, responseIndex, responseKey))
                 reasons.Add("story_event_dialogue_response_drifted");
         }

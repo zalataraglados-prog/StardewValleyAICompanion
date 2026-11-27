@@ -213,7 +213,9 @@ public sealed partial class ModEntry
                 }
                 return;
             }
-            if (!string.Equals(questionKey, request.StoryEventQuestionKey, StringComparison.Ordinal) ||
+            if ((questionKey.Length == 0 &&
+                 (active.NativeEvent.CurrentCommand != request.StoryEventCommandIndex ||
+                  !string.Equals(CurrentStoryEventCommand(active.NativeEvent), request.StoryEventCommandRaw, StringComparison.Ordinal))) ||
                 !StoryEventResponseMatches(dialogue, request))
             {
                 CompleteStoryEventBlocked(active, "story_event_dialogue_response_changed_before_input");
@@ -284,7 +286,7 @@ public sealed partial class ModEntry
             return false;
         var response = dialogue.responses[index];
         return string.Equals(response.responseKey, request.StoryEventResponseKey, StringComparison.Ordinal) &&
-            string.Equals(Game1.currentLocation?.lastQuestionKey, request.StoryEventQuestionKey, StringComparison.Ordinal);
+            string.Equals(Game1.currentLocation?.lastQuestionKey ?? string.Empty, request.StoryEventQuestionKey, StringComparison.Ordinal);
     }
 
     private static void ObserveStoryEventProgress(ActiveStoryEvent active, Event currentEvent)

@@ -6,6 +6,7 @@ using System.Text.Json;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
+using StardewAI.Core.Infrastructure;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
 
 namespace StardewAI.Core.OptionRegistry;
@@ -53,7 +54,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
 
         if (!row.TryGetProperty("dialogue_responses", out var responses) || responses.ValueKind != JsonValueKind.Array)
             return Array.Empty<EventCandidate>();
-        if (string.IsNullOrWhiteSpace(ReadString(row, "dialogue_question_key")))
+        if (!StoryEventQuestionKey.TryRead(row, out var questionKey))
             return Array.Empty<EventCandidate>();
         var boundResponse = ReadParameter(boundParameters, "continuation.story_event_response_key");
         return responses.EnumerateArray()
@@ -68,7 +69,7 @@ public sealed partial class CandidateOptionAvailabilityEvaluator
                 var responseKey = ReadString(response, "response_key");
                 var parameters = common.Concat(new[]
                 {
-                    Parameter("story_event_question_key", ReadString(row, "dialogue_question_key")),
+                    Parameter("story_event_question_key", questionKey),
                     Parameter("story_event_response_index", responseIndex.ToString(CultureInfo.InvariantCulture)),
                     Parameter("story_event_response_key", responseKey),
                     Parameter("story_event_response_text", ReadString(response, "response_text")),

@@ -333,6 +333,7 @@ static partial class Program
             new[] { "story.advance_event" },
             candidateKindOverride: string.Empty,
             candidateIdOverride: string.Empty,
+            maxCandidatesOverride: 1,
             priorityStoryEventInterrupt: true);
 
     private static Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildNativeSaveBoundaryQueueAsync(
