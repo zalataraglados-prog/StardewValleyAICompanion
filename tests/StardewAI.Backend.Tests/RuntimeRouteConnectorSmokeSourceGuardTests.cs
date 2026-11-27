@@ -39,8 +39,10 @@ public sealed class RuntimeRouteConnectorSmokeSourceGuardTests
             "ModEntry.MovementSleep.ResultsConnector.cs");
         var selection = connector[connector.IndexOf("private static Point? FindConnectorActionStandTile(", StringComparison.Ordinal)..];
         selection = selection[..selection.IndexOf("private static bool TryResolveBoundaryWarpStandTile", StringComparison.Ordinal)];
+        Assert.Contains("IsTileOnMap(location, tile) && IsTileWalkable(location, tile)", selection, StringComparison.Ordinal);
+        Assert.Contains("foreach (var avoidSoftObstacles in new[] { true, false })", selection, StringComparison.Ordinal);
         Assert.Contains("foreach (var tile in candidates)", selection, StringComparison.Ordinal);
-        Assert.Contains("location, startTile, tile, maxTiles, out _, allowRemovableObstacles: false", selection, StringComparison.Ordinal);
+        Assert.Contains("location, startTile, tile, maxTiles, out _, avoidSoftObstacles, allowRemovableObstacles: false", selection, StringComparison.Ordinal);
         Assert.Contains("if (path is not null) return tile;", selection, StringComparison.Ordinal);
 
         var movement = RuntimeHarnessSources.RepositoryFile("tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.cs");

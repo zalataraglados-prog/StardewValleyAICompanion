@@ -393,7 +393,7 @@ public sealed partial class ModEntry : Mod
         GameLocation location, Point startTile, Point actionTile, int maxTiles, out List<Point>? path)
     {
         var candidates = Neighbors(actionTile)
-            .Where(tile => IsTileTraversableForPlan(location, tile, avoidSoftObstacles: true, allowRemovableObstacles: false))
+            .Where(tile => IsTileOnMap(location, tile) && IsTileWalkable(location, tile))
             .Where(tile => string.IsNullOrWhiteSpace(
                 location.doesTileHaveProperty(
                     tile.X,
@@ -403,12 +403,19 @@ public sealed partial class ModEntry : Mod
             .Where(tile => !location.warps.Any(warp =>
                 warp.X == tile.X &&
                 warp.Y == tile.Y))
-            .OrderBy(tile => ManhattanDistance(startTile, tile));
-        foreach (var tile in candidates)
+            .OrderBy(tile => ManhattanDistance(startTile, tile))
+            .ToArray();
+        // Prefer an unobstructed approach. A character can occupy the only
+        // legal doorway tile; the existing native mover handles yielding.
+        foreach (var avoidSoftObstacles in new[] { true, false })
         {
-            path = tile == startTile ? new List<Point>() : TryBuildTilePath(
-                location, startTile, tile, maxTiles, out _, allowRemovableObstacles: false);
-            if (path is not null) return tile;
+            foreach (var tile in candidates)
+            {
+                if (avoidSoftObstacles && IsTileOccupiedByCharacter(location, tile)) continue;
+                path = tile == startTile ? new List<Point>() : TryBuildTilePath(
+                    location, startTile, tile, maxTiles, out _, avoidSoftObstacles, allowRemovableObstacles: false);
+                if (path is not null) return tile;
+            }
         }
 
         path = null;
