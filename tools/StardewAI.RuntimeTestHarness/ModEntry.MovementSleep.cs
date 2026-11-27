@@ -108,7 +108,7 @@ public sealed partial class ModEntry : Mod
                 }
 
                 var standTile = new Point(requestedTargetTile.X, requestedTargetTile.Y + 1);
-                if (!IsTileTraversableForPlan(Game1.currentLocation, standTile, avoidSoftObstacles: true))
+                if (!IsConnectorStandTerrainWalkable(Game1.currentLocation, standTile))
                 {
                     pending.Completion.SetResult(BlockedWithPrimitive(
                         pending.Request,
@@ -163,9 +163,18 @@ public sealed partial class ModEntry : Mod
         }
         else if (pending.Request.OptionId == "executor.traverse_connector" &&
             string.Equals(pending.Request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase) &&
-            !IsTileOnMap(Game1.currentLocation, requestedTargetTile) &&
-            TryResolveBoundaryWarpStandTile(Game1.currentLocation, requestedTargetTile, out var boundaryStandTile, out var boundaryDirection))
+            !IsTileOnMap(Game1.currentLocation, requestedTargetTile))
         {
+            if (!TryResolveBoundaryWarpStandTile(Game1.currentLocation, requestedTargetTile, out var boundaryStandTile, out var boundaryDirection))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    pending.Request,
+                    primitiveKind,
+                    ConnectorRequestedEffect(pending.Request),
+                    ConnectorObservedEffect(),
+                    "connector_boundary_warp_stand_unavailable"));
+                return;
+            }
             targetTile = boundaryStandTile;
             connectorExitDirection = boundaryDirection;
         }

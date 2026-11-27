@@ -389,11 +389,14 @@ public sealed partial class ModEntry : Mod
         return NativeCurrentWarpStandPolicy.CanUse(facts) ? startTile : null;
     }
 
+    private static bool IsConnectorStandTerrainWalkable(GameLocation location, Point tile) =>
+        IsTileOnMap(location, tile) && IsTileWalkable(location, tile);
+
     private static Point? FindConnectorActionStandTile(
         GameLocation location, Point startTile, Point actionTile, int maxTiles, out List<Point>? path)
     {
         var candidates = Neighbors(actionTile)
-            .Where(tile => IsTileOnMap(location, tile) && IsTileWalkable(location, tile))
+            .Where(tile => IsConnectorStandTerrainWalkable(location, tile))
             .Where(tile => string.IsNullOrWhiteSpace(
                 location.doesTileHaveProperty(
                     tile.X,
@@ -438,33 +441,30 @@ public sealed partial class ModEntry : Mod
         {
             standTile = new Point(0, warpTile.Y);
             direction = 3;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
         }
-
-        if (warpTile.X >= width && warpTile.Y >= 0 && warpTile.Y < height)
+        else if (warpTile.X >= width && warpTile.Y >= 0 && warpTile.Y < height)
         {
             standTile = new Point(width - 1, warpTile.Y);
             direction = 1;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
         }
-
-        if (warpTile.Y < 0 && warpTile.X >= 0 && warpTile.X < width)
+        else if (warpTile.Y < 0 && warpTile.X >= 0 && warpTile.X < width)
         {
             standTile = new Point(warpTile.X, 0);
             direction = 0;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
         }
-
-        if (warpTile.Y >= height && warpTile.X >= 0 && warpTile.X < width)
+        else if (warpTile.Y >= height && warpTile.X >= 0 && warpTile.X < width)
         {
             standTile = new Point(warpTile.X, height - 1);
             direction = 2;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
+        }
+        else
+        {
+            standTile = Point.Zero;
+            direction = 0;
+            return false;
         }
 
-        standTile = Point.Zero;
-        direction = 0;
-        return false;
+        return IsConnectorStandTerrainWalkable(location, standTile);
     }
 
     private static Point MapDimensions(GameLocation location)
