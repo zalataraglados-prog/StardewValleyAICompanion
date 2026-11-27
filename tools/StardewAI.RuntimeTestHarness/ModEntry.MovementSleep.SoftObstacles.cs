@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using StardewValley;
+using StardewValley.Characters;
 
 namespace StardewAI.RuntimeTestHarness;
 
@@ -149,13 +150,47 @@ public sealed partial class ModEntry
         return minimum;
     }
 
+    private static bool IsNextNativeStepBlockedByPet(GameLocation location, int direction)
+    {
+        var farmer = Game1.player;
+        if (farmer.temporarilyInvincible || !farmer.TemporaryPassableTiles.IsEmpty())
+        {
+            return false;
+        }
+
+        var current = farmer.GetBoundingBox();
+        var next = farmer.nextPosition(direction);
+        foreach (var character in location.characters)
+        {
+            if (character is not Pet pet || pet.farmerPassesThrough || pet.IsInvisible)
+            {
+                continue;
+            }
+
+            var bounds = pet.GetBoundingBox();
+            if (pet.layingDown)
+            {
+                bounds.Y -= Game1.tileSize;
+                bounds.Height += Game1.tileSize;
+            }
+
+            if (next.Intersects(bounds) && !current.Intersects(bounds))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void TickTileMoveSoftObstacle(
         ActiveTileMove move,
         Point currentTile,
-        Point nextTile)
+        Point nextTile,
+        bool allowReplan = true)
     {
         move.SoftObstacleTicks++;
-        if (move.SoftObstacleTicks == 1 || move.SoftObstacleTicks % 30 == 0)
+        if (allowReplan && (move.SoftObstacleTicks == 1 || move.SoftObstacleTicks % 30 == 0))
         {
             StopAllMovement("soft_obstacle_replan");
             move.CurrentDirection = null;

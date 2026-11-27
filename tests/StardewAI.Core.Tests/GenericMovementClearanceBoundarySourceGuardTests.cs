@@ -137,6 +137,21 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
     }
 
     [Fact]
+    public void NativeApproachThatClipsPetKeepsThePushWithoutReplanningTheSameTile()
+    {
+        var movement = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.cs"));
+        var softObstacles = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.SoftObstacles.cs"));
+
+        Assert.Contains("IsNextNativeStepBlockedByPet(Game1.currentLocation, direction)", movement, StringComparison.Ordinal);
+        Assert.Contains("TickTileMoveSoftObstacle(move, currentTile, nextTile, allowReplan: false)", movement, StringComparison.Ordinal);
+        Assert.Contains("farmer.nextPosition(direction)", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("next.Intersects(bounds) && !current.Intersects(bounds)", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("if (allowReplan &&", softObstacles, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void IncidentalDialogueUsesBoundedStateChangePacing()
     {
         var movement = File.ReadAllText(FindRepositoryFile(

@@ -460,8 +460,6 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        move.SoftObstacleTicks = 0;
-
         if (!IsTileWalkable(Game1.currentLocation, nextTile))
         {
             if (TryClearRemovableObstacle(Game1.currentLocation, nextTile, move))
@@ -495,7 +493,8 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var direction = DirectionTo(currentTile, nextTile);
+        var pathDirection = DirectionTo(currentTile, nextTile);
+        var direction = pathDirection;
         var movedSinceLastTick =
             Vector2.DistanceSquared(
                 move.LastPosition,
@@ -507,6 +506,17 @@ public sealed partial class ModEntry : Mod
         {
             direction = move.CurrentDirection.Value;
         }
+        if (direction == pathDirection &&
+            (!movedSinceLastTick || move.SoftObstacleTicks > 0) &&
+            IsNextNativeStepBlockedByPet(Game1.currentLocation, direction))
+        {
+            // The tile is clear, but the approach clips a pet. The tile-only
+            // replan would select the same step and restart the native push.
+            TickTileMoveSoftObstacle(move, currentTile, nextTile, allowReplan: false);
+            return;
+        }
+
+        move.SoftObstacleTicks = 0;
         move.LastPosition = Game1.player.Position;
         StartMovingIfNeeded(move, direction);
         MovePlayerForTick();
