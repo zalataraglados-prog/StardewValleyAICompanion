@@ -273,6 +273,12 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
+        if (move.OccupiedStartEgressTileToCenter == Game1.player.TilePoint)
+        {
+            move.OccupiedStartEgressTileToCenter = null;
+            move.NeedsPathStartCentering = true;
+        }
+
         if (move.NeedsPathStartCentering)
         {
             var pathStartTile = Game1.player.TilePoint;

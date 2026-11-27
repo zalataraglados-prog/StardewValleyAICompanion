@@ -25,7 +25,7 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
-    private static List<Point>? TryBuildTilePath(GameLocation location, Point startTile, Point targetTile, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true)
+    private static List<Point>? TryBuildTilePath(GameLocation location, Point startTile, Point targetTile, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true, bool requireWalkableTerrain = false)
     {
         blockReason = string.Empty;
         if (IsTileHardBlocked(location, targetTile))
@@ -56,7 +56,10 @@ public sealed partial class ModEntry : Mod
             foreach (var next in Neighbors(current))
             {
                 var key = TileKey(next);
-                if (!IsTileTraversableForPlan(location, next, avoidSoftObstacles, allowRemovableObstacles))
+                var traversable = requireWalkableTerrain
+                    ? IsTileOnMap(location, next) && IsTileWalkable(location, next)
+                    : IsTileTraversableForPlan(location, next, avoidSoftObstacles, allowRemovableObstacles);
+                if (!traversable)
                 {
                     continue;
                 }

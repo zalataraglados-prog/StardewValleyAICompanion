@@ -117,6 +117,26 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
     }
 
     [Fact]
+    public void OccupiedPathStartCanRealignBeforeARequiredSoftObstacle()
+    {
+        var movement = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.cs"));
+        var softObstacles = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.SoftObstacles.cs"));
+        var pathing = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.PathingInput.cs"));
+
+        var strict = softObstacles.IndexOf("avoidSoftObstacles: true", StringComparison.Ordinal);
+        var fallback = softObstacles.IndexOf("avoidSoftObstacles: false", StringComparison.Ordinal);
+        Assert.InRange(strict, 0, fallback - 1);
+        Assert.Contains("requireWalkableTerrain: !avoidSoftObstacles", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("? IsTileOnMap(location, next) && IsTileWalkable(location, next)", pathing, StringComparison.Ordinal);
+        Assert.Contains("needsEgressCentering ? path[0] : null", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("move.OccupiedStartEgressTileToCenter == Game1.player.TilePoint", movement, StringComparison.Ordinal);
+        Assert.Contains("move.NeedsPathStartCentering = true", movement, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void IncidentalDialogueUsesBoundedStateChangePacing()
     {
         var movement = File.ReadAllText(FindRepositoryFile(

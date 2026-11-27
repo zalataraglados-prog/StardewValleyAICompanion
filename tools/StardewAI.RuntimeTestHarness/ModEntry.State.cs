@@ -85,6 +85,7 @@ public sealed partial class ModEntry : Mod
         public int Tick { get; set; }
         public int PathIndex { get; set; }
         public int? CurrentDirection { get; set; }
+        public Point? OccupiedStartEgressTileToCenter { get; set; }
         public bool NeedsPathStartCentering { get; set; }
         public int StuckTicks { get; set; }
         public int SoftObstacleTicks { get; set; }
