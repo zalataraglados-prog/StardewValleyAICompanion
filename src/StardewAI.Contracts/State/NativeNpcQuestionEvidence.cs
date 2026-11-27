@@ -26,16 +26,16 @@ public sealed class NativeNpcQuestionEvidence
                 !IsDisplayOnlyReply(row.Reply)))
             return null;
 
-        // Native chooseResponse resolves the first matching key. Other menu
-        // options using that key are safe only when their effects are identical.
-        if (Responses.GroupBy(row => row.Key, StringComparer.Ordinal).Any(group =>
+        // Native chooseResponse applies the first matching key, even when a
+        // later menu row advertises a larger friendship change.
+        var byKey = Responses.GroupBy(row => row.Key, StringComparer.Ordinal).ToArray();
+        if (byKey.Any(group =>
         {
             var first = group.First();
-            return group.Skip(1).Any(row => row.SeenId != first.SeenId ||
-                row.FriendshipChange != first.FriendshipChange || row.Reply != first.Reply);
+            return group.Skip(1).Any(row => row.SeenId != first.SeenId || row.Reply != first.Reply);
         })) return null;
 
-        return Responses.OrderByDescending(row => row.FriendshipChange)
+        return byKey.Select(group => group.First()).OrderByDescending(row => row.FriendshipChange)
             .ThenBy(row => row.Key, StringComparer.Ordinal).First();
     }
 

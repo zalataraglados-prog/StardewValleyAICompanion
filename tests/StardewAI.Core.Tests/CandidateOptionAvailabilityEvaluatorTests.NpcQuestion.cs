@@ -18,6 +18,7 @@ public sealed class NativeNpcQuestionRecoveryTests
     [InlineData("alex_stale_sleep", "summer_Wed_01_01")]
     [InlineData("alex_stale_tent_sleep", "summer_Wed_01_01")]
     [InlineData("haley_same_key", "summer_Sat_12")]
+    [InlineData("haley_shadowed_friendship", "summer_Sat_12")]
     public void NativeNpcQuestionCompilesThroughMandatoryRecoveryInsteadOfClosingIt(string mutation, string expectedResponseKey)
     {
         var snapshot = NpcQuestionSnapshot(mutation);
@@ -52,13 +53,24 @@ public sealed class NativeNpcQuestionRecoveryTests
     [InlineData("sleep_prompt")]
     [InlineData("tent_sleep_prompt")]
     [InlineData("haley_conflicting_seen")]
-    [InlineData("haley_conflicting_friendship")]
     [InlineData("haley_conflicting_reply")]
     [InlineData("haley_extra_action")]
     public void NativeNpcQuestionDoesNotWidenOtherDialogueContracts(string mutation)
     {
         var snapshot = NpcQuestionSnapshot(mutation);
         Assert.Null(NativeNpcQuestionRecovery.Candidate(snapshot));
+    }
+
+    [Fact]
+    public void NpcQuestionRanksOnlyFriendshipChangesReachableByNativeResponseKey()
+    {
+        var evidence = NativeNpcQuestionRecovery.Read(NpcQuestionSnapshot("haley_shadowed_friendship"))!;
+        Assert.Equal(20, evidence.Responses[3].FriendshipChange);
+        Assert.Equal(10, evidence.BestAnswer()!.FriendshipChange);
+        var identity = evidence.Identity();
+        evidence.Responses[2].FriendshipChange = 15;
+        Assert.NotEqual(identity, evidence.Identity());
+        Assert.Equal("summer_Sat_13", evidence.BestAnswer()!.Key);
     }
 
     [Fact]
@@ -213,7 +225,7 @@ public sealed class NativeNpcQuestionRecoveryTests
                 new() { Key = "summer_Sat_12", SeenId = "42", FriendshipChange = 10, Reply = "Sounds like a lot of work." }
             ];
             if (mutation == "haley_conflicting_seen") evidence.Responses[3].SeenId = "44";
-            if (mutation == "haley_conflicting_friendship") evidence.Responses[3].FriendshipChange = 20;
+            if (mutation == "haley_shadowed_friendship") evidence.Responses[3].FriendshipChange = 20;
             if (mutation == "haley_conflicting_reply") evidence.Responses[3].Reply = "A different reply.";
             if (mutation == "haley_extra_action") evidence.Responses[3].Reply = "$action AddMoney 100";
         }
