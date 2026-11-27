@@ -230,7 +230,7 @@ namespace StardewAI.Core.Training
                 var nextRemainingEnergy = remainingEnergy.HasValue ? Math.Max(0, remainingEnergy.Value - effectiveEnergyCost) : (int?)null;
                 var acceptedSteps = waitSteps
                     .Concat(candidateSteps)
-                    .Select(step => AnnotateBudget(
+                    .Select(step => AnnotateAcceptedStep(
                         step,
                         candidate,
                         selected,
@@ -317,7 +317,7 @@ namespace StardewAI.Core.Training
             };
         }
 
-        private static SmallModelPlanStep AnnotateBudget(
+        private static SmallModelPlanStep AnnotateAcceptedStep(
             SmallModelPlanStep step,
             PolicyEventCandidatePrediction candidate,
             int acceptedCandidateIndex,
@@ -327,6 +327,15 @@ namespace StardewAI.Core.Training
             int? remainingEnergyBefore,
             int? remainingEnergyAfter)
         {
+            // The executor binds every accepted step to the original ranked candidate.
+            var preconditions = step.Preconditions ?? Array.Empty<string>();
+            var candidateIdentity = "candidate_id:" + candidate.CandidateId;
+            if (!string.IsNullOrWhiteSpace(candidate.CandidateId) &&
+                !preconditions.Contains(candidateIdentity, StringComparer.Ordinal))
+            {
+                step.Preconditions = preconditions.Append(candidateIdentity).ToArray();
+            }
+
             var parameters = new List<SmallModelActionParameter>(step.Parameters ?? Array.Empty<SmallModelActionParameter>())
             {
                 Parameter("budget.accepted_candidate_index", acceptedCandidateIndex.ToString()),

@@ -1,9 +1,11 @@
 using System.Text.Json;
+using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 using StardewAI.Core.Execution;
 using StardewAI.Core.OptionRegistry;
 using StardewAI.Core.Training;
+using StardewAI.LiveTrainingLoop;
 
 namespace StardewAI.Core.Tests;
 
@@ -37,6 +39,7 @@ public sealed class SpecialOrderAcceptanceMainlineTests
         var plan = new DailyPlanCompiler().Compile(new[] { prediction }, terminal.StateHash);
         Assert.Equal(new[] { "accept_special_order" }, plan.Steps.Select(step => step.Kind));
         var queue = new ActionQueueCompiler().Compile(plan, terminal);
+        AssertRetainsSelectedCandidate(plan, queue, new[] { prediction }, selected.CandidateId);
         Assert.Equal("pending", queue.Status);
         var item = Assert.Single(queue.Items);
         Assert.Equal("executor.accept_special_order", item.OptionId);
@@ -82,10 +85,23 @@ public sealed class SpecialOrderAcceptanceMainlineTests
         var candidate = Assert.Single(availability.Options.Single().EventCandidates);
         Assert.True(candidate.Available, string.Join(";", candidate.BlockReasons));
         Assert.Equal(expectedCandidateKind, candidate.Kind);
-        var plan = new DailyPlanCompiler().Compile(
-            new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability),
-            snapshot.StateHash);
+        var ranked = new EventCandidateRanker().Rank(new BaselineTrainingReport(), availability);
+        var plan = new DailyPlanCompiler().Compile(ranked, snapshot.StateHash);
         Assert.Equal(new[] { expectedStepKind }, plan.Steps.Select(step => step.Kind));
+        AssertRetainsSelectedCandidate(
+            plan, new ActionQueueCompiler().Compile(plan, snapshot), ranked, candidate.CandidateId);
+    }
+
+    private static void AssertRetainsSelectedCandidate(
+        SmallModelPlanEnvelope plan,
+        ActionQueueEnvelope queue,
+        PolicyEventCandidatePrediction[] ranked,
+        string candidateId)
+    {
+        var ranking = JsonSerializer.SerializeToNode(new { ranked_event_candidates = ranked }, JsonOptions)!.AsObject();
+        var compiled = JsonSerializer.SerializeToNode(queue, JsonOptions)!.AsObject();
+        Assert.Equal(candidateId, SelectedQueueDecisionLease.CreateFromPlan(plan, ranking).CandidateAt(0).CandidateId);
+        Assert.Equal(candidateId, SelectedQueueDecisionLease.Create(compiled, ranking).CandidateAt(0).CandidateId);
     }
 
     private static StardewAI.Contracts.Options.OptionAvailabilityEnvelope Evaluate(SnapshotEnvelope snapshot) =>
