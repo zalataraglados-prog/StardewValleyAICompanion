@@ -81,6 +81,8 @@ static partial class Program
             options.DailyPlanCandidateOptionIds;
         var candidateParameters = candidateParametersOverride ??
             options.DailyPlanCandidateParameters;
+        var nativeStoryInterrupt = priorityStoryEventInterrupt &&
+            options.TargetExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer;
         var explicitCandidates =
             candidateParameters.Count > 0
                 ? new object[]
@@ -110,6 +112,7 @@ static partial class Program
                 ? candidateOptionIds
                 : Array.Empty<string>(),
             candidates = explicitCandidates,
+            priority_story_event_interrupt = nativeStoryInterrupt,
             include_blocked_options = false
         }, JsonOptions);
         var ranking = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", rankRequest);
@@ -275,6 +278,7 @@ static partial class Program
             execution_mode = options.TargetExecutionMode,
             max_candidates = maxCandidates,
             compile_action_queue = true,
+            priority_story_event_interrupt = nativeStoryInterrupt,
             ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
         }, JsonOptions);
         var compileActionQueue = true;
@@ -331,6 +335,7 @@ static partial class Program
             stateHash,
             Array.Empty<JsonObject>(),
             new[] { "story.advance_event" },
+            candidateParametersOverride: Array.Empty<SmallModelActionParameter>(),
             candidateKindOverride: string.Empty,
             candidateIdOverride: string.Empty,
             maxCandidatesOverride: 1,

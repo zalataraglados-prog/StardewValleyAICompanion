@@ -249,6 +249,10 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("include_blocked_options")]
         public bool IncludeBlockedOptions { get; set; }
 
+        [JsonPropertyName("priority_story_event_interrupt")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool PriorityStoryEventInterrupt { get; set; }
+
         [JsonPropertyName("candidate_option_ids")]
         public string[] CandidateOptionIds { get; set; } = Array.Empty<string>();
 
@@ -306,6 +310,10 @@ namespace StardewAI.Contracts.Training
         [JsonPropertyName("use_joint_calendar")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool UseJointCalendar { get; set; }
+
+        [JsonPropertyName("priority_story_event_interrupt")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool PriorityStoryEventInterrupt { get; set; }
 
         [JsonPropertyName("required_candidate_ids")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

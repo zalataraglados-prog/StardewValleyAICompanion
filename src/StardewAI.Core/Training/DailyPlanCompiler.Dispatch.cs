@@ -159,7 +159,7 @@ namespace StardewAI.Core.Training
                 : Array.Empty<string>();
         }
 
-        private static IEnumerable<SmallModelPlanStep> CandidateSteps(PolicyEventCandidatePrediction candidate)
+        private static IEnumerable<SmallModelPlanStep> CandidateSteps(PolicyEventCandidatePrediction candidate, bool nativeStoryInterrupt)
         {
             if (OptionCandidateCompilerKinds.TryGetValue(candidate.OptionId, out var allowedKinds) &&
                 !allowedKinds.Contains(candidate.Kind, StringComparer.Ordinal) &&
@@ -439,7 +439,7 @@ namespace StardewAI.Core.Training
             if (candidate.Kind == "advance_story_event_automatic" ||
                 candidate.Kind == "advance_story_event_choice")
             {
-                return StoryEventSteps(candidate);
+                return StoryEventSteps(candidate, nativeStoryInterrupt);
             }
 
             if (candidate.Kind == "advance_story_event_minigame_passive" ||

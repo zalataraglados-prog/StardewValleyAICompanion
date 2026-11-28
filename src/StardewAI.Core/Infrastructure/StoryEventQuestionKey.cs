@@ -17,9 +17,10 @@ internal static class StoryEventQuestionKey
 
         key = field.GetString()!;
         // A native Speak script can own a question without setting the map's lastQuestionKey.
+        var command = ReadString(projection, "current_command_raw");
         return !string.IsNullOrWhiteSpace(key) ||
             key.Length == 0 && ReadBool(projection, "dialogue_is_question") == true &&
             ReadString(projection, "current_command_resolved_name") == "Speak" &&
-            ReadString(projection, "current_command_raw").Contains("$q ", StringComparison.Ordinal);
+            (command.Contains("$q ", StringComparison.Ordinal) || command.Contains("$y ", StringComparison.Ordinal));
     }
 }

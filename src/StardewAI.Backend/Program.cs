@@ -716,6 +716,8 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
 
     if (string.IsNullOrWhiteSpace(request.StateHash))
     {
+        if (request.PriorityStoryEventInterrupt)
+            return Results.UnprocessableEntity(new { detail = "native story interrupt requires a matching singleplayer snapshot" });
         if (useStructuredPolicy)
             return Results.BadRequest(new { detail = "Structured policy ranking requires state_hash." });
         return Results.Ok(ranker.Rank(report, request.CandidateOptionIds));
@@ -747,7 +749,14 @@ app.MapPost("/api/v1/planner/baseline/rank-options", (BaselinePredictionRequest 
                 .OrderBy(optionId => optionId, StringComparer.Ordinal)
                 .ToArray()
             : request.CandidateOptionIds;
-    var availability = CandidateOptionAvailabilityEvaluator.RequiresExclusiveRecovery(snapshot)
+    if (request.PriorityStoryEventInterrupt && (snapshot.StateHash != request.StateHash ||
+        request.ExecutionMode != ExecutionTargetProfiles.TrainingSingleplayer ||
+        request.CandidateOptionIds is not ["story.advance_event"] ||
+        request.Candidates.Length != 0 || request.AdditionalCandidates.Length != 0))
+        return Results.UnprocessableEntity(new { detail = "native story interrupt requires a matching singleplayer snapshot and only story.advance_event" });
+    var availability = request.PriorityStoryEventInterrupt
+        ? availabilityEvaluator.Evaluate(snapshot, request.CandidateOptionIds, commitmentLedger: commitmentLedger)
+        : CandidateOptionAvailabilityEvaluator.RequiresExclusiveRecovery(snapshot)
         ? availabilityEvaluator.Evaluate(
             snapshot,
             new[] { "recovery.stabilize_day" },
@@ -893,6 +902,10 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
         return Results.UnprocessableEntity(new { detail = "required candidates require explicit joint calendar mode" });
     if (request.PrimaryCandidateIds is not null && !request.UseJointCalendar)
         return Results.UnprocessableEntity(new { detail = "primary candidates require explicit joint calendar mode" });
+    if (request.PriorityStoryEventInterrupt && (snapshot is null || snapshot.StateHash != request.StateHash ||
+        request.ExecutionMode != ExecutionTargetProfiles.TrainingSingleplayer || !request.CompileActionQueue ||
+        request.RequiredCandidateIds is not null || request.PrimaryCandidateIds is not null))
+        return Results.UnprocessableEntity(new { detail = "native story interrupt requires a matching singleplayer snapshot, an action queue, and no scheduled work" });
     var availableMinutes = jointTime.HasValue
         ? DailyPlanBudgetReader.AvailablePlanMinutes(jointTime.Value, request.RankedEventCandidates)
         : DailyPlanBudgetReader.AvailablePlanMinutes(snapshot, request.RankedEventCandidates);
@@ -903,7 +916,10 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
     SmallModelPlanEnvelope plan;
     try
     {
-        if (request.PrimaryCandidateIds is not null)
+        if (request.PriorityStoryEventInterrupt)
+            plan = dailyPlanCompiler.CompileNativeStoryInterrupt(request.RankedEventCandidates, request.StateHash,
+                request.GoalId, availableMinutes, energyBudget);
+        else if (request.PrimaryCandidateIds is not null)
             plan = dailyPlanCompiler.CompileWithPrimaryGoal(request.RankedEventCandidates, request.StateHash, jointTime!.Value,
                 request.RequiredCandidateIds ?? Array.Empty<string>(), request.PrimaryCandidateIds,
                 string.IsNullOrWhiteSpace(request.GoalId) ? "daily.closed_loop" : request.GoalId,
@@ -923,7 +939,7 @@ app.MapPost("/api/v1/planner/daily-plan/compile", (DailyPlanCompileRequest reque
             availableMinutes,
             energyBudget);
     }
-    catch (ArgumentException error) when (request.UseJointCalendar)
+    catch (ArgumentException error) when (request.UseJointCalendar || request.PriorityStoryEventInterrupt)
     {
         return Results.UnprocessableEntity(new { detail = error.Message });
     }

@@ -57,7 +57,8 @@ namespace StardewAI.Core.Training
             int? energyBudget,
             JointCalendarBudget? calendar,
             ISet<string>? requiredCandidates = null,
-            ISet<string>? primaryCandidates = null)
+            ISet<string>? primaryCandidates = null,
+            bool nativeStoryInterrupt = false)
         {
             var steps = new List<SmallModelPlanStep>();
             var audit = new List<SmallModelPlanCandidateAudit>();
@@ -97,7 +98,7 @@ namespace StardewAI.Core.Training
                     : WaitSteps(candidate, waitTicks).ToArray();
                 var candidateSteps = rollingDeferred
                     ? Array.Empty<SmallModelPlanStep>()
-                    : CandidateSteps(candidate).ToArray();
+                    : CandidateSteps(candidate, nativeStoryInterrupt).ToArray();
                 var effectiveEnergyCost = Math.Max(0, candidate.EnergyCost);
                 var candidateMinutes = waitSteps
                     .Concat(candidateSteps)
