@@ -1,5 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
+using StardewAI.Core.Execution;
 using StardewAI.LiveTrainingLoop;
 
 static partial class Program
@@ -56,4 +59,50 @@ static partial class Program
         ReadString(queue, "status") == "blocked" && queue["items"] is JsonArray { Count: 0 } &&
         queue["compiler_diagnostics"] is JsonArray { Count: 1 } diagnostics &&
         diagnostics[0]?.ToString() == "empty_action_list";
+
+    private static (JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking) WithNativeFestivalExitWait(
+        LiveTrainingOptions options, string snapshotJson, string stateHash,
+        (JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking) original)
+    {
+        if (!options.ContinueGlobalDailyPlanAfterCropTeacherRun || !options.RequireNativeSaveBoundary ||
+            !options.UseRuntimeTestHarnessExecutor || original.Ranking["ranked_event_candidates"] is not JsonArray { Count: 0 } ||
+            !IsPinnedEmptyDailyCompile(stateHash, original.Plan, original.Queue))
+            return original;
+
+        var snapshot = JsonSerializer.Deserialize<SnapshotEnvelope>(snapshotJson, JsonOptions);
+        if (snapshot is null || snapshot.StateHash != stateHash ||
+            ActionQueueCompiler.BuildNativeFestivalExitWait(snapshot) is not { } wait)
+            return original;
+
+        var plan = new SmallModelPlanEnvelope
+        {
+            PlanId = "native_festival_exit_wait." + Guid.NewGuid().ToString("N"),
+            SourceModel = "native_festival_exit_recovery.v1",
+            GoalId = ReadString(original.Plan, "goal_id"),
+            StateHash = stateHash,
+            ExecutionMode = options.TargetExecutionMode,
+            Actor = options.TargetActor,
+            PlanType = "mechanical_plan",
+            Steps = new[] { wait }
+        };
+        var command = new ActionQueueCompiler().Compile(plan, snapshot);
+        if (command.Status != "pending" || command.Items is not [{ OptionId: "executor.wait_ticks", Status: "pending" }])
+            return original;
+
+        var planNode = JsonSerializer.SerializeToNode(plan, JsonOptions)!.AsObject();
+        var queueNode = JsonSerializer.SerializeToNode(command, JsonOptions)!.AsObject();
+        var ranking = (JsonObject)original.Ranking.DeepClone();
+        ranking["native_festival_exit_wait"] = new JsonObject
+        {
+            ["source_state_hash"] = stateHash,
+            ["reason"] = "empty_daily_pool_and_native_return_gate_reopens_today",
+            ["blocked_compile_response"] = original.Response.DeepClone()
+        };
+        return (new JsonObject
+        {
+            ["schema_version"] = "daily_plan_compile_response.v1",
+            ["plan"] = planNode.DeepClone(),
+            ["action_queue"] = queueNode.DeepClone()
+        }, planNode, queueNode, ranking);
+    }
 }

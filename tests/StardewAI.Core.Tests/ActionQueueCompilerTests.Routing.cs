@@ -983,6 +983,9 @@ public sealed partial class ActionQueueCompilerTests
           "time": {
             "time": {"value":710,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
           },
+          "current_location": {
+            "home_context": {"value":{"home_available":true,"home_location_id":"Town","current_location_is_home":false},"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1}
+          },
           "player": {
             "location_id": {"value":"Beach","status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
             "tile_x": {"value":8,"status":"available","source":{"kind":"game_object","path":"test"},"adapter":"test","read_at_tick":1,"confidence":1},
@@ -1040,6 +1043,15 @@ public sealed partial class ActionQueueCompilerTests
             parameter => parameter.Name == "cross_location_move_target" &&
                 parameter.Value == "Town");
         Assert.Equal("wait_ticks", Assert.Single(item.NormalizedCommand.Steps).StepType);
+
+        var recovery = ActionQueueCompiler.BuildNativeFestivalExitWait(snapshot);
+        Assert.NotNull(recovery);
+        var recoveryQueue = new ActionQueueCompiler().Compile(Plan(snapshot.StateHash, recovery), snapshot);
+        Assert.Equal("pending", recoveryQueue.Status);
+        var recoveryItem = Assert.Single(recoveryQueue.Items);
+        Assert.Equal("executor.wait_ticks", recoveryItem.OptionId);
+        Assert.Contains(recoveryItem.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "route_wait_until_time" && parameter.Value == "1410");
     }
 
     private static SnapshotEnvelope NativeBusConnectorSnapshot(bool allowedNow) => Snapshot($$"""

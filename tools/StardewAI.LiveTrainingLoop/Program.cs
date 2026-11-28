@@ -1459,6 +1459,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         dailyMaintenancePreemption.ShouldPreempt
                             ? null
                             : activeObjectiveContinuation);
+                if (activeObjectiveContinuation is null)
+                    dailyPlan = WithNativeFestivalExitWait(options, snapshotJson, lastStateHash, dailyPlan);
+                if (dailyPlan.Ranking["native_festival_exit_wait"] is JsonObject festivalExit)
+                {
+                    useDailyPlanDecisionLease = false;
+                    AppendProgress(options, "native_festival_exit_wait", iteration, lastStateHash,
+                        ReadString(dailyPlan.Queue, "queue_id"), ReadString(festivalExit, "reason"));
+                }
                 if (dailyPlan.Ranking["global_primary_budget_recovery"] is JsonObject recovery)
                 {
                     useDailyPlanDecisionLease = false;
