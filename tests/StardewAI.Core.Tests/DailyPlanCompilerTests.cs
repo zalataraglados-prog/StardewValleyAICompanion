@@ -1387,6 +1387,51 @@ public sealed partial class DailyPlanCompilerTests
         Assert.Equal("accepted", Assert.Single(plan.CandidateAudit).Decision);
     }
 
+    [Theory]
+    [InlineData(2400, "47", true)]
+    [InlineData(2440, "47", false)]
+    [InlineData(2400, null, false)]
+    [InlineData(2400, "999", false)]
+    public void RecoveryConnectorBudgetsTravelWithoutConsumingTheSleepReserve(int time, string? pathTiles, bool fits)
+    {
+        var parameters = new List<SmallModelActionParameter>
+        {
+            new() { Name = "execution_option_id", Value = "executor.traverse_connector" },
+            new() { Name = "connector_kind", Value = "warp" },
+            new() { Name = "expected_target_location", Value = "BusStop" },
+            new() { Name = "max_movement_tiles", Value = "63" },
+            new() { Name = "estimated_ticks", Value = "3780" },
+            new() { Name = "estimated_minutes", Value = "90" }
+        };
+        if (pathTiles is not null)
+            parameters.Add(new() { Name = "compiler_context.route_shortest_path_tiles", Value = pathTiles });
+        var rows = new[]
+        {
+            new PolicyEventCandidatePrediction
+            {
+                CandidateId = "recovery:sleep_immediately", OptionId = "recovery.stabilize_day",
+                Kind = "recovery_sleep_immediately", Rank = 1, TimelineStatus = "ready_now",
+                LocationId = "Town", TileX = -1, TileY = 53, EstimatedTicks = 3780, Parameters = parameters.ToArray()
+            }
+        };
+        var available = DailyPlanResourceBudget.AvailablePlanMinutes(time, rows);
+        Assert.Equal(time == 2400 ? 60 : 20, available);
+        var plan = new DailyPlanCompiler().CompileWithJointCalendar(rows, "native-day", time, availableMinutes: available);
+        var audit = Assert.Single(plan.CandidateAudit);
+        if (!fits)
+        {
+            Assert.Empty(plan.Steps);
+            Assert.Contains("aggregate_time_budget_exceeded", audit.Reasons);
+            return;
+        }
+        var step = Assert.Single(plan.Steps);
+        Assert.Equal("accepted", audit.Decision);
+        Assert.Equal(31, step.EstimatedMinutes);
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "estimated_ticks" && parameter.Value == "3780");
+        Assert.Contains(step.Parameters, parameter => parameter.Name == "max_movement_tiles" && parameter.Value == "63");
+        Assert.DoesNotContain(step.Parameters, parameter => parameter.Name == "estimated_minutes");
+    }
+
     [Fact]
     public void CompileRecoveryResumeSleepPromptPreservesTypedMode()
     {

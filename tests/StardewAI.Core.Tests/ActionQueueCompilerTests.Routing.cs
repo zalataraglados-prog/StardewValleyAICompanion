@@ -739,8 +739,10 @@ public sealed partial class ActionQueueCompilerTests
         Assert.Equal("location=Farm;player.tile=64,15", step.ExpectedEffect);
     }
 
-    [Fact]
-    public void CompileRefreshesConnectorBudgetWithDynamicOccupancyDetourAllowance()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CompileRefreshesConnectorBudgetWithDynamicOccupancyDetourAllowance(bool recovery)
     {
         var snapshot = Snapshot("""
         {
@@ -778,6 +780,15 @@ public sealed partial class ActionQueueCompilerTests
                 }
             });
 
+        if (recovery)
+        {
+            var step = Assert.Single(plan.Steps);
+            step.Parameters = step.Parameters.Append(new SmallModelActionParameter
+            {
+                Name = "recovery_step_kind",
+                Value = ConnectorRouteExecutionBudgetPolicy.RecoveryRouteStepKind
+            }).ToArray();
+        }
         var queue = new ActionQueueCompiler().Compile(plan, snapshot);
 
         Assert.Equal("pending", queue.Status);
@@ -797,9 +808,7 @@ public sealed partial class ActionQueueCompilerTests
             parameter.Value == expectedTicks.ToString());
         Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
             parameter.Name == "estimated_minutes" &&
-            parameter.Value == GameClockBudgetPolicy
-                .TicksToGameMinutes(expectedTicks)
-                .ToString());
+            parameter.Value == (recovery ? 26 : GameClockBudgetPolicy.TicksToGameMinutes(expectedTicks)).ToString());
     }
 
     [Fact]

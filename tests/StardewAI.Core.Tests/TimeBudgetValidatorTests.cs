@@ -236,15 +236,18 @@ public sealed class TimeBudgetValidatorTests
         Assert.Contains("time_budget_contains_unknown_duration", report.BlockReasons);
     }
 
-    [Fact]
-    public void RecoveryConnectorUsesTransparentCurrentStepEstimate()
+    [Theory]
+    [InlineData("recovery.stabilize_day")]
+    [InlineData("executor.traverse_connector")]
+    public void RecoveryConnectorUsesTransparentCurrentStepEstimate(string optionId)
     {
-        var snapshot = Snapshot(2300);
+        var snapshot = Snapshot(2400);
         var model = new WorldModelProjector().Project(snapshot, "return home", "training");
-        var item = Item("recovery.stabilize_day", "required");
+        var item = Item(optionId, "required");
         item.NormalizedCommand.Parameters = item.NormalizedCommand.Parameters.Concat(new[]
         {
             new SmallModelActionParameter { Name = "execution_option_id", Value = "executor.traverse_connector" },
+            new SmallModelActionParameter { Name = "recovery_step_kind", Value = ConnectorRouteExecutionBudgetPolicy.RecoveryRouteStepKind },
             new SmallModelActionParameter { Name = "estimated_ticks", Value = "180" },
             new SmallModelActionParameter { Name = "estimated_minutes", Value = "3" }
         }).ToArray();
@@ -258,6 +261,9 @@ public sealed class TimeBudgetValidatorTests
 
         var report = new TimeBudgetValidator().Validate(model, queue);
 
+        Assert.Equal(60, report.AvailableMinutes);
+        Assert.Equal(60, report.SafetyBufferMinutes);
+        Assert.True(report.FitsRequired);
         Assert.Equal(3, Assert.Single(report.Items).EstimatedMinutes);
         Assert.Equal("transparent_current_connector_path.v1", report.Items[0].Estimator);
     }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Training;
+using StardewAI.Core.Execution;
 
 namespace StardewAI.Core.Training
 {
@@ -231,6 +232,15 @@ namespace StardewAI.Core.Training
                 }
             }
 
+            var pathTiles = CandidateInt(candidate, ConnectorRouteExecutionBudgetPolicy.ShortestPathTilesParameter);
+            var useTravelEstimate = candidate.OptionId == "recovery.stabilize_day" &&
+                pathTiles is >= 0 and <= ConnectorRouteExecutionBudgetPolicy.MaximumMovementTiles;
+            if (useTravelEstimate)
+            {
+                parameters.RemoveAll(parameter => parameter.Name == "estimated_minutes");
+                parameters.Add(Parameter("recovery_step_kind", ConnectorRouteExecutionBudgetPolicy.RecoveryRouteStepKind));
+            }
+
             return new[]
             {
                 new SmallModelPlanStep
@@ -240,7 +250,9 @@ namespace StardewAI.Core.Training
                     TargetLocation = candidate.LocationId,
                     TargetTileX = targetTileX,
                     TargetTileY = targetTileY,
-                    EstimatedMinutes = CandidateInt(candidate, "estimated_minutes") ?? TicksToMinutes(candidate.EstimatedTicks),
+                    EstimatedMinutes = useTravelEstimate
+                        ? ConnectorRouteExecutionBudgetPolicy.RecoveryTravelGameMinutes(pathTiles!.Value)
+                        : CandidateInt(candidate, "estimated_minutes") ?? TicksToMinutes(candidate.EstimatedTicks),
                     Preconditions = new[]
                     {
                         "candidate_id:" + candidate.CandidateId,

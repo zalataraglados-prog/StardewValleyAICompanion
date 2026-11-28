@@ -39,7 +39,9 @@ namespace StardewAI.Core.Execution
         {
             var currentTime = model.InGameTime ?? 600;
             var recoveryQueue = queue.Items.Any(item =>
-                string.Equals(item.OptionId, "recovery.stabilize_day", StringComparison.Ordinal));
+                string.Equals(item.OptionId, "recovery.stabilize_day", StringComparison.Ordinal) ||
+                item.OptionId == "executor.traverse_connector" &&
+                Parameter(item, "recovery_step_kind") == ConnectorRouteExecutionBudgetPolicy.RecoveryRouteStepKind);
             var deadlineTime = recoveryQueue
                 ? GameClockBudgetPolicy.DayEndTime
                 : GameClockBudgetPolicy.AutonomousRecoveryStartTime;
