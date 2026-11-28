@@ -585,6 +585,14 @@ static partial class Program
                     "kind");
             }
 
+            var rebindMovedNpc = useDailyPlan && options.ContinueGlobalDailyPlanAfterCropTeacherRun &&
+                seedPrefix is null && string.IsNullOrWhiteSpace(options.ExecutorOptionId) &&
+                afterSnapshot.Fresh && QueueReplanFilter.IsTrainingVerifiedExecution(execution) &&
+                itemIndex + 1 < queueItems.Length && QueueReplanFilter.NeedsMovedNpcApproachRebind(
+                    item, queueItems[itemIndex + 1], currentBeforeSnapshot);
+            if (rebindMovedNpc)
+                execution["social_approach_rebind_reason"] = "npc_moved_before_interaction_dispatch";
+
             var replanDecision = QueueReplanFilter.DecideAfterExecution(
                 executionStatus,
                 options.ContinueAfterBlockedQueueItems,
@@ -592,7 +600,7 @@ static partial class Program
                 !string.IsNullOrWhiteSpace(options.ExecutorOptionId),
                 afterSnapshot.Fresh,
                 attemptedCount < options.MaxQueueItemAttempts,
-                activeObjectiveContinuation is not null ||
+                rebindMovedNpc || activeObjectiveContinuation is not null ||
                     QueueReplanFilter.RequiresFreshSnapshotReplan(item),
                 completedContinuationThisStep);
 
@@ -737,7 +745,7 @@ static partial class Program
                             "priority_story_event_interrupt_unavailable";
                     }
                 }
-                else if (activeObjectiveContinuation is null)
+                else if (activeObjectiveContinuation is null && !rebindMovedNpc)
                 {
                     execution["queue_replan_applied"] = false;
                     if (!QueueReplanFilter.IsContinuableExecutionStatus(
@@ -818,7 +826,12 @@ static partial class Program
                     execution["queue_replan_response_path"] = refreshResponsePath;
                     execution["queue_replan_queue_path"] = refreshQueuePath;
                     execution["queue_replan_evidence_path"] = refreshEvidencePath;
-                    if (QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
+                    if (rebindMovedNpc && refreshedItems.Length == 0 && activeObjectiveContinuation is null)
+                    {
+                        execution["selected_queue_redecision_required"] = true;
+                        execution["queue_replan_stop_reason"] = "moved_npc_selected_talk_could_not_rebind";
+                    }
+                    else if (QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
                             activeObjectiveContinuation,
                             refreshedItems.Length))
                     {
@@ -853,7 +866,7 @@ static partial class Program
                         StringComparison.Ordinal) &&
                     itemIndex == originalPlannedItemCount - 1 &&
                     attemptedCount == originalPlannedItemCount
-                : QueueReplanFilter.CompletesSelectedQueueCandidate(
+                : !rebindMovedNpc && QueueReplanFilter.CompletesSelectedQueueCandidate(
                     executionStatus,
                     activeObjectiveContinuation,
                     selectedCandidateId,

@@ -5,6 +5,43 @@ namespace StardewAI.Core.Tests;
 
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
+    [Theory]
+    [InlineData(18, "social:talk:Caroline", true, true)]
+    [InlineData(31, "social:talk:Caroline", true, false)]
+    [InlineData(18, "social:talk:Pierre", true, false)]
+    [InlineData(18, "social:talk:Caroline", false, false)]
+    public void LocalSocialApproachRebindsOnlyTheSameTalkWhenItsNativePositionChanges(
+        int liveX, string nextCandidate, bool instanceLoaded, bool rebind)
+    {
+        JsonObject Parameter(string name, string value) => new() { ["name"] = name, ["value"] = value };
+        var approach = new JsonObject { ["option_id"] = "executor.move_to_tile" };
+        var talk = new JsonObject
+        {
+            ["option_id"] = "executor.social_interact",
+            ["normalized_command"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(
+                    Parameter("npc_name", "Caroline"),
+                    Parameter("target_location", "SeedShop"),
+                    Parameter("social_action_kind", "talk"),
+                    Parameter("npc_tile_x", "31"), Parameter("npc_tile_y", "12"))
+            }
+        };
+        QueueReplanFilter.StampSelectedQueueIdentity(approach, "social:talk:Caroline", 0);
+        QueueReplanFilter.StampSelectedQueueIdentity(talk, nextCandidate, 0);
+        var snapshot = JsonNode.Parse($$"""
+            { "state": { "player": { "location_id": { "value": "SeedShop" } },
+              "npcs": { "social_interaction": { "value": [
+                { "name": "Caroline", "location_id": "SeedShop", "tile_x": {{liveX}}, "tile_y": 12,
+                  "current_instance_loaded": {{(instanceLoaded ? "true" : "false")}} }
+              ] } } } }
+            """)!.AsObject();
+
+        var result = QueueReplanFilter.NeedsMovedNpcApproachRebind(approach, talk, snapshot);
+
+        Assert.Equal(rebind, result);
+    }
+
     [Fact]
     public void ResolvedGoalCompilesOnlyExactBoundCandidates()
     {
