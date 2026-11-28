@@ -468,6 +468,7 @@ namespace StardewAI.Core.OptionRegistry
                 .Where(candidate => candidate.Kind == "route_connector_tile")
                 .ToArray();
             var matches = new List<EventCandidate>();
+            var routeTo = SocialRouteLookup(snapshot, currentLocation, routeCandidates);
             foreach (var socialGift in SocialCandidateBuilder.Build(snapshot, "social.gift_npc", int.MaxValue))
             {
                 var slotText = ReadParameter(socialGift.Parameters, "slot_index");
@@ -497,11 +498,10 @@ namespace StardewAI.Core.OptionRegistry
                     string.Equals(socialGift.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase)
                         ? socialGift
                         : SocialRouteCandidate(
-                            snapshot,
                             "quest.advance",
                             socialGift,
                             currentLocation,
-                            routeCandidates);
+                            routeTo(socialGift.LocationId));
                 var extra = new List<SmallModelActionParameter>
                 {
                     Parameter("quest_interaction_kind", "gift"),

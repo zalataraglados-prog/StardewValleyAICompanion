@@ -39,7 +39,8 @@ internal static class FunctionalRouteReplayer
         var snapshot = Read<SnapshotEnvelope>(evidence.Snapshot!.Path);
         ValidateSnapshot(snapshot);
         var request = Read<DailyPlanCompileRequest>(evidence.CompileRequest!.Path);
-        Require(request.UseJointCalendar && request.CompileActionQueue && request.StateHash == snapshot.StateHash &&
+        Require(request.UseJointCalendar && request.CompileActionQueue && !request.PriorityStoryEventInterrupt &&
+            request.StateHash == snapshot.StateHash &&
             request.ExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer &&
             request.GoalId == "goal.fishing.complete_master_angler" &&
             (request.RequiredCandidateIds?.Length ?? 0) == 0,

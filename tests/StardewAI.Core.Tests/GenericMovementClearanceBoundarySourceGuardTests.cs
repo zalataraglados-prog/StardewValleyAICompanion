@@ -117,6 +117,41 @@ public sealed class GenericMovementClearanceBoundarySourceGuardTests
     }
 
     [Fact]
+    public void OccupiedPathStartCanRealignBeforeARequiredSoftObstacle()
+    {
+        var movement = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.cs"));
+        var softObstacles = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.SoftObstacles.cs"));
+        var pathing = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.PathingInput.cs"));
+
+        var strict = softObstacles.IndexOf("avoidSoftObstacles: true", StringComparison.Ordinal);
+        var fallback = softObstacles.IndexOf("avoidSoftObstacles: false", StringComparison.Ordinal);
+        Assert.InRange(strict, 0, fallback - 1);
+        Assert.Contains("requireWalkableTerrain: !avoidSoftObstacles", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("? IsTileOnMap(location, next) && IsTileWalkable(location, next)", pathing, StringComparison.Ordinal);
+        Assert.Contains("needsEgressCentering ? path[0] : null", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("move.OccupiedStartEgressTileToCenter == Game1.player.TilePoint", movement, StringComparison.Ordinal);
+        Assert.Contains("move.NeedsPathStartCentering = true", movement, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NativeApproachThatClipsPetKeepsThePushWithoutReplanningTheSameTile()
+    {
+        var movement = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.cs"));
+        var softObstacles = File.ReadAllText(FindRepositoryFile(
+            "tools", "StardewAI.RuntimeTestHarness", "ModEntry.MovementSleep.SoftObstacles.cs"));
+
+        Assert.Contains("IsNextNativeStepBlockedByPet(Game1.currentLocation, direction)", movement, StringComparison.Ordinal);
+        Assert.Contains("TickTileMoveSoftObstacle(move, currentTile, nextTile, allowReplan: false)", movement, StringComparison.Ordinal);
+        Assert.Contains("farmer.nextPosition(direction)", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("next.Intersects(bounds) && !current.Intersects(bounds)", softObstacles, StringComparison.Ordinal);
+        Assert.Contains("if (allowReplan &&", softObstacles, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void IncidentalDialogueUsesBoundedStateChangePacing()
     {
         var movement = File.ReadAllText(FindRepositoryFile(

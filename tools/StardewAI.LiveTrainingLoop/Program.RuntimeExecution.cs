@@ -317,48 +317,31 @@ static partial class Program
                 itemQueueId = queueId;
             }
             JsonObject? dispatchReadiness = null;
-            if (!QueueContainsRecoveryWork(queue))
+            if (await ReadDispatchRecoveryOverrideAsync(http, options, queue, item,
+                    executionSnapshotUrlOverride, executionSnapshotProfileOverride) is { } latest)
             {
-                var latest = await ReadCurrentSnapshotAsync(http, options);
-                var latestTime = ReadInGameTime(latest.Snapshot);
-                if (latestTime >= GameClockBudgetPolicy.AutonomousRecoveryStartTime)
+                var recoverySuffix = "-dispatch-recovery-" +
+                    (dispatchGateReplanCount + 1).ToString("D4");
+                var recoverySnapshotPath = Path.Combine(
+                    options.SnapshotDir,
+                    "before-snapshot-" + iteration.ToString("D4") + recoverySuffix + ".json");
+                await ContentAddressedJsonArtifactStore.WriteAsync(
+                    recoverySnapshotPath,
+                    latest.Json,
+                    options.SnapshotArtifactMode);
+                var ingest = await PostJsonStringAsync(http, SnapshotIngestUrl(options), latest.Json);
+                currentBeforeSnapshot = latest.Snapshot;
+                currentBeforeSnapshotPath = recoverySnapshotPath;
+                currentStateHash = ReadString(ingest, "state_hash");
+                dispatchReadiness = new JsonObject
                 {
-                    latest = await ReadExecutionSnapshotAsync(
-                        http,
-                        options,
-                        forceRefresh: true,
-                        snapshotUrlOverride: executionSnapshotUrlOverride,
-                        snapshotProfileOverride: executionSnapshotProfileOverride);
-                    latestTime = ReadInGameTime(latest.Snapshot);
-                    var recoverySuffix = "-dispatch-recovery-" +
-                        (dispatchGateReplanCount + 1).ToString("D4");
-                    var recoverySnapshotPath = Path.Combine(
-                        options.SnapshotDir,
-                        "before-snapshot-" + iteration.ToString("D4") +
-                        recoverySuffix + ".json");
-                    await ContentAddressedJsonArtifactStore.WriteAsync(
-                        recoverySnapshotPath,
-                        latest.Json,
-                        options.SnapshotArtifactMode);
-                    var ingest = await PostJsonStringAsync(
-                        http,
-                        SnapshotIngestUrl(options),
-                        latest.Json);
-                    currentBeforeSnapshot = latest.Snapshot;
-                    currentBeforeSnapshotPath = recoverySnapshotPath;
-                    currentStateHash = ReadString(ingest, "state_hash");
-                    dispatchReadiness = new JsonObject
-                    {
-                        ["ready"] = false,
-                        ["status"] = "blocked",
-                        ["state_hash"] = currentStateHash,
-                        ["current_time"] = latestTime,
-                        ["blocking_reasons"] = new JsonArray(
-                            "dispatch_recovery_window_started"),
-                        ["policy"] =
-                            "fresh_snapshot_before_dispatch;exclusive_recovery_replan"
-                    };
-                }
+                    ["ready"] = false,
+                    ["status"] = "blocked",
+                    ["state_hash"] = currentStateHash,
+                    ["current_time"] = ReadInGameTime(latest.Snapshot),
+                    ["blocking_reasons"] = new JsonArray("dispatch_recovery_window_started"),
+                    ["policy"] = "fresh_snapshot_before_dispatch;exclusive_recovery_replan"
+                };
             }
 
             var compiledCommandStateHash = ReadString(
@@ -538,7 +521,7 @@ static partial class Program
                 string.Equals(executionStatus, "applied", StringComparison.Ordinal))
             {
                 continuationForCompletion =
-                    QueueReplanFilter.ReadObjectiveContinuation(item);
+                    QueueReplanFilter.ReadContinuationToStartAfterAppliedStep(item);
             }
 
             if (QueueReplanFilter.CompletesObjectiveContinuation(
@@ -585,6 +568,14 @@ static partial class Program
                     "kind");
             }
 
+            var rebindMovedNpc = useDailyPlan && options.ContinueGlobalDailyPlanAfterCropTeacherRun &&
+                seedPrefix is null && string.IsNullOrWhiteSpace(options.ExecutorOptionId) &&
+                afterSnapshot.Fresh && QueueReplanFilter.IsTrainingVerifiedExecution(execution) &&
+                itemIndex + 1 < queueItems.Length && QueueReplanFilter.NeedsMovedNpcApproachRebind(
+                    item, queueItems[itemIndex + 1], currentBeforeSnapshot);
+            if (rebindMovedNpc)
+                execution["social_approach_rebind_reason"] = "npc_moved_before_interaction_dispatch";
+
             var replanDecision = QueueReplanFilter.DecideAfterExecution(
                 executionStatus,
                 options.ContinueAfterBlockedQueueItems,
@@ -592,7 +583,7 @@ static partial class Program
                 !string.IsNullOrWhiteSpace(options.ExecutorOptionId),
                 afterSnapshot.Fresh,
                 attemptedCount < options.MaxQueueItemAttempts,
-                activeObjectiveContinuation is not null ||
+                rebindMovedNpc || activeObjectiveContinuation is not null ||
                     QueueReplanFilter.RequiresFreshSnapshotReplan(item),
                 completedContinuationThisStep);
 
@@ -737,7 +728,7 @@ static partial class Program
                             "priority_story_event_interrupt_unavailable";
                     }
                 }
-                else if (activeObjectiveContinuation is null)
+                else if (activeObjectiveContinuation is null && !rebindMovedNpc)
                 {
                     execution["queue_replan_applied"] = false;
                     if (!QueueReplanFilter.IsContinuableExecutionStatus(
@@ -818,7 +809,12 @@ static partial class Program
                     execution["queue_replan_response_path"] = refreshResponsePath;
                     execution["queue_replan_queue_path"] = refreshQueuePath;
                     execution["queue_replan_evidence_path"] = refreshEvidencePath;
-                    if (QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
+                    if (rebindMovedNpc && refreshedItems.Length == 0 && activeObjectiveContinuation is null)
+                    {
+                        execution["selected_queue_redecision_required"] = true;
+                        execution["queue_replan_stop_reason"] = "moved_npc_selected_talk_could_not_rebind";
+                    }
+                    else if (QueueReplanFilter.ShouldResumeContinuationOnNextIteration(
                             activeObjectiveContinuation,
                             refreshedItems.Length))
                     {
@@ -853,7 +849,7 @@ static partial class Program
                         StringComparison.Ordinal) &&
                     itemIndex == originalPlannedItemCount - 1 &&
                     attemptedCount == originalPlannedItemCount
-                : QueueReplanFilter.CompletesSelectedQueueCandidate(
+                : !rebindMovedNpc && QueueReplanFilter.CompletesSelectedQueueCandidate(
                     executionStatus,
                     activeObjectiveContinuation,
                     selectedCandidateId,

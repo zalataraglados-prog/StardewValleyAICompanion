@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -1113,6 +1114,37 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("unsupported_route_action_branch_at_target", option.BlockingReasons);
     }
 
+    [Theory]
+    [InlineData(true, true, false, true)]
+    [InlineData(true, false, false, false)]
+    [InlineData(false, false, false, false)]
+    [InlineData(false, true, true, false)]
+    public void RouteConnectorUsesNativeTimeOverrideWithoutIgnoringHardGates(
+        bool allowedNow, bool timeUnrestricted, bool festivalClosed, bool removeNominalWindow)
+    {
+        var snapshot = RouteConnectorSnapshot(routeTrainingBlocked: false, targetLocation: "SeedShop", currentTime: 600);
+        var locations = JsonNode.Parse(snapshot.State["locations"].GetRawText())!.AsObject();
+        locations["route_connectors"]!["value"]!["connectors"]![0]!["kind"] = "locked_door_warp";
+        locations["route_action_branch_coverage"]!["value"]!["rows"]![0]!["branch"] = "LockedDoorWarp";
+        locations["route_gate_context"]!["value"]!["action_gates"] = JsonSerializer.SerializeToNode(new[]
+        {
+            new
+            {
+                kind = "locked_door_warp", tile_x = 12, tile_y = 10, target_location = "SeedShop",
+                allowed_now = allowedNow, time_unrestricted_on_capture_date = timeUnrestricted,
+                effective_open_time = 900, close_time = 2100, festival_closed = festivalClosed
+            }
+        });
+        snapshot.State["locations"] = JsonSerializer.SerializeToElement(locations);
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "exploration.visit_location" }).Options[0].EventCandidates);
+
+        Assert.Equal(allowedNow, candidate.AllowedNow);
+        Assert.Equal(removeNominalWindow ? null : 900, candidate.EffectiveOpenTime);
+        Assert.Equal(removeNominalWindow ? null : 2100, candidate.ClosesAt);
+        if (festivalClosed) Assert.False(candidate.AllowedToday);
+    }
+
     [Fact]
     public void VisitLocationEmitsRouteRepairClearObstacleCandidateWhenConnectorTileIsClearable()
     {
@@ -1187,8 +1219,10 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
                 parameter.Name == "route_repair.snapshot_policy"));
     }
 
-    [Fact]
-    public void VisitLocationEmitsRouteRepairClearObstacleCandidateWhenPathSegmentIsClearable()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void VisitLocationEmitsRouteRepairClearObstacleCandidateWhenPathSegmentIsClearable(bool missingToolShortcut)
     {
         var snapshot = Snapshot("""
         {
@@ -1218,6 +1252,27 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         }
         """);
 
+        if (missingToolShortcut)
+        {
+            var location = JsonNode.Parse(snapshot.State["current_location"].GetRawText())!.AsObject();
+            location["objects"]!["value"] = JsonNode.Parse("""
+                [{"tile_x":1,"tile_y":0,"qualified_item_id":"(O)294","name":"Twig","clear_kind":"twig","clear_obstacle_executor_status":"blocked_required_axe_missing"}]
+                """);
+            location["terrain_features"]!["value"] = JsonNode.Parse("""
+                [{"tile_x":1,"tile_y":1,"type":"Grass"},{"tile_x":2,"tile_y":1,"type":"Grass"}]
+                """);
+            snapshot.State["current_location"] = JsonSerializer.SerializeToElement(location);
+            var locations = JsonNode.Parse(snapshot.State["locations"].GetRawText())!.AsObject();
+            locations["collision_grid"]!["value"]!["height"] = 2;
+            locations["collision_grid"]!["value"]!["notable_tiles"]!.AsArray().Add(JsonNode.Parse("""
+                {"tile_x":1,"tile_y":1,"collision_blocked":true}
+                """));
+            locations["collision_grid"]!["value"]!["notable_tiles"]!.AsArray().Add(JsonNode.Parse("""
+                {"tile_x":2,"tile_y":1,"collision_blocked":true}
+                """));
+            snapshot.State["locations"] = JsonSerializer.SerializeToElement(locations);
+        }
+
         var option = new CandidateOptionAvailabilityEvaluator()
             .Evaluate(snapshot, new[] { "exploration.visit_location" })
             .Options[0];
@@ -1227,6 +1282,11 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Contains("route_path_blocked_by_collision_grid", route.BlockReasons);
         var repair = Assert.Single(option.EventCandidates, candidate => candidate.Kind == "clear_obstacle_tile");
         Assert.True(repair.Available);
+        if (missingToolShortcut)
+        {
+            Assert.EndsWith(":clear:Farm:1,1:grass", repair.CandidateId, StringComparison.Ordinal);
+            return;
+        }
         Assert.StartsWith("route-repair:route:Farm:3,0:warp:to=Town:arrival=1,2:clear:Farm:1,0:grass", repair.CandidateId);
         Assert.Equal("route_repair_for=route:Farm:3,0:warp:to=Town:arrival=1,2;route_repair_expected_target_location=Town;fresh_snapshot_replan_required=true;move_to_adjacent=0,0;current_location.obstacle[1,0]=clear;clear_kind=grass;source=Grass;max_tool_swings=8", repair.ExpectedEffect);
     }
@@ -1421,6 +1481,26 @@ public sealed partial class CandidateOptionAvailabilityEvaluatorTests
         Assert.Equal(10, candidate.TileY);
         Assert.Equal("move_to_adjacent=10,10;preview_interact=OpenShop", candidate.ExpectedEffect);
         Assert.Equal(30, candidate.EstimatedTicks);
+    }
+
+    [Fact]
+    public void LegacyBuyEndpointRoutesFromAboveToANativeLegalStand()
+    {
+        var snapshot = InteractEndpointSnapshot(
+            menuOpen: false,
+            branch: "Buy",
+            routeTrainingBlocked: false,
+            action: "Buy Fish",
+            parsed: "\"parsed\":{\"kind\":\"legacy_buy\",\"shop_id\":\"FishShop\"}",
+            playerX: 11,
+            playerY: 9);
+
+        var candidate = Assert.Single(new CandidateOptionAvailabilityEvaluator()
+            .Evaluate(snapshot, new[] { "executor.interact" }, includeExecutorCalibrationOptions: true)
+            .Options[0].EventCandidates);
+
+        Assert.True(candidate.Available);
+        Assert.Equal("move_to_adjacent=10,10;preview_interact=Buy", candidate.ExpectedEffect);
     }
 
     [Fact]

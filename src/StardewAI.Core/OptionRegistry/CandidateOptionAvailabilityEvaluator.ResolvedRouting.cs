@@ -30,7 +30,8 @@ namespace StardewAI.Core.OptionRegistry
             FindResolvedRoutePlans(snapshot, startLocation, targetLocation, routeCandidates).FirstOrDefault();
 
         private static IEnumerable<ResolvedRoutePlan> FindResolvedRoutePlans(
-            SnapshotEnvelope snapshot, string startLocation, string targetLocation, EventCandidate[] routeCandidates)
+            SnapshotEnvelope snapshot, string startLocation, string targetLocation, EventCandidate[] routeCandidates,
+            Func<JsonElement, bool>? includeEdge = null)
         {
             var graph = ReadStateFieldValue(snapshot, "locations", "route_graph");
             if (!graph.HasValue ||
@@ -38,7 +39,7 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return Array.Empty<ResolvedRoutePlan>();
             }
-            if (!TransparentRouteGraphResolver.TryCreate(graph.Value, out var resolver))
+            if (!TransparentRouteGraphResolver.TryCreateFiltered(graph.Value, includeEdge, out var resolver))
                 return Array.Empty<ResolvedRoutePlan>();
 
             var plans = new List<ResolvedRoutePlan>();

@@ -68,6 +68,33 @@ public sealed class StoryEventMainlineTests
     }
 
     [Fact]
+    public void NativeEmbeddedQuestionBindsAnExplicitlyEmptyMapQuestionKey()
+    {
+        var snapshot = Snapshot("dialogue_decision", questionKey: "", embeddedQuestion: true);
+        var candidates = Assert.Single(Evaluate(snapshot).Options).EventCandidates;
+        Assert.Equal(2, candidates.Length);
+        var candidate = candidates.Single(row => ReadParameter(row.Parameters, "story_event_response_key") == "no");
+        var plan = new DailyPlanCompiler().Compile(new[] { Prediction(candidate) }, snapshot.StateHash);
+        var item = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+        Assert.Empty(item.BlockingReasons);
+        AssertParameter(item.NormalizedCommand.Parameters, "story_event_question_key", "");
+
+        plan.Steps[0].Parameters = plan.Steps[0].Parameters
+            .Where(parameter => parameter.Name != "story_event_question_key").ToArray();
+        item = Assert.Single(new ActionQueueCompiler().Compile(plan, snapshot).Items);
+        Assert.Contains("story_event_dialogue_response_drifted", item.BlockingReasons);
+    }
+
+    [Theory]
+    [InlineData("", false)]
+    [InlineData(null, true)]
+    public void UnboundQuestionDoesNotBecomeAnExecutableStoryChoice(string? questionKey, bool embeddedQuestion)
+    {
+        var snapshot = Snapshot("dialogue_decision", questionKey: questionKey, embeddedQuestion: embeddedQuestion);
+        Assert.Empty(Assert.Single(Evaluate(snapshot).Options).EventCandidates);
+    }
+
+    [Fact]
     public void ProjectionOrDialogueDriftBlocksBeforeRuntime()
     {
         var original = Snapshot("dialogue_decision");
@@ -152,10 +179,11 @@ public sealed class StoryEventMainlineTests
     private static SnapshotEnvelope Snapshot(
         string boundary,
         string? fingerprint = null,
-        string questionKey = "EVD322Question",
+        string? questionKey = "EVD322Question",
         bool festival = false,
         bool minigame = false,
-        bool playerControl = false)
+        bool playerControl = false,
+        bool embeddedQuestion = false)
     {
         fingerprint ??= new string('a', 64);
         var responses = boundary == "dialogue_decision"
@@ -178,8 +206,10 @@ public sealed class StoryEventMainlineTests
             is_festival = festival,
             skipped = false,
             current_command_index = 3,
-            current_command_raw = "message \"hello\"",
+            current_command_raw = embeddedQuestion ? "speak Haley \"$q 45 null#Question#$r 45 30 yes#Answer\"" : "message \"hello\"",
+            current_command_resolved_name = embeddedQuestion ? "Speak" : "Message",
             boundary_kind = boundary,
+            dialogue_is_question = boundary == "dialogue_decision",
             dialogue_question_key = questionKey,
             dialogue_responses = responses,
             active_minigame_type = minigame ? "StardewValley.Minigames.Intro" : string.Empty,

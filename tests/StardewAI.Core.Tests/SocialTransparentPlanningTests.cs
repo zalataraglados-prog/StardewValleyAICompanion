@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -194,6 +195,29 @@ public sealed partial class SocialTransparentPlanningTests
         var candidate = Assert.Single(option.SocialCandidates);
         Assert.False(candidate.Available);
         Assert.Contains("social_no_reachable_adjacent_stand_tile", candidate.BlockReasons);
+    }
+
+    [Theory]
+    [InlineData("Town", true, 10, 9)]
+    [InlineData("Town", false, 9, 10)]
+    [InlineData("SeedShop", true, 9, 10)]
+    public void SocialStandAvoidsLiveNpcBoundsOnlyInCurrentLocation(string location, bool loaded, int x, int y)
+    {
+        var snapshot = CompleteSocialSnapshot();
+        var npcs = JsonNode.Parse(snapshot.State["npcs"].GetRawText())!.AsObject();
+        npcs["social_interaction"]!["value"]!.AsArray().Add(new JsonObject
+        {
+            ["name"] = "Marnie", ["location_id"] = location, ["current_instance_loaded"] = loaded,
+            ["tile_x"] = 9, ["tile_y"] = 10, ["bounding_box_x"] = 578, ["bounding_box_y"] = 670,
+            ["bounding_box_width"] = 48, ["bounding_box_height"] = 32
+        });
+        snapshot.State["npcs"] = JsonSerializer.SerializeToElement(npcs);
+        var candidate = SocialCandidateBuilder.Build(snapshot, "social.talk_npc")
+            .Single(row => row.Parameters.Any(parameter => parameter.Name == "npc_name" && parameter.Value == "Abigail"));
+
+        Assert.True(candidate.Available);
+        Assert.Equal(x.ToString(), candidate.Parameters.Single(row => row.Name == "stand_tile_x").Value);
+        Assert.Equal(y.ToString(), candidate.Parameters.Single(row => row.Name == "stand_tile_y").Value);
     }
 
     [Fact]

@@ -57,7 +57,8 @@ namespace StardewAI.Core.Training
             int? energyBudget,
             JointCalendarBudget? calendar,
             ISet<string>? requiredCandidates = null,
-            ISet<string>? primaryCandidates = null)
+            ISet<string>? primaryCandidates = null,
+            bool nativeStoryInterrupt = false)
         {
             var steps = new List<SmallModelPlanStep>();
             var audit = new List<SmallModelPlanCandidateAudit>();
@@ -97,7 +98,7 @@ namespace StardewAI.Core.Training
                     : WaitSteps(candidate, waitTicks).ToArray();
                 var candidateSteps = rollingDeferred
                     ? Array.Empty<SmallModelPlanStep>()
-                    : CandidateSteps(candidate).ToArray();
+                    : CandidateSteps(candidate, nativeStoryInterrupt).ToArray();
                 var effectiveEnergyCost = Math.Max(0, candidate.EnergyCost);
                 var candidateMinutes = waitSteps
                     .Concat(candidateSteps)
@@ -184,13 +185,19 @@ namespace StardewAI.Core.Training
                     continue;
                 }
 
-                if (remainingMinutes.HasValue && candidateMinutes > remainingMinutes.Value)
+                // Recheck future hops after dispatch; admission still needs enough
+                // budget for the itinerary, not just for the first leg.
+                var followupMinutes = calendar is not null && !rollingDeferred && candidate.Kind == "route_connector_tile"
+                    ? Math.Max(0, CandidateInt(candidate, "social_route.projected_followup_minutes") ?? 0)
+                    : 0;
+                var requiredMinutes = (int)Math.Min(int.MaxValue, (long)candidateMinutes + followupMinutes);
+                if (remainingMinutes.HasValue && requiredMinutes > remainingMinutes.Value)
                 {
                     audit.Add(CandidateAudit(
                         candidate,
                         "skipped",
                         new[] { "aggregate_time_budget_exceeded" },
-                        candidateMinutes,
+                        requiredMinutes,
                         remainingMinutes,
                         remainingMinutes,
                         remainingEnergy,

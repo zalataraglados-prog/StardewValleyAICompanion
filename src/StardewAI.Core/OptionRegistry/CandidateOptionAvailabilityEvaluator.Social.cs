@@ -7,6 +7,7 @@ using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
 using StardewAI.Contracts.Strategy;
 using StardewAI.Core.Execution;
+using StardewAI.Core.Infrastructure;
 using StardewAI.Core.Strategy;
 using StardewAI.Core.Verifier;
 using static StardewAI.Core.Infrastructure.SnapshotValueReader;
@@ -37,11 +38,13 @@ namespace StardewAI.Core.OptionRegistry
                 : SocialCandidateBuilder.Build(snapshot, optionId, int.MaxValue);
             var continuationNpc = ReadParameter(boundParameters, "continuation.npc_name");
             var continuationTarget = ReadParameter(boundParameters, "continuation.target_location");
-            var hasCurrentContinuationNpc = candidates.Any(candidate =>
-                string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase));
+            bool IsContinuationNpc(EventCandidate candidate) =>
+                !string.IsNullOrWhiteSpace(continuationNpc) &&
+                string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase);
+
             if (!string.IsNullOrWhiteSpace(continuationNpc) &&
                 !string.IsNullOrWhiteSpace(continuationTarget) &&
-                !hasCurrentContinuationNpc)
+                !candidates.Any(IsContinuationNpc))
             {
                 candidates = candidates
                     .Concat(new[] { LastObservedSocialContinuationCandidate(optionId, continuationNpc, continuationTarget, boundParameters) })
@@ -61,13 +64,16 @@ namespace StardewAI.Core.OptionRegistry
             var routeCandidates = RouteConnectorCandidates(snapshot, int.MaxValue)
                 .Where(candidate => candidate.Kind == "route_connector_tile")
                 .ToArray();
+            var routeTo = SocialRouteLookup(snapshot, currentLocation, routeCandidates);
             var routed = candidates
                 .Select(candidate =>
                     string.IsNullOrWhiteSpace(candidate.LocationId) ||
                     string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase)
                         ? candidate
-                        : SocialRouteCandidate(snapshot, optionId, candidate, currentLocation, routeCandidates))
-                .OrderByDescending(candidate => candidate.Available)
+                        : SocialRouteCandidate(optionId, candidate, currentLocation, routeTo(candidate.LocationId)))
+                // Keep the locked NPC's real route and gate reasons in the bounded refresh.
+                .OrderByDescending(IsContinuationNpc)
+                .ThenByDescending(candidate => candidate.Available)
                 .ThenBy(candidate => candidate.LocationId, StringComparer.Ordinal)
                 .ThenBy(candidate => candidate.CandidateId, StringComparer.Ordinal)
                 .Take(socialCandidateLimit)
@@ -75,12 +81,12 @@ namespace StardewAI.Core.OptionRegistry
             if (!string.IsNullOrWhiteSpace(continuationNpc))
             {
                 routed = routed
-                    .Select(candidate => string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase) &&
+                    .Select(candidate => IsContinuationNpc(candidate) &&
                         !candidate.Available &&
                         candidate.BlockReasons.Length > 0 &&
                         candidate.BlockReasons.All(reason => reason == "social_menu_must_be_clear")
                             ? SocialContinuationCloseMenu(optionId, candidate)
-                            : string.Equals(ReadParameter(candidate.Parameters, "npc_name"), continuationNpc, StringComparison.OrdinalIgnoreCase) &&
+                            : IsContinuationNpc(candidate) &&
                         !candidate.Available &&
                         string.Equals(candidate.LocationId, currentLocation, StringComparison.OrdinalIgnoreCase) &&
                         candidate.BlockReasons.Length > 0 &&
@@ -273,33 +279,60 @@ namespace StardewAI.Core.OptionRegistry
             };
         }
 
-        private EventCandidate SocialRouteCandidate(
-            SnapshotEnvelope snapshot,
+        private static Func<string, (ResolvedRoutePlan? Plan, bool DateBlocked)> SocialRouteLookup(
+            SnapshotEnvelope snapshot, string currentLocation, EventCandidate[] routeCandidates)
+        {
+            var routes = new Dictionary<string, (ResolvedRoutePlan? Plan, bool DateBlocked)>(StringComparer.OrdinalIgnoreCase);
+            return location =>
+            {
+                if (!routes.TryGetValue(location, out var route))
+                {
+                    var plan = FindResolvedRoutePlans(snapshot, currentLocation, location, routeCandidates,
+                        IncludeSocialRouteEdge).FirstOrDefault();
+                    route = (plan, plan is null &&
+                        FindResolvedRoutePlan(snapshot, currentLocation, location, routeCandidates) is not null);
+                    routes.Add(location, route);
+                }
+                return route;
+            };
+        }
+
+        private static bool IncludeSocialRouteEdge(JsonElement edge) =>
+            !edge.TryGetProperty("gate", out var gate) || gate.ValueKind != JsonValueKind.Object ||
+            !string.IsNullOrWhiteSpace(ReadString(gate, "unresolved_reason")) ||
+            ReadBool(gate, "allowed_now") == true || ReadBool(gate, "allowed_on_capture_date") != false;
+
+        private static EventCandidate SocialRouteCandidate(
             string optionId,
             EventCandidate socialCandidate,
             string currentLocation,
-            EventCandidate[] routeCandidates)
+            (ResolvedRoutePlan? Plan, bool DateBlocked) route)
         {
             var remainingReasons = socialCandidate.BlockReasons
                 .Where(reason => reason != "social_npc_not_in_player_location" &&
                     reason != "social_npc_not_in_player_location_stand_skipped" &&
                     reason != "partnership_npc_not_in_player_location")
                 .ToList();
-            var routePlan = FindResolvedRoutePlan(
-                snapshot,
-                currentLocation,
-                socialCandidate.LocationId,
-                routeCandidates);
+            var routePlan = route.Plan;
             if (routePlan is null)
             {
-                remainingReasons.Add("social_cross_map_route_unavailable");
-                return CopySocialRouteCandidate(
+                remainingReasons.Add(route.DateBlocked
+                    ? "social_cross_map_route_gate_unavailable_on_capture_date"
+                    : "social_cross_map_route_unavailable");
+                var blocked = CopySocialRouteCandidate(
                     socialCandidate,
                     optionId,
                     currentLocation,
                     null,
                     0,
+                    0,
                     remainingReasons);
+                if (route.DateBlocked)
+                {
+                    blocked.AllowedNow = false;
+                    blocked.AllowedToday = false;
+                }
+                return blocked;
             }
 
             var routeCandidate = routePlan.FirstActionCandidate;
@@ -318,7 +351,32 @@ namespace StardewAI.Core.OptionRegistry
                 currentLocation,
                 routeCandidate,
                 routePlan.Path.Length,
+                ProjectedSocialRouteFollowupMinutes(routePlan.Path),
                 remainingReasons);
+        }
+
+        private static int ProjectedSocialRouteFollowupMinutes(TransparentRouteEdge[] path)
+        {
+            var minutes = 0;
+            for (var index = 1; index < path.Length; index++)
+            {
+                var arrival = path[index - 1];
+                var next = path[index];
+                if (arrival.Kind is not ("warp" or "locked_door_warp" or "action_warp" or "building_door") ||
+                    next.Kind is not ("warp" or "locked_door_warp" or "action_warp" or "building_door") ||
+                    arrival.TargetX is not int arrivalX || arrival.TargetY is not int arrivalY ||
+                    next.FromX is not int nextX || next.FromY is not int nextY)
+                    continue;
+
+                // This is only the budget on the projected itinerary. A real
+                // arrival still requires a fresh route and native collision check.
+                var distance = Math.Abs((long)arrivalX - nextX) + Math.Abs((long)arrivalY - nextY);
+                var approachTiles = (int)Math.Min(ConnectorRouteExecutionBudgetPolicy.MaximumMovementTiles,
+                    Math.Max(0, distance - 1));
+                minutes += GameClockBudgetPolicy.TicksToGameMinutes(
+                    ConnectorRouteExecutionBudgetPolicy.EstimatedTicks(approachTiles));
+            }
+            return minutes;
         }
 
         private static string PartnershipContinuationCandidateKind(string actionKind)
@@ -338,6 +396,7 @@ namespace StardewAI.Core.OptionRegistry
             string currentLocation,
             EventCandidate? routeCandidate,
             int remainingConnectorCount,
+            int projectedFollowupMinutes,
             IEnumerable<string> blockReasons)
         {
             var npcName = ReadParameter(socialCandidate.Parameters, "npc_name");
@@ -357,6 +416,8 @@ namespace StardewAI.Core.OptionRegistry
                     : ReadParameter(socialCandidate.Parameters, "social_route.position_source")),
                 Parameter("social_route.future_schedule_projection", "not_used")
             };
+            if (projectedFollowupMinutes > 0 && routeCandidate?.Kind == "route_connector_tile")
+                continuationParameters.Add(Parameter("social_route.projected_followup_minutes", projectedFollowupMinutes.ToString()));
             var slotIndex = ReadParameter(socialCandidate.Parameters, "slot_index");
             var qualifiedItemId = ReadParameter(socialCandidate.Parameters, "qualified_item_id");
             var partnershipActionKind = ReadParameter(socialCandidate.Parameters, "partnership_action_kind");

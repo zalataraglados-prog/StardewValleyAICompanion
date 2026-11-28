@@ -389,10 +389,14 @@ public sealed partial class ModEntry : Mod
         return NativeCurrentWarpStandPolicy.CanUse(facts) ? startTile : null;
     }
 
-    private static Point? FindConnectorActionStandTile(GameLocation location, Point startTile, Point actionTile)
+    private static bool IsConnectorStandTerrainWalkable(GameLocation location, Point tile) =>
+        IsTileOnMap(location, tile) && IsTileWalkable(location, tile);
+
+    private static Point? FindConnectorActionStandTile(
+        GameLocation location, Point startTile, Point actionTile, int maxTiles, out List<Point>? path)
     {
-        return Neighbors(actionTile)
-            .Where(tile => IsTileTraversableForPlan(location, tile, avoidSoftObstacles: true))
+        var candidates = Neighbors(actionTile)
+            .Where(tile => IsConnectorStandTerrainWalkable(location, tile))
             .Where(tile => string.IsNullOrWhiteSpace(
                 location.doesTileHaveProperty(
                     tile.X,
@@ -402,9 +406,23 @@ public sealed partial class ModEntry : Mod
             .Where(tile => !location.warps.Any(warp =>
                 warp.X == tile.X &&
                 warp.Y == tile.Y))
-            .OrderBy(tile => Math.Abs(startTile.X - tile.X) + Math.Abs(startTile.Y - tile.Y))
-            .Cast<Point?>()
-            .FirstOrDefault();
+            .OrderBy(tile => ManhattanDistance(startTile, tile))
+            .ToArray();
+        // Prefer an unobstructed approach. A character can occupy the only
+        // legal doorway tile; the existing native mover handles yielding.
+        foreach (var avoidSoftObstacles in new[] { true, false })
+        {
+            foreach (var tile in candidates)
+            {
+                if (avoidSoftObstacles && IsTileOccupiedByCharacter(location, tile)) continue;
+                path = tile == startTile ? new List<Point>() : TryBuildTilePath(
+                    location, startTile, tile, maxTiles, out _, avoidSoftObstacles, allowRemovableObstacles: false);
+                if (path is not null) return tile;
+            }
+        }
+
+        path = null;
+        return null;
     }
 
     private static bool TryResolveBoundaryWarpStandTile(GameLocation location, Point warpTile, out Point standTile, out int direction)
@@ -423,33 +441,30 @@ public sealed partial class ModEntry : Mod
         {
             standTile = new Point(0, warpTile.Y);
             direction = 3;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
         }
-
-        if (warpTile.X >= width && warpTile.Y >= 0 && warpTile.Y < height)
+        else if (warpTile.X >= width && warpTile.Y >= 0 && warpTile.Y < height)
         {
             standTile = new Point(width - 1, warpTile.Y);
             direction = 1;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
         }
-
-        if (warpTile.Y < 0 && warpTile.X >= 0 && warpTile.X < width)
+        else if (warpTile.Y < 0 && warpTile.X >= 0 && warpTile.X < width)
         {
             standTile = new Point(warpTile.X, 0);
             direction = 0;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
         }
-
-        if (warpTile.Y >= height && warpTile.X >= 0 && warpTile.X < width)
+        else if (warpTile.Y >= height && warpTile.X >= 0 && warpTile.X < width)
         {
             standTile = new Point(warpTile.X, height - 1);
             direction = 2;
-            return IsTileTraversableForPlan(location, standTile, avoidSoftObstacles: true);
+        }
+        else
+        {
+            standTile = Point.Zero;
+            direction = 0;
+            return false;
         }
 
-        standTile = Point.Zero;
-        direction = 0;
-        return false;
+        return IsConnectorStandTerrainWalkable(location, standTile);
     }
 
     private static Point MapDimensions(GameLocation location)

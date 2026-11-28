@@ -42,7 +42,8 @@ public sealed partial class ModEntry : Mod
             remainingTiles,
             out _,
             avoidSoftObstacles,
-            allowRemovableObstacles: false);
+            allowRemovableObstacles: false,
+            ordinaryMoveWarpTiles: OrdinaryMoveWarpTiles(move.Pending.Request, Game1.currentLocation));
         if (path is null)
         {
             return false;
@@ -51,6 +52,7 @@ public sealed partial class ModEntry : Mod
         move.Path = path;
         move.PathIndex = 0;
         move.CurrentDirection = null;
+        move.OccupiedStartEgressTileToCenter = null;
         move.NeedsPathStartCentering = path.Count > 0;
         move.StuckTicks = 0;
         move.SoftObstacleTicks = 0;

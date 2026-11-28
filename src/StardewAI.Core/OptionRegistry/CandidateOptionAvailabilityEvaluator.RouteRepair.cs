@@ -388,6 +388,10 @@ namespace StardewAI.Core.OptionRegistry
             var result = new bool[checked(width * height)];
             foreach (var candidate in candidates)
             {
+                // A later obstacle can lack a reachable stand until the first
+                // is cleared; missing tools or other guards cannot be solved by routing.
+                if (!candidate.Available && candidate.BlockReasons is not ["clear_obstacle_no_adjacent_route_stand_tile"])
+                    continue;
                 var x = candidate.TileX!.Value;
                 var y = candidate.TileY!.Value;
                 if (TileInBounds(x, y, width, height))

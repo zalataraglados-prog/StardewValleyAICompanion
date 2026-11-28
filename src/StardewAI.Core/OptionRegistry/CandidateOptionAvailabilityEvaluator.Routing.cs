@@ -251,6 +251,14 @@ namespace StardewAI.Core.OptionRegistry
                 ReadBool(gate, "fish_shop_gone_fishing_closed") != true &&
                 (ReadBool(gate, "friendship_allowed") != false || greenRainOverride) &&
                 string.IsNullOrWhiteSpace(ReadString(gate, "unresolved_reason"));
+            // Published open/close values are nominal when the native gate has
+            // an explicit time override. Keep those values in the snapshot only.
+            if (allowedNow == true && hardGateOpen &&
+                ReadBool(gate, "time_unrestricted_on_capture_date") == true)
+            {
+                effectiveOpenTime = null;
+                closeTime = null;
+            }
             var canOpenLaterToday = allowedNow == false &&
                 hardGateOpen &&
                 effectiveOpenTime.HasValue &&

@@ -35,6 +35,24 @@ public sealed partial class CropTeacherSeedPurchaseSettlementTests
                     player["tile_y"]!["value"] = 1;
                     player["energy"] = JsonSerializer.SerializeToNode(new { status = "available", value = 270d });
                 });
+                if (frontier is "clear" or "access" or "protection")
+                {
+                    // The native clearance fixture reports a scythe swing; both source projections must contain it.
+                    var scythe = JsonSerializer.SerializeToNode(new
+                    {
+                        slot_index = 2, item_id = "47", qualified_item_id = "(W)47", stack = 1,
+                        quality = 0, maximum_stack_size = 1, context_tags = Array.Empty<string>(),
+                        runtime_type = "StardewValley.Tools.MeleeWeapon"
+                    })!;
+                    ChangeState(source.Before, "player", player =>
+                    {
+                        var slot = scythe.DeepClone();
+                        slot["is_empty"] = false;
+                        player["inventory"]!["value"]!.AsArray().Add(slot);
+                    });
+                    ChangeState(source.Before, "farm", farm =>
+                        farm["material_inventory_graph"]!["value"]!["inventory_nodes"]![0]!["slots"]!.AsArray().Add(scythe));
+                }
                 source.Before.State["menus"] = JsonSerializer.SerializeToElement(new
                 { active_menu = new { status = "available", value = new { is_open = false, type = "" } } });
                 ChangeState(source.Before, "current_location", location =>

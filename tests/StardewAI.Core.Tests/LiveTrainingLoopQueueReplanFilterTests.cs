@@ -5,6 +5,43 @@ namespace StardewAI.Core.Tests;
 
 public sealed class LiveTrainingLoopQueueReplanFilterTests
 {
+    [Theory]
+    [InlineData(18, "social:talk:Caroline", true, true)]
+    [InlineData(31, "social:talk:Caroline", true, false)]
+    [InlineData(18, "social:talk:Pierre", true, false)]
+    [InlineData(18, "social:talk:Caroline", false, false)]
+    public void LocalSocialApproachRebindsOnlyTheSameTalkWhenItsNativePositionChanges(
+        int liveX, string nextCandidate, bool instanceLoaded, bool rebind)
+    {
+        JsonObject Parameter(string name, string value) => new() { ["name"] = name, ["value"] = value };
+        var approach = new JsonObject { ["option_id"] = "executor.move_to_tile" };
+        var talk = new JsonObject
+        {
+            ["option_id"] = "executor.social_interact",
+            ["normalized_command"] = new JsonObject
+            {
+                ["parameters"] = new JsonArray(
+                    Parameter("npc_name", "Caroline"),
+                    Parameter("target_location", "SeedShop"),
+                    Parameter("social_action_kind", "talk"),
+                    Parameter("npc_tile_x", "31"), Parameter("npc_tile_y", "12"))
+            }
+        };
+        QueueReplanFilter.StampSelectedQueueIdentity(approach, "social:talk:Caroline", 0);
+        QueueReplanFilter.StampSelectedQueueIdentity(talk, nextCandidate, 0);
+        var snapshot = JsonNode.Parse($$"""
+            { "state": { "player": { "location_id": { "value": "SeedShop" } },
+              "npcs": { "social_interaction": { "value": [
+                { "name": "Caroline", "location_id": "SeedShop", "tile_x": {{liveX}}, "tile_y": 12,
+                  "current_instance_loaded": {{(instanceLoaded ? "true" : "false")}} }
+              ] } } } }
+            """)!.AsObject();
+
+        var result = QueueReplanFilter.NeedsMovedNpcApproachRebind(approach, talk, snapshot);
+
+        Assert.Equal(rebind, result);
+    }
+
     [Fact]
     public void ResolvedGoalCompilesOnlyExactBoundCandidates()
     {
@@ -1070,6 +1107,25 @@ public sealed class LiveTrainingLoopQueueReplanFilterTests
             buy,
             continuation,
             "applied"));
+    }
+
+    [Fact]
+    public void AppliedPurchaseCleanupRetainsProvenanceWithoutStartingAnotherPurchase()
+    {
+        var close = QueueItem("queue.purchase.close", "executor.close_menu", "0", "0", string.Empty);
+        var parameters = close["normalized_command"]!["parameters"]!.AsArray();
+        parameters.Add(Parameter("continuation.option_id", "economy.buy_supplies"));
+        parameters.Add(Parameter("continuation.shop_id", "FishShop"));
+        parameters.Add(Parameter("continuation.qualified_item_id", "(O)219"));
+        parameters.Add(Parameter("continuation.quantity", "1"));
+
+        Assert.Equal("economy_purchase", QueueReplanFilter.ReadObjectiveContinuation(close)!["kind"]!.GetValue<string>());
+        var restarted = QueueReplanFilter.ReadContinuationToStartAfterAppliedStep(close);
+        Assert.Null(restarted);
+        Assert.True(QueueReplanFilter.CompletesSelectedQueueCandidate("applied", restarted, "purchase:219", "next"));
+
+        close["option_id"] = "executor.interact";
+        Assert.NotNull(QueueReplanFilter.ReadContinuationToStartAfterAppliedStep(close));
     }
 
     [Fact]

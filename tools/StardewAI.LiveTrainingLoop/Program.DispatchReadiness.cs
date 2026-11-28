@@ -1,7 +1,34 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using StardewAI.Contracts.Execution;
+using StardewAI.Contracts.State;
+using StardewAI.Core.Execution;
 
 static partial class Program
 {
+    private static async Task<(string Json, JsonObject Snapshot)?> ReadDispatchRecoveryOverrideAsync(
+        HttpClient http, LiveTrainingOptions options, JsonObject queue, JsonObject item,
+        string? snapshotUrlOverride, string? snapshotProfileOverride)
+    {
+        if (QueueContainsRecoveryWork(queue))
+            return null;
+        var clock = await ReadCurrentSnapshotAsync(http, options);
+        if (!GameClockBudgetPolicy.RecoveryWindowStarted(ReadInGameTime(clock.Snapshot)))
+            return null;
+
+        var fresh = await ReadExecutionSnapshotAsync(http, options, forceRefresh: true,
+            snapshotUrlOverride: snapshotUrlOverride, snapshotProfileOverride: snapshotProfileOverride);
+        if (options.TargetExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer &&
+            string.IsNullOrWhiteSpace(options.ExecutorOptionId) &&
+            ReadStringOrEmpty(item, "option_id") == "executor.advance_story_event" &&
+            item["normalized_command"]?.Deserialize<NormalizedCommand>(JsonOptions) is { } command &&
+            fresh.Snapshot.Deserialize<SnapshotEnvelope>(JsonOptions) is { } snapshot &&
+            ActionQueueCompiler.IsBoundSingleplayerStoryInterrupt(command, snapshot))
+            return null;
+
+        return fresh;
+    }
+
     private static async Task<JsonObject?> ReadDispatchReadinessAsync(
         HttpClient http,
         LiveTrainingOptions options,

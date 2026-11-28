@@ -55,7 +55,8 @@ namespace StardewAI.Core.OptionRegistry
                 expectedActionType = "OpenShop";
             }
 
-            var standTile = FindBestStandTile(snapshot, x, y);
+            // GameLocation.performAction rejects Buy from above its action tile.
+            var standTile = FindBestStandTile(snapshot, x, y, legacyBuy: expectedActionType == "Buy");
             var reasons = new List<string>();
             if (ActiveMenuOpenForCandidate(snapshot))
             {
@@ -280,7 +281,7 @@ namespace StardewAI.Core.OptionRegistry
             return distance <= 2 && npcY <= actionTileY;
         }
 
-        private static CandidateTile? FindBestStandTile(SnapshotEnvelope snapshot, int targetX, int targetY)
+        private static CandidateTile? FindBestStandTile(SnapshotEnvelope snapshot, int targetX, int targetY, bool legacyBuy = false)
         {
             var routeIndex = currentRouteDistanceBySnapshot.GetValue(
                 snapshot,
@@ -292,6 +293,7 @@ namespace StardewAI.Core.OptionRegistry
                     new CandidateTile(targetX, targetY + 1),
                     new CandidateTile(targetX, targetY - 1)
                 }
+                .Where(tile => !legacyBuy || tile.Y >= targetY)
                 .Select(tile => routeIndex.TryGetDistance(
                         tile.X,
                         tile.Y,

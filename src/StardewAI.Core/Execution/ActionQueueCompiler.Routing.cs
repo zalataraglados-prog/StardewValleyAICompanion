@@ -175,6 +175,36 @@ namespace StardewAI.Core.Execution
             };
         }
 
+        public static SmallModelPlanStep? BuildNativeFestivalExitWait(SnapshotEnvelope snapshot)
+        {
+            var storyEvent = ReadStateFieldValue(snapshot, "player", "story_event");
+            if (ActiveMenuOpen(snapshot) || storyEvent is { ValueKind: JsonValueKind.Object } &&
+                ReadBool(storyEvent.Value, "active"))
+            {
+                return null;
+            }
+
+            var route = BuildRecoveryRoutePlan(snapshot);
+            if (route.Step is not null)
+            {
+                return null;
+            }
+
+            var home = ReadStateFieldValue(snapshot, "current_location", "home_context");
+            return home is { ValueKind: JsonValueKind.Object }
+                ? BuildCrossLocationGateWaitStep(
+                    snapshot,
+                    ReadStateFieldString(snapshot, "player", "location_id"),
+                    ReadString(home.Value, "home_location_id"),
+                    new SmallModelPlanStep
+                    {
+                        StepId = "recovery.native_festival_exit",
+                        Preconditions = new[] { "candidate_id:recovery:wait_for_native_festival_exit" }
+                    },
+                    route.BlockReasons)
+                : null;
+        }
+
         private static SmallModelPlanStep? BuildCrossLocationGateWaitStep(
             SnapshotEnvelope snapshot,
             string currentLocation,

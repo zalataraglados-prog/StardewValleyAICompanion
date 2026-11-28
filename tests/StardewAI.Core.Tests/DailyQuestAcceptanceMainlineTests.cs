@@ -39,6 +39,8 @@ public sealed class DailyQuestAcceptanceMainlineTests
             string.Join(";", queue.Items.Select(item =>
                 item.OptionId + ":missing=" + string.Join(",", item.MissingStateFactors) +
                 ":blocked=" + string.Join(",", item.BlockingReasons))));
+        Assert.All(queue.Items, item => Assert.Contains(item.NormalizedCommand.Parameters, parameter =>
+            parameter.Name == "precondition" && parameter.Value == "candidate_id:" + terminalCandidate.CandidateId));
         var nativeAccept = Assert.Single(queue.Items.Where(item =>
             item.OptionId == "executor.accept_daily_quest"));
         Assert.Empty(nativeAccept.BlockingReasons);

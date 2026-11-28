@@ -23,10 +23,19 @@ public sealed class NativeNpcQuestionEvidence
             Responses is null || Responses.Length < 2 || Responses.Length > 16 ||
             Responses.Any(row => row is null || string.IsNullOrWhiteSpace(row.Key) ||
                 string.IsNullOrWhiteSpace(row.SeenId) || row.SeenId == "-1" ||
-                !IsDisplayOnlyReply(row.Reply)) ||
-            Responses.Select(row => row.Key).Distinct(StringComparer.Ordinal).Count() != Responses.Length)
+                !IsDisplayOnlyReply(row.Reply)))
             return null;
-        return Responses.OrderByDescending(row => row.FriendshipChange)
+
+        // Native chooseResponse applies the first matching key, even when a
+        // later menu row advertises a larger friendship change.
+        var byKey = Responses.GroupBy(row => row.Key, StringComparer.Ordinal).ToArray();
+        if (byKey.Any(group =>
+        {
+            var first = group.First();
+            return group.Skip(1).Any(row => row.SeenId != first.SeenId || row.Reply != first.Reply);
+        })) return null;
+
+        return byKey.Select(group => group.First()).OrderByDescending(row => row.FriendshipChange)
             .ThenBy(row => row.Key, StringComparer.Ordinal).First();
     }
 

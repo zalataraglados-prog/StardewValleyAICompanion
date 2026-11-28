@@ -81,6 +81,8 @@ public sealed partial class ModEntry : Mod
         }
 
         var targetTile = requestedTargetTile;
+        var maxTiles = Math.Clamp(pending.Request.MaxMovementTiles ?? 512, 1, 512);
+        List<Point>? connectorStandPath = null;
         Point? connectorActionTile = null;
         int? connectorExitDirection = null;
         if (pending.Request.OptionId == "executor.traverse_connector" && IsActionConnectorKind(pending.Request.ConnectorKind))
@@ -106,7 +108,7 @@ public sealed partial class ModEntry : Mod
                 }
 
                 var standTile = new Point(requestedTargetTile.X, requestedTargetTile.Y + 1);
-                if (!IsTileTraversableForPlan(Game1.currentLocation, standTile, avoidSoftObstacles: true))
+                if (!IsConnectorStandTerrainWalkable(Game1.currentLocation, standTile))
                 {
                     pending.Completion.SetResult(BlockedWithPrimitive(
                         pending.Request,
@@ -121,7 +123,8 @@ public sealed partial class ModEntry : Mod
             }
             else
             {
-                var standTile = FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
+                var standTile = FindConnectorActionStandTile(
+                    Game1.currentLocation, startTile, requestedTargetTile, maxTiles, out connectorStandPath);
                 if (standTile is null)
                 {
                     pending.Completion.SetResult(BlockedWithPrimitive(
@@ -143,7 +146,8 @@ public sealed partial class ModEntry : Mod
             connectorActionTile = requestedTargetTile;
             var standTile = FindCurrentWarpStandTile(
                     Game1.currentLocation, pending.Request, startTile, requestedTargetTile)
-                ?? FindConnectorActionStandTile(Game1.currentLocation, startTile, requestedTargetTile);
+                ?? FindConnectorActionStandTile(
+                    Game1.currentLocation, startTile, requestedTargetTile, maxTiles, out connectorStandPath);
             if (standTile is null)
             {
                 pending.Completion.SetResult(BlockedWithPrimitive(
@@ -159,9 +163,18 @@ public sealed partial class ModEntry : Mod
         }
         else if (pending.Request.OptionId == "executor.traverse_connector" &&
             string.Equals(pending.Request.ConnectorKind, "warp", StringComparison.OrdinalIgnoreCase) &&
-            !IsTileOnMap(Game1.currentLocation, requestedTargetTile) &&
-            TryResolveBoundaryWarpStandTile(Game1.currentLocation, requestedTargetTile, out var boundaryStandTile, out var boundaryDirection))
+            !IsTileOnMap(Game1.currentLocation, requestedTargetTile))
         {
+            if (!TryResolveBoundaryWarpStandTile(Game1.currentLocation, requestedTargetTile, out var boundaryStandTile, out var boundaryDirection))
+            {
+                pending.Completion.SetResult(BlockedWithPrimitive(
+                    pending.Request,
+                    primitiveKind,
+                    ConnectorRequestedEffect(pending.Request),
+                    ConnectorObservedEffect(),
+                    "connector_boundary_warp_stand_unavailable"));
+                return;
+            }
             targetTile = boundaryStandTile;
             connectorExitDirection = boundaryDirection;
         }
@@ -190,14 +203,15 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var maxTiles = Math.Clamp(pending.Request.MaxMovementTiles ?? 512, 1, 512);
-        var path = TryBuildTilePath(
+        var blockReason = string.Empty;
+        var path = connectorStandPath ?? TryBuildTilePath(
             Game1.currentLocation,
             startTile,
             targetTile,
             maxTiles,
-            out var blockReason,
-            allowRemovableObstacles: false);
+            out blockReason,
+            allowRemovableObstacles: false,
+            ordinaryMoveWarpTiles: OrdinaryMoveWarpTiles(pending.Request, Game1.currentLocation));
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(
@@ -258,6 +272,12 @@ public sealed partial class ModEntry : Mod
         if (TickMovementControlGate(move))
         {
             return;
+        }
+
+        if (move.OccupiedStartEgressTileToCenter == Game1.player.TilePoint)
+        {
+            move.OccupiedStartEgressTileToCenter = null;
+            move.NeedsPathStartCentering = true;
         }
 
         if (move.NeedsPathStartCentering)
@@ -441,8 +461,6 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        move.SoftObstacleTicks = 0;
-
         if (!IsTileWalkable(Game1.currentLocation, nextTile))
         {
             if (TryClearRemovableObstacle(Game1.currentLocation, nextTile, move))
@@ -476,7 +494,8 @@ public sealed partial class ModEntry : Mod
             return;
         }
 
-        var direction = DirectionTo(currentTile, nextTile);
+        var pathDirection = DirectionTo(currentTile, nextTile);
+        var direction = pathDirection;
         var movedSinceLastTick =
             Vector2.DistanceSquared(
                 move.LastPosition,
@@ -488,6 +507,17 @@ public sealed partial class ModEntry : Mod
         {
             direction = move.CurrentDirection.Value;
         }
+        if (direction == pathDirection &&
+            (!movedSinceLastTick || move.SoftObstacleTicks > 0) &&
+            IsNextNativeStepBlockedByPet(Game1.currentLocation, direction))
+        {
+            // The tile is clear, but the approach clips a pet. The tile-only
+            // replan would select the same step and restart the native push.
+            TickTileMoveSoftObstacle(move, currentTile, nextTile, allowReplan: false);
+            return;
+        }
+
+        move.SoftObstacleTicks = 0;
         move.LastPosition = Game1.player.Position;
         StartMovingIfNeeded(move, direction);
         MovePlayerForTick();

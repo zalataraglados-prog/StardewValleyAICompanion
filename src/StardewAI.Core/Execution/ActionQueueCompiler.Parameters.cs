@@ -331,8 +331,9 @@ namespace StardewAI.Core.Execution
                 SetCompilerDerivedParameter(
                     parameters,
                     "estimated_minutes",
-                    GameClockBudgetPolicy.TicksToGameMinutes(estimatedTicks)
-                        .ToString());
+                    (ReadParameter(action, "recovery_step_kind") == ConnectorRouteExecutionBudgetPolicy.RecoveryRouteStepKind
+                        ? ConnectorRouteExecutionBudgetPolicy.RecoveryTravelGameMinutes(pathTiles.Value)
+                        : GameClockBudgetPolicy.TicksToGameMinutes(estimatedTicks)).ToString());
             }
 
             AddParameterIfMissing(parameters, "compiler_context.route_connector_source", "locations.route_connectors");
@@ -490,7 +491,7 @@ namespace StardewAI.Core.Execution
 
             var step = routePlan.Step;
             parameters.Add(Parameter("execution_option_id", "executor.traverse_connector"));
-            parameters.Add(Parameter("recovery_step_kind", "rolling_route_home_connector"));
+            parameters.Add(Parameter("recovery_step_kind", ConnectorRouteExecutionBudgetPolicy.RecoveryRouteStepKind));
             parameters.Add(Parameter("target_tile_x", step.Edge.FromX!.Value.ToString()));
             parameters.Add(Parameter("target_tile_y", step.Edge.FromY!.Value.ToString()));
             parameters.Add(Parameter("connector_kind", step.Edge.Kind));

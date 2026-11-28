@@ -203,6 +203,7 @@ var nativeSaveBoundaryVerified = false;
 ManagedCropGlobalContinuation? pendingManagedGlobalSave = null;
 var nativeSaveBoundaryInitialDayKey = string.Empty;
 var nativeSaveBoundaryCurrentDayKey = string.Empty;
+var globalNativeSaveRecoveryDayKey = string.Empty;
 var goldenWalnutSourceMilestone =
     new GoldenWalnutFreshSaveMilestoneAssessment(
         false,
@@ -413,6 +414,10 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             }
         }
         var currentDayKey = QueueReplanFilter.SnapshotDayKey(beforeSnapshot);
+        if (!string.IsNullOrWhiteSpace(currentDayKey) && currentDayKey != globalNativeSaveRecoveryDayKey)
+        {
+            globalNativeSaveRecoveryDayKey = string.Empty;
+        }
         if (pendingCropTeacherDayBoundary is not null)
         {
             var boundaryCheck = await CheckCropTeacherDayBoundaryAsync(
@@ -1105,7 +1110,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
     }
     else if (options.UseDailyPlan)
     {
-        var hasDecisionLease = File.Exists(leasedDecisionModelPlanPath) &&
+        var continuingGlobalNativeSaveRecovery = !string.IsNullOrWhiteSpace(globalNativeSaveRecoveryDayKey);
+        var hasDecisionLease = !continuingGlobalNativeSaveRecovery &&
+            File.Exists(leasedDecisionModelPlanPath) &&
             File.Exists(leasedDecisionRankingPath) &&
             File.Exists(leasedDecisionCompiledQueuePath) &&
             File.Exists(leasedDecisionSnapshotPath) &&
@@ -1113,7 +1120,16 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             !string.IsNullOrWhiteSpace(leasedDecisionGoalId) &&
             !string.IsNullOrWhiteSpace(leasedSelectedCandidateId) &&
             leasedSelectedQueueIndex >= 0;
-        if (hasDecisionLease)
+        if (options.ContinueGlobalDailyPlanAfterCropTeacherRun && HasPriorityStoryEventInterrupt(beforeSnapshot))
+        {
+            // An open story choice belongs to the native event, not menu dismissal or a resumed daily candidate.
+            var story = await BuildCropTeacherStoryEventQueueAsync(
+                http, options, iteration, snapshotPath, beforeSnapshot, lastStateHash);
+            queue = story.Queue ?? throw new InvalidOperationException("priority story event queue unavailable");
+            modelPlanPath = decisionModelPlanPath = story.ModelPlanPath;
+            rankingPath = decisionRankingPath = story.RankingPath;
+        }
+        else if (hasDecisionLease)
         {
             inventoryCapacityRecoveryControlActive =
                 leasedDecisionIsInventoryCapacityRecovery;
@@ -1146,8 +1162,9 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
             selectedQueueIndex = selectedCandidate.QueueIndex;
             resumedSelectedQueueDecision = true;
         }
-        else if (closingNativeSaveBoundary)
+        else if (closingNativeSaveBoundary || continuingGlobalNativeSaveRecovery)
         {
+            if (continuingGlobalNativeSaveRecovery) useDailyPlanDecisionLease = false;
             var saveBoundary = await BuildNativeSaveBoundaryQueueAsync(
                 http,
                 options,
@@ -1442,6 +1459,23 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         dailyMaintenancePreemption.ShouldPreempt
                             ? null
                             : activeObjectiveContinuation);
+                if (activeObjectiveContinuation is null)
+                    dailyPlan = WithNativeFestivalExitWait(options, snapshotJson, lastStateHash, dailyPlan);
+                if (dailyPlan.Ranking["native_festival_exit_wait"] is JsonObject festivalExit)
+                {
+                    useDailyPlanDecisionLease = false;
+                    AppendProgress(options, "native_festival_exit_wait", iteration, lastStateHash,
+                        ReadString(dailyPlan.Queue, "queue_id"), ReadString(festivalExit, "reason"));
+                }
+                if (dailyPlan.Ranking["global_primary_budget_recovery"] is JsonObject recovery)
+                {
+                    useDailyPlanDecisionLease = false;
+                    if (ReadString(dailyPlan.Queue, "status") == "pending" && !string.IsNullOrWhiteSpace(currentDayKey))
+                        globalNativeSaveRecoveryDayKey = currentDayKey;
+                    AppendProgress(options, "global_primary_budget_recovery", iteration, lastStateHash,
+                        ReadString(dailyPlan.Queue, "queue_id"),
+                        "reason=" + ReadString(recovery, "reason") + " next=original_native_save_boundary");
+                }
                 modelPlanPath = Path.Combine(options.SnapshotDir, "model-plan-" + iteration.ToString("D4") + ".json");
                 await File.WriteAllTextAsync(modelPlanPath, dailyPlan.Plan.ToJsonString(JsonOptions), Encoding.UTF8);
                 var dailyPlanPath = Path.Combine(options.SnapshotDir, "daily-plan-response-" + iteration.ToString("D4") + ".json");
@@ -1666,10 +1700,14 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         attemptOrdinal);
                     continue;
                 }
+                var routeTimeExhausted = executableSubsetCount == 0 &&
+                    options.ContinueGlobalDailyPlanAfterCropTeacherRun &&
+                    options.UseJointDailyCalendar &&
+                    QueueReplanFilter.ShouldReleaseTimeBlockedRouteContinuation(activeObjectiveContinuation, dailyPlanRanking, queue);
                 if (executableSubsetCount == 0 &&
-                    QueueReplanFilter.ShouldReleaseUnavailableContinuation(
+                    (routeTimeExhausted || QueueReplanFilter.ShouldReleaseUnavailableContinuation(
                         activeObjectiveContinuation,
-                        dailyPlanRanking))
+                        dailyPlanRanking)))
                 {
                     var releasedContinuation = activeObjectiveContinuation!;
                     var releasedOptionId = ReadString(
@@ -1686,7 +1724,8 @@ for (var attemptOrdinal = 1; ; attemptOrdinal++)
                         iteration,
                         lastStateHash,
                         lastQueueId,
-                        "reason=no_available_continuation_candidate option_id=" +
+                        "reason=" + (routeTimeExhausted ? "continuation_exceeds_daily_time_budget" :
+                            "no_available_continuation_candidate") + " option_id=" +
                         releasedOptionId +
                         " suppressed_until_day_change=true suppressed_count=" +
                         suppressedObjectiveContinuations.Count);

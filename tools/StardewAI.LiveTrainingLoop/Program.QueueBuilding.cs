@@ -81,6 +81,8 @@ static partial class Program
             options.DailyPlanCandidateOptionIds;
         var candidateParameters = candidateParametersOverride ??
             options.DailyPlanCandidateParameters;
+        var nativeStoryInterrupt = priorityStoryEventInterrupt &&
+            options.TargetExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer;
         var explicitCandidates =
             candidateParameters.Count > 0
                 ? new object[]
@@ -110,6 +112,7 @@ static partial class Program
                 ? candidateOptionIds
                 : Array.Empty<string>(),
             candidates = explicitCandidates,
+            priority_story_event_interrupt = nativeStoryInterrupt,
             include_blocked_options = false
         }, JsonOptions);
         var ranking = await PostJsonStringAsync(http, options.BackendUrl + "/api/v1/planner/baseline/rank-options", rankRequest);
@@ -149,6 +152,15 @@ static partial class Program
         var unsuppressedCandidates = QueueReplanFilter.FilterSuppressedContinuations(
             goalBoundCandidates,
             suppressedObjectiveContinuations);
+        var allBoundPrimarySuppressed = false;
+        if (primaryCandidateIds is { Length: > 0 } && suppressedObjectiveContinuations.Count > 0 &&
+            ReadString(goalResolution, "source_state_hash") == stateHash)
+        {
+            var originalIds = goalBoundCandidates.OfType<JsonObject>().Select(row => ReadString(row, "candidate_id"));
+            var retainedIds = unsuppressedCandidates.OfType<JsonObject>().Select(row => ReadString(row, "candidate_id"));
+            var suppressedIds = originalIds.Except(retainedIds, StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+            allBoundPrimarySuppressed = primaryCandidateIds.All(suppressedIds.Contains);
+        }
         var continuationFilterActive =
             activeObjectiveContinuation is not null &&
             !exclusiveRecovery &&
@@ -266,6 +278,7 @@ static partial class Program
             execution_mode = options.TargetExecutionMode,
             max_candidates = maxCandidates,
             compile_action_queue = true,
+            priority_story_event_interrupt = nativeStoryInterrupt,
             ranked_event_candidates = JsonNode.Parse(selectedCandidates.ToJsonString(JsonOptions))
         }, JsonOptions);
         var compileActionQueue = true;
@@ -285,6 +298,26 @@ static partial class Program
         var queue = compileActionQueue
             ? response["action_queue"]?.AsObject() ?? throw new InvalidOperationException("daily plan response did not include action_queue")
             : new JsonObject();
+        if (options.RequireNativeSaveBoundary)
+        {
+            var recoveryReason = allBoundPrimarySuppressed && primaryCandidateIds is { Length: 0 } &&
+                IsPinnedEmptyDailyCompile(stateHash, plan, queue)
+                    ? "all_bound_primary_work_suppressed_until_game_day_changes"
+                    : GlobalDailyPrimaryTimeExhausted(stateHash, primaryCandidateIds, plan, queue)
+                        ? "all_bound_primary_work_exceeds_daily_time_budget"
+                        : null;
+            if (recoveryReason is not null)
+            {
+                var recovery = await BuildNativeSaveBoundaryQueueAsync(http, options, stateHash);
+                recovery.Ranking["global_primary_budget_recovery"] = new JsonObject
+                {
+                    ["reason"] = recoveryReason,
+                    ["blocked_resolution"] = goalResolution?.DeepClone(),
+                    ["blocked_compile_response"] = response.DeepClone()
+                };
+                return recovery;
+            }
+        }
         return (response, plan, queue, ranking);
     }
 
@@ -302,8 +335,10 @@ static partial class Program
             stateHash,
             Array.Empty<JsonObject>(),
             new[] { "story.advance_event" },
+            candidateParametersOverride: Array.Empty<SmallModelActionParameter>(),
             candidateKindOverride: string.Empty,
             candidateIdOverride: string.Empty,
+            maxCandidatesOverride: 1,
             priorityStoryEventInterrupt: true);
 
     private static Task<(JsonObject Response, JsonObject Plan, JsonObject Queue, JsonObject Ranking)> BuildNativeSaveBoundaryQueueAsync(
