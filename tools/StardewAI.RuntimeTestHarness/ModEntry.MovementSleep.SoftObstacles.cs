@@ -16,12 +16,14 @@ public sealed partial class ModEntry
             return false;
         }
 
+        var warpTiles = OrdinaryMoveWarpTiles(move.Pending.Request, location);
         var needsEgressCentering = false;
         if (!TryBuildOccupiedStartEgressPath(
                 location,
                 pathStartTile,
                 move.TargetTile,
                 Math.Max(1, 512 - move.PathIndex),
+                warpTiles,
                 avoidSoftObstacles: true,
                 out var path))
         {
@@ -32,6 +34,7 @@ public sealed partial class ModEntry
                     pathStartTile,
                     move.TargetTile,
                     remainingTiles,
+                    warpTiles,
                     avoidSoftObstacles: false,
                     out path))
             {
@@ -65,6 +68,7 @@ public sealed partial class ModEntry
         Point startTile,
         Point targetTile,
         int maxTiles,
+        HashSet<Point>? warpTiles,
         bool avoidSoftObstacles,
         out List<Point> path)
     {
@@ -88,7 +92,8 @@ public sealed partial class ModEntry
         long bestClearance = long.MinValue;
         foreach (var egressTile in Neighbors(startTile))
         {
-            if (!IsTileOnMap(location, egressTile) ||
+            if (warpTiles?.Contains(egressTile) == true ||
+                !IsTileOnMap(location, egressTile) ||
                 !IsTileWalkable(location, egressTile) ||
                 IsTileOccupiedByCharacter(location, egressTile))
             {
@@ -103,7 +108,8 @@ public sealed partial class ModEntry
                 out _,
                 avoidSoftObstacles: avoidSoftObstacles,
                 allowRemovableObstacles: false,
-                requireWalkableTerrain: !avoidSoftObstacles);
+                requireWalkableTerrain: !avoidSoftObstacles,
+                ordinaryMoveWarpTiles: warpTiles);
             if (tail is null)
             {
                 continue;

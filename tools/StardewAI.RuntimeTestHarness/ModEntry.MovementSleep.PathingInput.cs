@@ -25,9 +25,14 @@ namespace StardewAI.RuntimeTestHarness;
 
 public sealed partial class ModEntry : Mod
 {
-    private static List<Point>? TryBuildTilePath(GameLocation location, Point startTile, Point targetTile, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true, bool requireWalkableTerrain = false)
+    private static List<Point>? TryBuildTilePath(GameLocation location, Point startTile, Point targetTile, int maxTiles, out string blockReason, bool avoidSoftObstacles = false, bool allowRemovableObstacles = true, bool requireWalkableTerrain = false, HashSet<Point>? ordinaryMoveWarpTiles = null)
     {
         blockReason = string.Empty;
+        if (ordinaryMoveWarpTiles?.Contains(targetTile) == true)
+        {
+            blockReason = "movement_target_is_passive_warp";
+            return null;
+        }
         if (IsTileHardBlocked(location, targetTile))
         {
             blockReason = MovementHardBlockReason(location, targetTile);
@@ -55,6 +60,10 @@ public sealed partial class ModEntry : Mod
 
             foreach (var next in Neighbors(current))
             {
+                if (ordinaryMoveWarpTiles?.Contains(next) == true)
+                {
+                    continue;
+                }
                 var key = TileKey(next);
                 var traversable = requireWalkableTerrain
                     ? IsTileOnMap(location, next) && IsTileWalkable(location, next)
@@ -85,6 +94,11 @@ public sealed partial class ModEntry : Mod
         blockReason = "movement_no_collision_safe_path";
         return null;
     }
+
+    private static HashSet<Point>? OrdinaryMoveWarpTiles(TrainingExecutionRequest request, GameLocation location) =>
+        request.OptionId == "executor.move_to_tile"
+            ? location.warps.Where(warp => !warp.npcOnly.Value).Select(warp => new Point(warp.X, warp.Y)).ToHashSet()
+            : null;
 
     private static int MovementTraversalCost(GameLocation location, Point tile)
     {

@@ -210,7 +210,8 @@ public sealed partial class ModEntry : Mod
             targetTile,
             maxTiles,
             out blockReason,
-            allowRemovableObstacles: false);
+            allowRemovableObstacles: false,
+            ordinaryMoveWarpTiles: OrdinaryMoveWarpTiles(pending.Request, Game1.currentLocation));
         if (path is null)
         {
             pending.Completion.SetResult(BlockedWithPrimitive(

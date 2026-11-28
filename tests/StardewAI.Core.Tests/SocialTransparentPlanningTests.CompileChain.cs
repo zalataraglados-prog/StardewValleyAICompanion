@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using StardewAI.Contracts.Execution;
 using StardewAI.Contracts.Options;
 using StardewAI.Contracts.State;
@@ -300,6 +301,51 @@ public sealed partial class SocialTransparentPlanningTests
             "Route distance (" + distanceTiles + ") should exceed Manhattan distance (" + manhattanToNpc + ") due to obstacle wall");
 
         Assert.True(int.Parse(standX) >= 9, "Stand tile should be on right side of obstacle wall");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SelectReachableStandTileNeverUsesWalkablePassiveWarp(bool oppositeSideOccupied)
+    {
+        var npcs = JsonNode.Parse("""
+        [{"name":"Abigail","display_name":"Abigail","master_data_present":true,"current_instance_loaded":true,
+          "location_id":"Town","tile_x":3,"tile_y":14,"is_villager":true,"is_invisible":false,
+          "is_sleeping":false,"has_controller":false,"is_busy":false,"schedule_loaded":true,
+          "can_socialize":true,"can_socialize_complete":true,"friendship_row_exists":true,"friendship_points":250,
+          "talked_to_today":false,"expected_talk_friendship_delta":20,"expected_talk_friendship_delta_complete":true,
+          "expected_talk_friendship_points_after":270,"current_route_window_complete":true}]
+        """)!.AsArray();
+        if (oppositeSideOccupied)
+            npcs.Add(JsonNode.Parse("""
+            {"name":"Penny","current_instance_loaded":true,"location_id":"Town",
+             "bounding_box_x":234,"bounding_box_y":862,"bounding_box_width":48,"bounding_box_height":32}
+            """));
+        var snapshot = CompleteSocialSnapshot(
+            socialInteractionValue: npcs.ToJsonString(),
+            collisionValue: """
+            {"width":10,"height":20,"notable_tiles":[
+              {"tile_x":2,"tile_y":14,"collision_blocked":true},
+              {"tile_x":4,"tile_y":14,"collision_blocked":true},
+              {"tile_x":3,"tile_y":15,"collision_blocked":false,"warp_target":"Exit"}]}
+            """,
+            playerTileX: 3,
+            playerTileY: 14);
+
+        var availability = new CandidateOptionAvailabilityEvaluator().Evaluate(snapshot, new[] { "social.talk_npc" });
+        var talk = Assert.Single(Assert.Single(availability.Options).SocialCandidates, row =>
+            row.Parameters.Any(parameter => parameter.Name == "npc_name" && parameter.Value == "Abigail"));
+        if (oppositeSideOccupied)
+        {
+            Assert.False(talk.Available);
+            Assert.Contains("social_no_reachable_adjacent_stand_tile", talk.BlockReasons);
+        }
+        else
+        {
+            Assert.True(talk.Available, string.Join(", ", talk.BlockReasons));
+            Assert.Equal(3, talk.TileX);
+            Assert.Equal(13, talk.TileY);
+        }
     }
 
     [Fact]

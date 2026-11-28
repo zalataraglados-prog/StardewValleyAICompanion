@@ -582,7 +582,7 @@ namespace StardewAI.Core.OptionRegistry
                 return new StandTileSelection(null, -1, new[] { "social_route_collision_grid_incomplete" });
             }
 
-            var blocked = ReadBlockedCollisionTileKeys(grid.Value, width, height);
+            var blocked = ReadBlockedCollisionTileKeys(grid.Value, width, height, out var warpTiles);
             if (blocked is null)
             {
                 return new StandTileSelection(null, -1, new[] { "social_route_collision_grid_incomplete" });
@@ -592,6 +592,8 @@ namespace StardewAI.Core.OptionRegistry
             {
                 return new StandTileSelection(null, -1, new[] { "social_route_action_coverage_incomplete" });
             }
+            // A walkable map warp is an exit, not a valid stationary interaction tile.
+            unsupported.UnionWith(warpTiles);
             var npcs = ReadStateFieldValue(snapshot, "npcs", "social_interaction");
             var occupants = npcs is { ValueKind: JsonValueKind.Array }
                 ? npcs.Value.EnumerateArray().Where(npc => npc.ValueKind == JsonValueKind.Object &&
@@ -687,9 +689,11 @@ namespace StardewAI.Core.OptionRegistry
             return -1;
         }
 
-        private static HashSet<string>? ReadBlockedCollisionTileKeys(JsonElement collisionGrid, int width, int height)
+        private static HashSet<string>? ReadBlockedCollisionTileKeys(
+            JsonElement collisionGrid, int width, int height, out HashSet<string> warpTiles)
         {
             var blockedTiles = new HashSet<string>(StringComparer.Ordinal);
+            warpTiles = new HashSet<string>(StringComparer.Ordinal);
             if (!collisionGrid.TryGetProperty("notable_tiles", out var notableTiles) || notableTiles.ValueKind != JsonValueKind.Array)
             {
                 return null;
@@ -710,6 +714,10 @@ namespace StardewAI.Core.OptionRegistry
                 if (isBlocked)
                 {
                     blockedTiles.Add(TileKey(x, y));
+                }
+                if (!string.IsNullOrWhiteSpace(ReadString(tile, "warp_target")))
+                {
+                    warpTiles.Add(TileKey(x, y));
                 }
             }
 
