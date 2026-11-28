@@ -317,48 +317,31 @@ static partial class Program
                 itemQueueId = queueId;
             }
             JsonObject? dispatchReadiness = null;
-            if (!QueueContainsRecoveryWork(queue))
+            if (await ReadDispatchRecoveryOverrideAsync(http, options, queue, item,
+                    executionSnapshotUrlOverride, executionSnapshotProfileOverride) is { } latest)
             {
-                var latest = await ReadCurrentSnapshotAsync(http, options);
-                var latestTime = ReadInGameTime(latest.Snapshot);
-                if (latestTime >= GameClockBudgetPolicy.AutonomousRecoveryStartTime)
+                var recoverySuffix = "-dispatch-recovery-" +
+                    (dispatchGateReplanCount + 1).ToString("D4");
+                var recoverySnapshotPath = Path.Combine(
+                    options.SnapshotDir,
+                    "before-snapshot-" + iteration.ToString("D4") + recoverySuffix + ".json");
+                await ContentAddressedJsonArtifactStore.WriteAsync(
+                    recoverySnapshotPath,
+                    latest.Json,
+                    options.SnapshotArtifactMode);
+                var ingest = await PostJsonStringAsync(http, SnapshotIngestUrl(options), latest.Json);
+                currentBeforeSnapshot = latest.Snapshot;
+                currentBeforeSnapshotPath = recoverySnapshotPath;
+                currentStateHash = ReadString(ingest, "state_hash");
+                dispatchReadiness = new JsonObject
                 {
-                    latest = await ReadExecutionSnapshotAsync(
-                        http,
-                        options,
-                        forceRefresh: true,
-                        snapshotUrlOverride: executionSnapshotUrlOverride,
-                        snapshotProfileOverride: executionSnapshotProfileOverride);
-                    latestTime = ReadInGameTime(latest.Snapshot);
-                    var recoverySuffix = "-dispatch-recovery-" +
-                        (dispatchGateReplanCount + 1).ToString("D4");
-                    var recoverySnapshotPath = Path.Combine(
-                        options.SnapshotDir,
-                        "before-snapshot-" + iteration.ToString("D4") +
-                        recoverySuffix + ".json");
-                    await ContentAddressedJsonArtifactStore.WriteAsync(
-                        recoverySnapshotPath,
-                        latest.Json,
-                        options.SnapshotArtifactMode);
-                    var ingest = await PostJsonStringAsync(
-                        http,
-                        SnapshotIngestUrl(options),
-                        latest.Json);
-                    currentBeforeSnapshot = latest.Snapshot;
-                    currentBeforeSnapshotPath = recoverySnapshotPath;
-                    currentStateHash = ReadString(ingest, "state_hash");
-                    dispatchReadiness = new JsonObject
-                    {
-                        ["ready"] = false,
-                        ["status"] = "blocked",
-                        ["state_hash"] = currentStateHash,
-                        ["current_time"] = latestTime,
-                        ["blocking_reasons"] = new JsonArray(
-                            "dispatch_recovery_window_started"),
-                        ["policy"] =
-                            "fresh_snapshot_before_dispatch;exclusive_recovery_replan"
-                    };
-                }
+                    ["ready"] = false,
+                    ["status"] = "blocked",
+                    ["state_hash"] = currentStateHash,
+                    ["current_time"] = ReadInGameTime(latest.Snapshot),
+                    ["blocking_reasons"] = new JsonArray("dispatch_recovery_window_started"),
+                    ["policy"] = "fresh_snapshot_before_dispatch;exclusive_recovery_replan"
+                };
             }
 
             var compiledCommandStateHash = ReadString(

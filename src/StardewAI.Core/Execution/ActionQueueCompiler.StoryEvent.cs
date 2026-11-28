@@ -14,6 +14,16 @@ public sealed partial class ActionQueueCompiler
     private const string CompilerStoryEventNativeContract =
         "live_Event_Update_tryEventCommand_and_DialogueBox_native_input_until_event_end_or_fresh_decision_minigame_or_player_control_boundary_without_skipEvent_or_direct_event_state_mutation";
 
+    public static bool IsBoundSingleplayerStoryInterrupt(NormalizedCommand command, SnapshotEnvelope snapshot) =>
+        command.ExecutionMode == ExecutionTargetProfiles.TrainingSingleplayer &&
+        command.OptionId == "executor.advance_story_event" &&
+        command.Steps is [{ StepType: "advance_story_event" }] &&
+        ValidateAdvanceStoryEventPlan(new SmallModelAction
+        {
+            OptionId = command.OptionId,
+            Parameters = command.Parameters
+        }, snapshot).Length == 0;
+
     private static CompiledActionStep[] CompileAdvanceStoryEventStep(
         SmallModelAction action,
         SnapshotEnvelope _)

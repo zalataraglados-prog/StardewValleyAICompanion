@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using StardewAI.Contracts.State;
 using StardewAI.Contracts.Training;
 
 namespace StardewAI.Backend.Tests;
@@ -70,6 +71,7 @@ public sealed partial class JointDailyCalendarIntegrationTests
             Assert.Contains(normalized["parameters"]!.AsArray(), parameter =>
                 parameter!["name"]!.GetValue<string>() == "story_event_response_key" &&
                 parameter["value"]!.GetValue<string>() == "quickResponse1");
+        await VerifyMidnightStoryDispatch(options, snapshot, queue, item.AsObject(), question is not null);
 
         using var ordinaryRank = await http.PostAsJsonAsync("/api/v1/planner/baseline/rank-options", new BaselinePredictionRequest
         {
@@ -95,5 +97,47 @@ public sealed partial class JointDailyCalendarIntegrationTests
         });
         Assert.Equal(HttpStatusCode.UnprocessableEntity, mixedCompile.StatusCode);
         Assert.Single(store.ActionQueues);
+    }
+
+    private static async Task VerifyMidnightStoryDispatch(
+        LiveTrainingOptions options, SnapshotEnvelope snapshot, JsonObject queue, JsonObject item, bool decision)
+    {
+        var method = typeof(LiveTrainingOptions).Assembly.GetType("Program", true)!
+            .GetMethod("ReadDispatchRecoveryOverrideAsync", BindingFlags.NonPublic | BindingFlags.Static)!;
+        using var bridge = new MidnightDispatchBridge(JsonSerializer.SerializeToNode(snapshot, Json)!.AsObject());
+        using var http = new HttpClient(bridge);
+        async Task<(string Json, JsonObject Snapshot)?> Check(JsonObject dispatchItem) =>
+            await (Task<(string Json, JsonObject Snapshot)?>)method.Invoke(null,
+                [http, options, queue, dispatchItem, null, null])!;
+
+        Assert.Null(await Check(item));
+        var unrelated = (JsonObject)item.DeepClone();
+        unrelated["option_id"] = "executor.move_to_tile";
+        Assert.NotNull(await Check(unrelated));
+
+        var liveEvent = bridge.Fresh["state"]!["player"]!["story_event"]!["value"]!;
+        if (decision)
+            liveEvent["dialogue_responses"]![0]!["response_key"] = "anotherResponse";
+        else
+            liveEvent["current_command_index"] = 67;
+        Assert.NotNull(await Check(item));
+        Assert.Equal(3, bridge.FullSnapshotReads);
+    }
+
+    private sealed class MidnightDispatchBridge(JsonObject fresh) : HttpMessageHandler
+    {
+        internal JsonObject Fresh => fresh;
+        internal int FullSnapshotReads { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Assert.Equal(HttpMethod.Get, request.Method);
+            var clock = request.RequestUri!.Query.Contains("profile=clock", StringComparison.Ordinal);
+            if (!clock) FullSnapshotReads++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(clock ? "{\"in_game_time\":{\"value\":2400}}" : fresh.ToJsonString())
+            });
+        }
     }
 }
